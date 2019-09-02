@@ -6,7 +6,50 @@ ScrapQL bears some resemblance to GraphQL but is also quite different. ScrapQL a
 
 # Tutorial
 
-## Define Validators
+```typescript
+const example = {
+  customers: {
+    'c001': {
+      name: 'Scrooge McDuck',
+      age: '75',
+    },
+    'c002': {
+      name: 'Magica De Spell',
+      age: '35',
+    }
+  },
+  reports: {
+    '2017': {
+      profit: 500,
+    }
+    '2018': {
+      profit: 100,
+    },
+    '2018': {
+      profit: 10,
+    }
+  },
+};
+
+type Json = unknown;
+
+interface DB {
+  isKnownCustomer: (c: string) => Promise<boolean>;
+  getCustomer: (c: string) => Promise<Json>;
+  getReport: (y: string) => Promise<Json>;
+}
+
+const db: DB = {
+  hasCustomer: (customerId) => Promise.resolve(example.customers.hasOwnPropert(customerID))
+  getCustomer: (customerId) => Promise.resolve(example.customers[customerId])
+  getReport: (year) => Promise.resolve(example.reports[year])
+}
+
+
+```
+
+
+## Define Data Validators
 
 ```typescript
 import * as t from 'io-ts'
@@ -28,11 +71,11 @@ const Report = t.type({
 });
 type Report = t.TypeOf<typeof Report>;
 
-const Err = t.string;
-type Err = t.TypeOf<typeof Err>;
+const Errors = t.array(t.string);
+type Errors = t.TypeOf<typeof Errors>;
 ```
 
-## Define Protocol
+## Define Query Validator
 
 ```typescript
 package = 'scrapql-example-app';  // from package.json
@@ -50,21 +93,41 @@ const Query = t.type({
 export type Query = t.TypeOf<typeof Query>;
 ```
 
-## Define Resolvers
+## Define Query Resolvers
 
 ```typescript
+import { Task } from 'fp-ts/lib/Task';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
+
+import { pipe } from 'fp-ts/lib/pipeable';
+import * as Task_ from 'fp-ts/lib/Task';
+import * as TaskEither_ from 'fp-ts/lib/TaskEither';
+import { failure } from 'io-ts/lib/PathReporter'
+
 interface Resolvers {
-  readonly fetchReport: (y: Year) => TaskEither<Err, Report>;
-  readonly fetchCustomer: (c: CustomerId) => TaskEither<Err, Option<Customer>>;
+  readonly fetchReport: (y: Year) => TaskEither<Errors, Report>;
+  readonly fetchCustomer: (c: CustomerId) => TaskEither<Errors, Customer>;
   readonly checkCustomerExistence: (a: CustomerId) => Task<boolean>;
 }
+
+const resolvers: Resolvers = {
+  fetchReport: (year) => pipe(
+    () => db.getReport(year),
+    Task_.map(Report.decode),
+    TaskEither_.mapLeft(failure),
+  ),
+  fetchCustomer: (customerId) => pipe(
+    () => db.getCustomer(customerId),
+    Task_.map(CustomerDecode.decode),
+    TaskEither_.mapLeft(failure),
+  ),
+  checkCustomerExistence: (customerId) => pipe(
+    () => db.hasCustomer(customerId),
+  ),
+};
 ```
 
-
-
-
-
-## Create Query Processor
+## Define Query Processor
 
 ```typescript
 const queryProcessor = scrap.processQueryProperties({
@@ -96,7 +159,7 @@ export type Result = t.TypeOf<typeof Result>;
 
 
 interface Reporters {
-  readonly receiveCustomer: (a: Either<Err, Option<Customer>>) => Task<void>;
+  readonly receiveCustomer: (a: Either<Errors, Option<Customer>>) => Task<void>;
   readonly learnCustomerExistence: (a: CustomerId, b: boolean) => Task<void>;
 }
 
