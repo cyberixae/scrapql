@@ -24,8 +24,9 @@ function loggerTask<R, A extends Array<any>>(logger: Logger<R, A>): LoggerTask<R
 }
 
 describe('query', () => {
-  const nopResolver = (...rargs: any) => Task_.of(undefined);
   const nopResolvers = Symbol('resolvers');
+  const nopProcessor = (...rargs: any) => Task_.of(undefined);
+  const nopProcessorFactory = () => nopProcessor;
   const ctx2 = 'ctx2';
   const ctx1 = 'ctx1';
   const exampleContext = [ctx2, ctx1];
@@ -33,9 +34,9 @@ describe('query', () => {
   describe('literal processor', () => {
     const result = Symbol('result');
     const query: unknown = undefined;
-    const processor = processQuery.literal(result);
+    const processor = processQuery.literal(result)(nopResolvers);
     it('should return the predetermined result', async () => {
-      const main = processor({}, query, ...exampleContext);
+      const main = processor(query, ...exampleContext);
       const got = await main();
       expect(got).toEqual(result);
     });
@@ -47,9 +48,9 @@ describe('query', () => {
       resolveQuery: loggerTask(jest.fn((...largs: any) => result)),
     };
     const query = true;
-    const processor = processQuery.leaf((r: typeof resolvers) => r.resolveQuery);
+    const processor = processQuery.leaf((r: typeof resolvers) => r.resolveQuery)(resolvers);
     it('should call sub query resolver and return the result', async () => {
-      const main = processor(resolvers, query, ...exampleContext);
+      const main = processor(query, ...exampleContext);
       const got = await main();
       expect(resolvers.resolveQuery.mock.calls).toMatchObject([[ctx2, ctx1]]);
       expect(got).toEqual(result);
@@ -70,16 +71,19 @@ describe('query', () => {
       key1: query1,
       key2: query2,
     };
+
     const subProcessor = loggerTask(
-      jest.fn((_0: unknown, query: KeysQuery, key: keyof KeysQuery, ...exampleContext) => results[key]),
+      jest.fn((query: KeysQuery, key: keyof KeysQuery, ...exampleContext) => results[key]),
     );
-    const processor = processQuery.keys(subProcessor);
+    const subProcessorFactory = jest.fn(() => subProcessor);
+    const processor = processQuery.keys(subProcessorFactory)(nopResolvers);
 
     it('should call sub query processor for each query and return the results', async () => {
-      const main = processor(nopResolvers, queries, ...exampleContext);
+      const main = processor(queries, ...exampleContext);
       const got = await main();
-      expect(subProcessor.mock.calls).toContainEqual([nopResolvers, query1, 'key1', ctx2, ctx1]);
-      expect(subProcessor.mock.calls).toContainEqual([nopResolvers, query2, 'key2', ctx2, ctx1]);
+      expect(subProcessorFactory.mock.calls).toContainEqual([nopResolvers]);
+      expect(subProcessor.mock.calls).toContainEqual([query1, 'key1', ctx2, ctx1]);
+      expect(subProcessor.mock.calls).toContainEqual([query2, 'key2', ctx2, ctx1]);
       expect(subProcessor.mock.calls).toHaveLength(Object.keys(queries).length);
       expect(got).toMatchObject(results);
     });
@@ -102,17 +106,18 @@ describe('query', () => {
       existence: loggerTask(jest.fn((id: string) => Option_.isSome(results[id]))),
     };
     const subProcessor = loggerTask(
-      jest.fn((_0: unknown, query: IdsQuery, id: keyof IdsQuery, ...exampleContext) =>
+      jest.fn((query: IdsQuery, id: keyof IdsQuery, ...exampleContext) =>
         pipe(
           results[id],
           Option_.getOrElse(() => null),
         ),
       ),
     );
+    const subProcessorFactory = jest.fn(() => subProcessor);
 
     it('should call existence check for each query', async () => {
-      const processor = processQuery.ids((r: typeof resolvers) => r.existence, nopResolver);
-      const main = processor(resolvers, queries, ...exampleContext);
+      const processor = processQuery.ids((r: typeof resolvers) => r.existence, nopProcessorFactory)(resolvers);
+      const main = processor(queries, ...exampleContext);
       await main();
       expect(resolvers.existence.mock.calls).toContainEqual(['id1']);
       expect(resolvers.existence.mock.calls).toContainEqual(['id2']);
@@ -120,10 +125,11 @@ describe('query', () => {
     });
 
     it('should call sub query processor for some queries', async () => {
-      const processor = processQuery.ids((r: typeof resolvers) => r.existence, subProcessor);
-      const main = processor(resolvers, queries, ...exampleContext);
+      const processor = processQuery.ids((r: typeof resolvers) => r.existence, subProcessorFactory)(resolvers);
+      const main = processor(queries, ...exampleContext);
       const got = await main();
-      expect(subProcessor.mock.calls).toMatchObject([[resolvers, query1, 'id1', ctx2, ctx1]]);
+      expect(subProcessorFactory.mock.calls).toMatchObject([[resolvers]]);
+      expect(subProcessor.mock.calls).toMatchObject([[query1, 'id1', ctx2, ctx1]]);
       expect(got).toMatchObject(results);
     });
   });
@@ -149,16 +155,20 @@ describe('query', () => {
     };
     const processor1 = loggerTask(jest.fn((...largs: any): typeof result1 => result1));
     const processor2 = loggerTask(jest.fn((...largs: any): typeof result2 => result2));
+    const factory1 = jest.fn(() => processor1);
+    const factory2 = jest.fn(() => processor2);
 
     const processor = processQuery.properties({
-      property1: processor1,
-      property2: processor2,
-    });
+      property1: factory1,
+      property2: factory2,
+    })(nopResolvers);
 
     it('should call other query processors based on present properties', async () => {
-      const main = processor(nopResolvers, queries, ...exampleContext);
+      const main = processor(queries, ...exampleContext);
       const got = await main();
-      expect(processor1.mock.calls).toMatchObject([[nopResolvers, query1, ctx2, ctx1]]);
+      expect(factory1.mock.calls).toMatchObject([[nopResolvers]]);
+      expect(factory2.mock.calls).toMatchObject([]);
+      expect(processor1.mock.calls).toMatchObject([[query1, ctx2, ctx1]]);
       expect(processor2.mock.calls).toMatchObject([]);
       expect(got).toMatchObject(results);
     });
@@ -200,10 +210,10 @@ describe('query', () => {
           processQuery.leaf((r: typeof resolvers) => r.fetchData)
         ),
       ),
-    });
+    })(resolvers);
 
     it('should call stuff', async () => {
-      const main = processor(resolvers, query);
+      const main = processor(query);
       const got = await main();
       expect(resolvers.checkExistence.mock.calls).toMatchObject([['id1'], ['id2']]);
       expect(resolvers.fetchData.mock.calls).toMatchObject([['key1', 'id1']]);

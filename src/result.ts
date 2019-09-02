@@ -11,31 +11,32 @@ import { identity } from 'fp-ts/lib/function';
 
 // all processors share these generic processor types
 
-export type ResultProcessor<A, R> = (a: A, r: R, ...c: Array<string>) => Task<void>;
+export type ResultProcessor<R> = (r: R, ...c: Array<string>) => Task<void>;
+export type ResultProcessorFactory<A, R> = (a: A) => ResultProcessor<R>;
 
 // helper functions
 
-export function literal(): ResultProcessor<unknown, unknown> {
-  return (_0, _1, ..._99) => Task_.of(undefined);
+export function literal(): ResultProcessorFactory<unknown, unknown> {
+  return (_0) => (_1, ..._99) => Task_.of(undefined);
 }
 
 // leaf result contains part of the payload
 
 export type LeafReporterConnector<A, R> = (a: A) => (r: R, ...c: Array<string>) => Task<void>;
 
-export function leaf<A, R>(connect: LeafReporterConnector<A, R>): ResultProcessor<A, R> {
-  return (reporters, result, ...context) => connect(reporters)(result, ...context);
+export function leaf<A, R>(connect: LeafReporterConnector<A, R>): ResultProcessorFactory<A, R> {
+  return (reporters) => (result, ...context) => connect(reporters)(result, ...context);
 }
 
 // keys result contains data that always exists in database
 
 export function keys<A, R extends Record<I, SR>, I extends string, SR>(
-  subProcessor: ResultProcessor<A, SR>,
-): ResultProcessor<A, R> {
-  return (reporters: A, result: R, ...context: Array<string>) => {
+  subProcessor: ResultProcessorFactory<A, SR>,
+): ResultProcessorFactory<A, R> {
+  return (reporters: A) => (result: R, ...context: Array<string>) => {
     const tasks: Array<Task<void>> = pipe(
       result,
-      Record_.mapWithIndex((key: I, subResult: SR) => subProcessor(reporters, subResult, key, ...context)),
+      Record_.mapWithIndex((key: I, subResult: SR) => subProcessor(reporters)(subResult, key, ...context)),
       Record_.toUnfoldable(array),
       Array_.map(([k, v]) => v),
     );
@@ -49,9 +50,9 @@ export type ExistenceReporterConnector<A> = (a: A) => (i: string, b: boolean) =>
 
 export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
   connect: ExistenceReporterConnector<A>,
-  subProcessor: ResultProcessor<A, SR>,
-): ResultProcessor<A, R> {
-  return (reporters: A, result: R, ...context: Array<string>) => {
+  subProcessor: ResultProcessorFactory<A, SR>,
+): ResultProcessorFactory<A, R> {
+  return (reporters: A) => (result: R, ...context: Array<string>) => {
     const tasks: Array<Task<void>> = pipe(
       result,
       Record_.mapWithIndex((id: I, maybeSubResult: Option<SR>) => {
@@ -59,7 +60,7 @@ export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
           maybeSubResult,
           Option_.fold(
             () => [connect(reporters)(id, false)],
-            (subResult) => [connect(reporters)(id, true), subProcessor(reporters, subResult, id, ...context)],
+            (subResult) => [connect(reporters)(id, true), subProcessor(reporters)(subResult, id, ...context)],
           ),
         );
       }),
@@ -73,17 +74,17 @@ export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
 
 // properties result contains results for a set of optional queries
 
-export type ResultProcessorMapping<A, R, P extends keyof R> = Record<P, (a: A, q: R[P], ...c: Array<string>) => Task<void>>;
+export type ResultProcessorFactoryMapping<A, R, P extends keyof R> = Record<P, ResultProcessorFactory<A, R[P]>>
 
 export function properties<A, R, P extends string & keyof R>(
-  processors: ResultProcessorMapping<A, R, P>,
-): ResultProcessor<A, R> {
-  return (reporters: A, result: R, ...context: Array<string>) => {
+  processors: ResultProcessorFactoryMapping<A, R, P>,
+): ResultProcessorFactory<A, R> {
+  return (reporters: A) => (result: R, ...context: Array<string>) => {
     const tasks: Array<Task<void>> = pipe(
       result,
       Record_.mapWithIndex((property: P, subResult: R[P]) => {
         const processor = processors[property];
-        return processor(reporters, subResult, ...context);
+        return processor(reporters)(subResult, ...context);
       }),
       Record_.toUnfoldable(array),
       Array_.map(([k, v]) => v),

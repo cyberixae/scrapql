@@ -6,6 +6,10 @@ ScrapQL bears some resemblance to GraphQL but is also quite different. ScrapQL a
 
 # Tutorial
 
+In this tutorial we explain how you can use ScrapQL in a simple project with
+customers and profit reports.  We will use the following database mock
+throughout the tutorial.
+
 ```typescript
 const example = {
   customers: {
@@ -40,12 +44,11 @@ interface DB {
 }
 
 const db: DB = {
-  hasCustomer: (customerId) => Promise.resolve(example.customers.hasOwnPropert(customerID))
-  getCustomer: (customerId) => Promise.resolve(example.customers[customerId])
-  getReport: (year) => Promise.resolve(example.reports[year])
+  hasCustomer: (customerId) => Promise.resolve(example.customers.hasOwnPropert(customerID)),
+  getCustomer: (customerId) => Promise.resolve(example.customers[customerId]),
+  hasReport: (year) => Promise.resolve(example.reports.hasOwnPropert(year)),
+  getReport: (year) => Promise.resolve(example.reports[year]),
 }
-
-
 ```
 
 
@@ -111,19 +114,23 @@ interface Resolvers {
 }
 
 const resolvers: Resolvers = {
+
   fetchReport: (year) => pipe(
     () => db.getReport(year),
     Task_.map(Report.decode),
     TaskEither_.mapLeft(failure),
   ),
+
   fetchCustomer: (customerId) => pipe(
     () => db.getCustomer(customerId),
     Task_.map(CustomerDecode.decode),
     TaskEither_.mapLeft(failure),
   ),
+
   checkCustomerExistence: (customerId) => pipe(
     () => db.hasCustomer(customerId),
   ),
+
 };
 ```
 
@@ -133,15 +140,18 @@ const resolvers: Resolvers = {
 ```typescript
 import { process } from 'scrapql';
 
-const queryProcessor = process.query.Properties({
+const queryProcessor = process.query.properties({
   version: process.query.literal(RESPONSE_PROTOCOL),
-  get: process.query.Ids(
+  get: process.query.ids(
     (r: Resolvers) => r.checkExistence,
-    process.query.Keys(
-      process.query.Fields((r: Resolvers) => r.fetchData)
+    process.query.keys(
+      process.query.leaf((r: Resolvers) => r.fetchData)
     ),
   ),
-});
+})(resolvers);
+
+
+
 ```
 
 
