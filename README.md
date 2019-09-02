@@ -29,7 +29,7 @@ const example = {
     '2018': {
       profit: 100,
     },
-    '2018': {
+    '2019': {
       profit: 10,
     }
   },
@@ -46,8 +46,7 @@ interface DB {
 const db: DB = {
   hasCustomer: (customerId) => Promise.resolve(example.customers.hasOwnPropert(customerID)),
   getCustomer: (customerId) => Promise.resolve(example.customers[customerId]),
-  hasReport: (year) => Promise.resolve(example.reports.hasOwnPropert(year)),
-  getReport: (year) => Promise.resolve(example.reports[year]),
+  getReport: (year) => Promise.resolve(example.reports[year]||{ profit: 0 }),
 }
 ```
 
@@ -84,7 +83,7 @@ type Errors = t.TypeOf<typeof Errors>;
 package = 'scrapql-example-app';  // from package.json
 version = '0.0.1';                // from package.json
 
-const queryProtocol = `${packge}/${version}/scrapql/query`;
+const QUERY_PROTOCOL= `${packge}/${version}/scrapql/query`;
 
 const Query = t.type({
   protocol: t.literal(queryProtocol),
@@ -140,25 +139,77 @@ const resolvers: Resolvers = {
 ```typescript
 import { process } from 'scrapql';
 
-const queryProcessor = process.query.properties({
-  version: process.query.literal(RESPONSE_PROTOCOL),
-  get: process.query.ids(
-    (r: Resolvers) => r.checkExistence,
-    process.query.keys(
-      process.query.leaf((r: Resolvers) => r.fetchData)
+const RESULT_PROTOCOL = `${packge}/${version}/scrapql/result`;
+
+const processQuery = process.query.properties({
+  protocol: process.query.literal(RESPONSE_PROTOCOL),
+  get: process.query.properties({
+    reports: process.query.keys(
+      process.query.leaf((r: Resolvers) => r.fetchReport)
     ),
-  ),
+    customers: process.query.ids(
+      (r: Resolvers) => r.checkCustomerExistence,
+      process.query.leaf((r: Resolvers) => r.fetchCustomer)
+    ),
+  }),
 })(resolvers);
+```
 
+## Running The Query Processor
 
+Now that we have a query processor we can finally use it to process queries.
+The query processor works as follows.
 
+```typescript
+const query: Query = {
+  protocol: QUERY_PROTOCOL,
+  get: {
+    reports: {
+      2018: true,
+      3030: true,   
+    },
+    customers: {
+      'c002': true,
+      'c007': true,
+    },
+  },
+};
+
+main = processQuery(query);
+
+main();
+```
+
+Executing main should return a promise with the query result. Which should look
+as follows.
+
+```
+{
+  protocol: 'scrapql-example-app/0.0.1/scrapql/result',
+  get: {
+    reports: {
+      2018: { profit: 100 },
+      3030: { profit: 0 },
+    },
+    customers: {
+      c002: {
+        _tag: 'Some',
+        value: {
+          name: 'Magica De Spell',
+          age: '35',
+        },
+      },
+      c007: {
+        _tag: 'None',
+      },
+    },
+  },
+};
 ```
 
 
 
 
-
-const resultProtocol = `${packge}/${version}/scrapql/result`;
 
 export const Result = t.type({
   protocol: t.literal(resultProtocol),
