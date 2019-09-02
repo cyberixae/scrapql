@@ -127,6 +127,7 @@ const resolvers: Resolvers = {
 };
 ```
 
+
 ## Define Query Processor
 
 ```typescript
@@ -140,9 +141,6 @@ const queryProcessor = scrap.processQueryProperties({
   ),
 });
 ```
-
-
-
 
 
 
