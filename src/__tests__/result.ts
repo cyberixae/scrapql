@@ -30,6 +30,15 @@ describe('result', () => {
   const ctx1 = 'ctx1';
   const exampleContext = [ctx2, ctx1];
 
+  describe('literal processor', () => {
+    const result: unknown = undefined;
+    const processor = processResult.literal;
+    it('should ignore result literal', async () => {
+      const main = processor({}, result, ...exampleContext);
+      await main();
+    });
+  });
+
   describe('leaf processor', () => {
     const reporters = {
       reportResult: loggerTask(jest.fn((...largs: any): void => undefined)),

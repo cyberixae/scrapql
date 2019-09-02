@@ -30,6 +30,17 @@ describe('query', () => {
   const ctx1 = 'ctx1';
   const exampleContext = [ctx2, ctx1];
 
+  describe('literal processor', () => {
+    const result = Symbol('result');
+    const query: unknown = undefined;
+    const processor = processQuery.literal(result);
+    it('should return the predetermined result', async () => {
+      const main = processor({}, query, ...exampleContext);
+      const got = await main();
+      expect(got).toEqual(result);
+    });
+  });
+
   describe('leaf processor', () => {
     const result = Symbol('result');
     const resolvers = {

@@ -11,8 +11,9 @@ export type QueryProcessor<A, Q, R> = (a: A, q: Q, ...c: Array<string>) => Task<
 
 // helper functions
 
-export const replaceWith = <C>(constant: C): QueryProcessor<unknown, unknown, C> => (_0, _1, ..._99) =>
-  Task_.of(constant);
+export function literal<C>(constant: C): QueryProcessor<unknown, unknown, C> {
+  return (_0, _1, ..._99) => Task_.of(constant);
+}
 
 // leaf query contains information for retrieving a payload
 

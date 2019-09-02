@@ -15,7 +15,9 @@ export type ResultProcessor<A, R> = (a: A, r: R, ...c: Array<string>) => Task<vo
 
 // helper functions
 
-export const discard: ResultProcessor<unknown, unknown> = (_0, _1, ..._99) => Task_.of(undefined);
+export function literal(): ResultProcessor<unknown, unknown> {
+  return (_0, _1, ..._99) => Task_.of(undefined);
+}
 
 // leaf result contains part of the payload
 

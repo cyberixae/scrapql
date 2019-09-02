@@ -131,12 +131,14 @@ const resolvers: Resolvers = {
 ## Define Query Processor
 
 ```typescript
-const queryProcessor = scrap.processQueryProperties({
-  version: scrap.replaceWith(RESPONSE_PROTOCOL),
-  get: scrap.processQueryIds(
+import { process } from 'scrapql';
+
+const queryProcessor = process.query.Properties({
+  version: process.query.literal(RESPONSE_PROTOCOL),
+  get: process.query.Ids(
     (r: Resolvers) => r.checkExistence,
-    scrap.processQueryKeys(
-      scrap.processQueryFields((r: Resolvers) => r.fetchData)
+    process.query.Keys(
+      process.query.Fields((r: Resolvers) => r.fetchData)
     ),
   ),
 });
@@ -161,12 +163,12 @@ interface Reporters {
   readonly learnCustomerExistence: (a: CustomerId, b: boolean) => Task<void>;
 }
 
-const processor = scrap.processResultProperties({
-  version: scrap.discard,
-  get: scrap.processResultIds(
+const processor = process.result.Properties({
+  version: process.result.literal(),
+  get: process.result.Ids(
     (r: Reporters) => r.learnExistence,
-    scrap.processResultKeys(
-      scrap.processResultFields((r: Reporters) => r.receiveData)
+    process.result.Keys(
+      process.result.Fields((r: Reporters) => r.receiveData)
     ),
   ),
 });
