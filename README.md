@@ -86,7 +86,7 @@ version = '0.0.1';                // from package.json
 const QUERY_PROTOCOL= `${packge}/${version}/scrapql/query`;
 
 const Query = t.type({
-  protocol: t.literal(queryProtocol),
+  protocol: t.literal(QUERY_PROTOCOL),
   get: t.type({
     reports: t.record(Year, Report)),
     customers: t.record(CustomerId, Customer)),
@@ -107,8 +107,8 @@ import * as TaskEither_ from 'fp-ts/lib/TaskEither';
 import { failure } from 'io-ts/lib/PathReporter'
 
 interface Resolvers {
-  readonly fetchReport: (y: Year) => TaskEither<Errors, Report>;
-  readonly fetchCustomer: (c: CustomerId) => TaskEither<Errors, Customer>;
+  readonly fetchReport: (a: Year) => TaskEither<Errors, Report>;
+  readonly fetchCustomer: (a: CustomerId) => TaskEither<Errors, Customer>;
   readonly checkCustomerExistence: (a: CustomerId) => Task<boolean>;
 }
 
@@ -142,7 +142,7 @@ import { process } from 'scrapql';
 const RESULT_PROTOCOL = `${packge}/${version}/scrapql/result`;
 
 const processQuery = process.query.properties({
-  protocol: process.query.literal(RESPONSE_PROTOCOL),
+  protocol: process.query.literal(RESULT_PROTOCOL),
   get: process.query.properties({
     reports: process.query.keys(
       process.query.leaf((r: Resolvers) => r.fetchReport)
@@ -161,7 +161,7 @@ Now that we have a query processor we can finally use it to process queries.
 The query processor works as follows.
 
 ```typescript
-const query: Query = {
+const query: Json = {
   protocol: QUERY_PROTOCOL,
   get: {
     reports: {
@@ -175,62 +175,142 @@ const query: Query = {
   },
 };
 
-main = processQuery(query);
+main = pipe(
+  Task_.of(query),
+  Task_.map(Query.decode),
+  TaskEither_.mapLeft(failure),
+  TaskEither_.chain(processQuery),
+)
 
 main();
 ```
 
 Executing main should return a promise with the query result. Which should look
-as follows.
+as follows. The top level wrapper contains the result of the query decode and
+should return `left` in case of an invalid query.
 
-```
+```typescript
 {
-  protocol: 'scrapql-example-app/0.0.1/scrapql/result',
-  get: {
-    reports: {
-      2018: { profit: 100 },
-      3030: { profit: 0 },
-    },
-    customers: {
-      c002: {
-        _tag: 'Some',
-        value: {
-          name: 'Magica De Spell',
-          age: '35',
-        },
+  _tag: 'Right',
+  right: {
+    protocol: 'scrapql-example-app/0.0.1/scrapql/result',
+    get: {
+      reports: {
+        2018: { profit: 100 },
+        3030: { profit: 0 },
       },
-      c007: {
-        _tag: 'None',
+      customers: {
+        c002: {
+          _tag: 'Some',
+          value: {
+            name: 'Magica De Spell',
+            age: '35',
+          },
+        },
+        c007: {
+          _tag: 'None',
+        },
       },
     },
   },
 };
 ```
 
+## Define Result Validator
 
+```typescript
+import { option as tOption } from 'io-ts-types/lib/option';
+import { option as tEither } from 'io-ts-types/lib/option';
 
-
-
-export const Result = t.type({
-  protocol: t.literal(resultProtocol),
-  get: ,
+const Result = t.type({
+  protocol: t.literal(RESULT_PROTOCOL),
+  get: t.type({
+    reports: t.record(Year, tEither(Errors, Report)),
+    customers: t.record(CustomerId, tEither(Errors, tOption(Customer))),
+  }),
 });
 export type Result = t.TypeOf<typeof Result>;
+```
 
+## Define Result Reporters
 
-
+```typescript
 interface Reporters {
-  readonly receiveCustomer: (a: Either<Errors, Option<Customer>>) => Task<void>;
+  readonly receiveReport: (a: Either<Errors, Report>, b: Year) => Task<void>;
+  readonly receiveCustomer: (a: Either<Errors, Option<Customer>>, b: CustomerId) => Task<void>;
   readonly learnCustomerExistence: (a: CustomerId, b: boolean) => Task<void>;
 }
 
-const processor = process.result.Properties({
-  version: process.result.literal(),
-  get: process.result.Ids(
-    (r: Reporters) => r.learnExistence,
-    process.result.Keys(
-      process.result.Fields((r: Reporters) => r.receiveData)
+const reporters: Reporters = {
+
+  receiveReport: (result, year) => pipe(
+    result,
+    Either_.fold(
+      (errors) => () => Promise.resolve(console.error(year, errors))
+      (report) => () => Promise.resolve(console.log(year, report))
     ),
   ),
-});
+
+  receiveCustomer: (result, customerId) => pipe(
+    result,
+    Either_.fold(
+      (errors) => () => Promise.resolve(console.error(customerId, errors))
+      (customer) => () => Promise.resolve(console.log(customerId, customer))
+    ),
+  ),
+
+  learnCustomerExistence: (customerId, existence) => pipe(
+    () => Promise.resolve(console.log(customerId, existence ? 'known customer' : 'unknown customer')),
+  ),
+
+};
 ```
+
+
+## Define Result Processor
+
+```typescript
+
+const processResult = process.result.properties({
+  protocol: process.result.literal(),
+  get: process.result.properties({
+    reports: process.result.keys(
+      process.result.leaf((r: Reporters) => r.receiveReport)
+    ),
+    customers: process.result.ids(
+      (r: Reporters) => r.learnCustomerExistence,
+      process.result.leaf((r: Reporters) => r.receiveCustomer)
+    ),
+  }),
+})(reporters);
+```
+
+
+## Example Flow
+
+Now that we have a query processor we can finally use it to process queries.
+The query processor works as follows.
+
+```typescript
+
+async function exampleFlow() {
+
+
+  const request = Promise.resolve(JSON.stringify(query);
+
+  const response = pipe(
+    TaskEither_.tryCatch(() => request, (reason) => [String(reason)]),
+    TaskEither_.chain((body) => Either.parseJSON(body, (reason) => [String(reason)]),
+    TaskEither_.map(Query.decode),
+    TaskEither_.mapLeft(failure),
+    TaskEither_.chain(processQuery),
+    Task_.map()
+  )();
+
+
+}
+
+
+
+```
+
