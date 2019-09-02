@@ -175,19 +175,20 @@ const query: Json = {
   },
 };
 
-main = pipe(
-  Task_.of(query),
-  Task_.map(Query.decode),
-  TaskEither_.mapLeft(failure),
-  TaskEither_.chain(processQuery),
-)
-
-main();
+async function jsonQueryProcessor<R>(query: Json): Promise<R> {
+  const main = pipe(
+    Query.decode(query),
+    TaskEither_.fromEither,
+    TaskEither_.mapLeft(failure),
+    TaskEither_.chain(processQuery),
+  );
+  return main();
+}
 ```
 
-Executing main should return a promise with the query result. Which should look
-as follows. The top level wrapper contains the result of the query decode and
-should return `left` in case of an invalid query.
+Executing main should return a promise with the query result of type `R`. Which
+should look as follows. The top level wrapper contains the result of the query
+decode and should return `left` in case of an invalid query.
 
 ```typescript
 {
@@ -293,24 +294,46 @@ The query processor works as follows.
 
 ```typescript
 
-async function exampleFlow() {
-
-
-  const request = Promise.resolve(JSON.stringify(query);
-
-  const response = pipe(
+async function server(request: string): Promise<string> {
+  const main = pipe(
     TaskEither_.tryCatch(() => request, (reason) => [String(reason)]),
     TaskEither_.chain((body) => Either.parseJSON(body, (reason) => [String(reason)]),
-    TaskEither_.map(Query.decode),
-    TaskEither_.mapLeft(failure),
+    TaskEither_.chain((json) => pipe(
+      json,
+      Query.decode,
+      Either_.mapLeft(failure),
+    )),
     TaskEither_.chain(processQuery),
-    Task_.map()
-  )();
-
-
+    Task_.map((payload) => pipe(
+      Either_.stringify(payload, (reason) => String(reason)),
+    )),
+    TaskEither_.fold(
+      (errorString) => errorString,
+      (jsonString) => jsonString,
+    )
+  );
+  return main();
 }
 
-
-
+async function client(query: Query): Promise<void> {
+  const main = pipe(
+    Either_.stringifyJSON(query, (reason) => [String(reason)]),
+    TaskEither_.fromEither,
+    TaskEither_.chain((requestBody) => pipe(
+      TaskEither_.tryCatch(() => server(requestBody), (reason) => [String(reason)]),
+    )),
+    TaskEither_.tryCatch(() => result, (reason) => [String(reason)]),
+    TaskEither_.chain((body) => Either.parseJSON(body, (reason) => [String(reason)]),
+    TaskEither_.chain((json) => pipe(
+      json,
+      Result.decode,
+      Either_.mapLeft(failure),
+    )),
+    TaskEither_.fold(
+      (errors) => () => Promise.resolve(console.error(errors)),
+      processResult,
+    ),
+  );
+  return main();
+}
 ```
-
