@@ -77,17 +77,16 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
 
 export type QueryProcessorFactoryMapping<
   A,
-  Q extends Record<string, any>,
-  R extends Record<keyof Q, any>,
-  P extends keyof Q & keyof R
-> = Record<P, QueryProcessorFactory<A, Q[P], R[P]>>;
+  Q,
+  R,
+> = {[I in keyof Required<Q> & keyof Required<R>]: QueryProcessorFactory<A, Q[I], R[I]>}
 
 export function properties<
   A,
-  Q extends Record<string, any>,
-  R extends Record<keyof Q, any>,
+  Q,
+  R,
   P extends string & keyof Q & keyof R
->(processors: QueryProcessorFactoryMapping<A, Q, R, P>): QueryProcessorFactory<A, Q, Record<P, R[P]>> {
+>(processors: QueryProcessorFactoryMapping<A, Q, R>): QueryProcessorFactory<A, Q, Record<P, R[P]>> {
   return (resolvers: A) => (query: Q, ...context: Array<string>) => {
     const tasks: Record<P, Task<R[P]>> = pipe(
       query,
