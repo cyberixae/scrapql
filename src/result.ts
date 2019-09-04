@@ -74,10 +74,10 @@ export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
 
 // properties result contains results for a set of optional queries
 
-export type ResultProcessorFactoryMapping<A, R, P extends keyof R> = Record<P, ResultProcessorFactory<A, R[P]>>
+export type ResultProcessorFactoryMapping<A, R, P extends keyof R> = {[I in P]: ResultProcessorFactory<A, R[I]>}
 
 export function properties<A, R, P extends string & keyof R>(
-  processors: ResultProcessorFactoryMapping<A, R, P>,
+  processors: ResultProcessorFactoryMapping<A, Required<R>, P>,
 ): ResultProcessorFactory<A, R> {
   return (reporters: A) => (result: R, ...context: Array<string>) => {
     const tasks: Array<Task<void>> = pipe(
