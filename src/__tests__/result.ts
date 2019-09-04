@@ -25,9 +25,12 @@ function loggerTask<R, A extends Array<any>>(logger: Logger<R, A>): LoggerTask<R
 }
 
 describe('result', () => {
-  const nopReporter = (...rargs: any) => Task_.of(undefined);
-  const nopProcessor = (...rargs: any) => Task_.of(undefined);
-  const nopProcessorFactory = () => nopProcessor;
+
+/*
+
+  //const nopReporter = (...rargs: any) => Task_.of(undefined);
+  //const nopProcessor = (...rargs: any) => Task_.of(undefined);
+  //const nopProcessorFactory = () => nopProcessor;
   const nopReporters = Symbol('reporters');
   const ctx2 = 'ctx2';
   const ctx1 = 'ctx1';
@@ -130,6 +133,7 @@ describe('result', () => {
     });
   });
 
+/*
   describe('processor combination', () => {
     const reporters = {
       learnExistence: loggerTask(jest.fn((...largs: any): void => undefined)),
@@ -163,6 +167,7 @@ describe('result', () => {
       expect(reporters.receiveData.mock.calls).toMatchObject([[result1, 'key1', 'id1']]);
     });
   });
+*/
 
   describe('processor combination (explicit)', () => {
     const reporters = {
@@ -170,48 +175,75 @@ describe('result', () => {
       receiveData: loggerTask(jest.fn((...largs: any): void => undefined)),
       receiveData2: loggerTask(jest.fn((...largs: any) => undefined)),
     };
+    type RPF<R> = ResultProcessorFactory<typeof reporters, R>
+
     type Id = string;
     type Key = string;
+
     type KeyResult = 'result1';
-    type KeysResult = Record<Key, KeyResult>;
-    type Property1Result = Record<Id, Option<KeysResult>>
-    type Property2Result = 'result2';
-    interface FullResult {
-      property1: Property1Result
-      property2: Property2Result
-    };
-    type Result = Partial<FullResult>;
-    type RPF<Result> = ResultProcessorFactory<typeof reporters, Result>
-
-    const result1: KeyResult = 'result1';
-    const results: Result = {
-      property1: {
-        id1: Option_.some({
-          key1: result1,
-        }),
-        id2: Option_.none,
-      },
-    };
-
+    const key1Result: KeyResult = 'result1';
     const processKey: RPF<KeyResult> = processResult.leaf((r: typeof reporters) => r.receiveData);
+
+    it('processKey', async () => {
+      await processKey(reporters)(key1Result)();
+    });
+
+    type KeysResult = Record<Key, KeyResult>;
+    const keysResult: KeysResult = {
+      key1: key1Result,
+    };
     const processKeys: RPF<KeysResult> = processResult.keys(processKey);
+
+    it('processKeys', async () => {
+      await processKeys(reporters)(keysResult)();
+    });
+
+    type Property1Result = Record<Id, Option<KeysResult>>
+    const property1Result: Property1Result = {
+      id1: Option_.some(keysResult),
+      id2: Option_.none,
+    };
     const processProperty1: RPF<Property1Result> = processResult.ids(
       (r: typeof reporters) => r.learnExistence,
       processKeys,
     );
+
+    it('processProperty1', async () => {
+      await processProperty1(reporters)(property1Result)();
+    });
+
+    type Property2Result = 'result2';
+    const property2Result: Property2Result = 'result2';
     const processProperty2: RPF<Property2Result> = processResult.leaf((r: typeof reporters) => r.receiveData2);
-    const processRoot: RPF<Result> = processResult.properties({
+
+    it('processProperty2', async () => {
+      await processProperty2(reporters)(property2Result)();
+    });
+
+    type RootResult = Partial<{
+      property1: Property1Result
+      property2: Property2Result
+    }>;
+    const rootResult: RootResult = {
+      property1: property1Result,
+    };
+    const processRootResult: RPF<RootResult> = processResult.properties({
       property1: processProperty1,
       property2: processProperty2,
     });
-    const processor = processRoot(reporters)
+    it('processResult', async () => {
+      await processRootResult(reporters)(result)();
+    });
 
+    /*
+    const processor = processResult(reporters)
     it('should call stuff', async () => {
-      const main = processor(results);
+      const main = processor(result);
       await main();
       expect(reporters.learnExistence.mock.calls).toMatchObject([['id1', true], ['id2', false]]);
-      expect(reporters.receiveData.mock.calls).toMatchObject([[result1, 'key1', 'id1']]);
+      expect(reporters.receiveData.mock.calls).toMatchObject([[key1Result, 'key1', 'id1']]);
     });
+    */
   });
 
 });
