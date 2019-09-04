@@ -1,8 +1,10 @@
 import { Task } from 'fp-ts/lib/Task';
 import * as Task_ from 'fp-ts/lib/Task';
 import * as Option_ from 'fp-ts/lib/Option';
+import { Option } from 'fp-ts/lib/Option';
 
 import * as processResult from '../result';
+import { ResultProcessorFactory } from '../result';
 
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
@@ -132,6 +134,7 @@ describe('result', () => {
     const reporters = {
       learnExistence: loggerTask(jest.fn((...largs: any): void => undefined)),
       receiveData: loggerTask(jest.fn((...largs: any): void => undefined)),
+      receiveData2: loggerTask(jest.fn((...largs: any) => undefined)),
     };
 
     const result1 = Symbol('result1');
@@ -150,7 +153,58 @@ describe('result', () => {
           processResult.leaf((r: typeof reporters) => r.receiveData)
         ),
       ),
+      property2: processResult.leaf((r: typeof reporters) => r.receiveData2)
     })(reporters);
+
+    it('should call stuff', async () => {
+      const main = processor(results);
+      await main();
+      expect(reporters.learnExistence.mock.calls).toMatchObject([['id1', true], ['id2', false]]);
+      expect(reporters.receiveData.mock.calls).toMatchObject([[result1, 'key1', 'id1']]);
+    });
+  });
+
+  describe('processor combination (explicit)', () => {
+    const reporters = {
+      learnExistence: loggerTask(jest.fn((...largs: any): void => undefined)),
+      receiveData: loggerTask(jest.fn((...largs: any): void => undefined)),
+      receiveData2: loggerTask(jest.fn((...largs: any) => undefined)),
+    };
+    type Id = string;
+    type Key = string;
+    type KeyResult = 'result1';
+    type KeysResult = Record<Key, KeyResult>;
+    type Property1Result = Record<Id, Option<KeysResult>>
+    type Property2Result = 'result2';
+    interface FullResult {
+      property1: Property1Result
+      property2: Property2Result
+    };
+    type Result = Partial<FullResult>;
+    type RPF<Result> = ResultProcessorFactory<typeof reporters, Result>
+
+    const result1: KeyResult = 'result1';
+    const results: Result = {
+      property1: {
+        id1: Option_.some({
+          key1: result1,
+        }),
+        id2: Option_.none,
+      },
+    };
+
+    const processKey: RPF<KeyResult> = processResult.leaf((r: typeof reporters) => r.receiveData);
+    const processKeys: RPF<KeysResult> = processResult.keys(processKey);
+    const processProperty1: RPF<Property1Result> = processResult.ids(
+      (r: typeof reporters) => r.learnExistence,
+      processKeys,
+    );
+    const processProperty2: RPF<Property2Result> = processResult.leaf((r: typeof reporters) => r.receiveData2);
+    const processRoot: RPF<Result> = processResult.properties({
+      property1: processProperty1,
+      property2: processProperty2,
+    });
+    const processor = processRoot(reporters)
 
     it('should call stuff', async () => {
       const main = processor(results);

@@ -201,6 +201,7 @@ describe('query', () => {
     const resolvers = {
       checkExistence: loggerTask(jest.fn((id: string) => Option_.isSome(items[id]))),
       fetchData: loggerTask(jest.fn((...largs: any) => result1)),
+      fetchData2: loggerTask(jest.fn((...largs: any) => null)),
     };
 
     const processor = processQuery.properties({
@@ -210,6 +211,7 @@ describe('query', () => {
           processQuery.leaf((r: typeof resolvers) => r.fetchData)
         ),
       ),
+      property2: processQuery.leaf((r: typeof resolvers) => r.fetchData2)
     })(resolvers);
 
     it('should call stuff', async () => {
@@ -220,4 +222,55 @@ describe('query', () => {
       expect(got).toMatchObject(results);
     });
   });
+
+/*
+  describe('processor combination explicit', () => {
+
+    const result1 = Symbol('result1');
+    const items: Record<string, any> = {
+      id1: Option_.some({
+        key1: result1,
+      }),
+      id2: Option_.none,
+    };
+    const results = {
+      property1: items,
+    }
+
+    const query = {
+      property1: {
+        id1: {
+          key1: true,
+        },
+        id2: {
+          key1: true,
+        },
+      },
+    };
+
+    const resolvers = {
+      checkExistence: loggerTask(jest.fn((id: string) => Option_.isSome(items[id]))),
+      fetchData: loggerTask(jest.fn((...largs: any) => result1)),
+      fetchData2: loggerTask(jest.fn((...largs: any) => null)),
+    };
+
+    const processor = processQuery.properties({
+      property1: processQuery.ids(
+        (r: typeof resolvers) => r.checkExistence,
+        processQuery.keys(
+          processQuery.leaf((r: typeof resolvers) => r.fetchData)
+        ),
+      ),
+      property2: processQuery.leaf((r: typeof resolvers) => r.fetchData2)
+    })(resolvers);
+
+    it('should call stuff', async () => {
+      const main = processor(query);
+      const got = await main();
+      expect(resolvers.checkExistence.mock.calls).toMatchObject([['id1'], ['id2']]);
+      expect(resolvers.fetchData.mock.calls).toMatchObject([['key1', 'id1']]);
+      expect(got).toMatchObject(results);
+    });
+  });
+*/
 });
