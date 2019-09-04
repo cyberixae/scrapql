@@ -1,9 +1,11 @@
 import { Task } from 'fp-ts/lib/Task';
 import * as Task_ from 'fp-ts/lib/Task';
+import { Option } from 'fp-ts/lib/Option';
 import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 import * as processQuery from '../query';
+import { QueryProcessorFactory } from '../query';
 
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
@@ -24,6 +26,8 @@ function loggerTask<R, A extends Array<any>>(logger: Logger<R, A>): LoggerTask<R
 }
 
 describe('query', () => {
+
+/*
   const nopResolvers = Symbol('resolvers');
   const nopProcessor = (...rargs: any) => Task_.of(undefined);
   const nopProcessorFactory = () => nopProcessor;
@@ -223,46 +227,103 @@ describe('query', () => {
     });
   });
 
-/*
+*/
+
   describe('processor combination explicit', () => {
 
-    const result1 = Symbol('result1');
-    const items: Record<string, any> = {
-      id1: Option_.some({
-        key1: result1,
-      }),
+    const resolvers = {
+      checkExistence: loggerTask(jest.fn((id: string) => Option_.isSome(property1Result[id]))),
+      fetchData: loggerTask(jest.fn((...largs: any) => key1Result)),
+      fetchData2: loggerTask(jest.fn((...largs: any) => property2Result)),
+    };
+    type QPF<Q, R> = QueryProcessorFactory<typeof resolvers, Q, R>
+
+    type Id = string;
+    type Key = string;
+
+    type KeyQuery = true;
+    const key1Query: KeyQuery = true;
+    type KeyResult = string;
+    const key1Result: KeyResult = 'result1';
+    const processKey: QPF<KeyQuery, KeyResult> = processQuery.leaf((r: typeof resolvers) => r.fetchData);
+
+    it('processKey', async () => {
+      await processKey(resolvers)(key1Query)();
+    });
+
+    type KeysQuery = Record<Key, KeyQuery>;
+    const keysQuery1: KeysQuery = {
+      key1: key1Query,
+    };
+    type KeysResult = Record<Key, KeyResult>; 
+    const keysResult: KeysResult = {
+      key1: key1Result,
+    };
+    const processKeys: QPF<KeysQuery,KeysResult> = processQuery.keys(processKey);
+
+    it('processKeys', async () => {
+      await processKeys(resolvers)(keysQuery1)();
+    });
+
+    type Property1Query = Record<Id, KeysQuery>
+    const property1Query: Property1Query = {
+      id1: keysQuery1,
+      id2: keysQuery1,
+    };
+    type Property1Result = Record<Id, Option<KeysResult>>
+    const property1Result: Property1Result = {
+      id1: Option_.some(keysResult),
       id2: Option_.none,
     };
-    const results = {
-      property1: items,
-    }
+    const processProperty1: QPF<Property1Query, Property1Result> = processQuery.ids(
+      (r: typeof resolvers) => r.checkExistence,
+      processKeys,
+    );
 
-    const query = {
-      property1: {
-        id1: {
-          key1: true,
-        },
-        id2: {
-          key1: true,
-        },
-      },
+    it('processProperty1', async () => {
+      await processProperty1(resolvers)(property1Query)();
+    });
+
+    type Property2Query = true;
+    const property2Query: Property2Query = true;
+    type Property2Result = string;
+    const property2Result: Property2Result = 'result2';
+    const processProperty2: QPF<Property2Query, Property2Result> = processQuery.leaf((r: typeof resolvers) => r.fetchData2);
+
+    it('processProperty2', async () => {
+      await processProperty2(resolvers)(property2Query)();
+    });
+
+    type RootQuery = Partial<{
+      property1: Property1Query
+      property2: Property2Query
+    }>;
+    const rootQuery: RootQuery = {
+      property1: property1Query
     };
-
-    const resolvers = {
-      checkExistence: loggerTask(jest.fn((id: string) => Option_.isSome(items[id]))),
-      fetchData: loggerTask(jest.fn((...largs: any) => result1)),
-      fetchData2: loggerTask(jest.fn((...largs: any) => null)),
+    type RootResult = Partial<{
+      property1: Property1Result
+      property2: Property2Result
+    }>;
+    const rootResult: RootResult = {
+      property1: property1Result,
     };
+    const processRoot: QPF<RootQuery, RootResult> = processQuery.properties({
+      property1: processProperty1,
+      property2: processProperty2,
+    });
+    it('processQuery', async () => {
+      await processRoot(resolvers)(rootQuery)();
+    });
 
-    const processor = processQuery.properties({
-      property1: processQuery.ids(
-        (r: typeof resolvers) => r.checkExistence,
-        processQuery.keys(
-          processQuery.leaf((r: typeof resolvers) => r.fetchData)
-        ),
-      ),
-      property2: processQuery.leaf((r: typeof resolvers) => r.fetchData2)
-    })(resolvers);
+    /*
+    const processor = processQuery(reporters)
+    it('should call stuff', async () => {
+      const main = processor(result);
+      await main();
+      expect(reporters.learnExistence.mock.calls).toMatchObject([['id1', true], ['id2', false]]);
+      expect(reporters.receiveData.mock.calls).toMatchObject([[key1Result, 'key1', 'id1']]);
+    });
 
     it('should call stuff', async () => {
       const main = processor(query);
@@ -271,6 +332,8 @@ describe('query', () => {
       expect(resolvers.fetchData.mock.calls).toMatchObject([['key1', 'id1']]);
       expect(got).toMatchObject(results);
     });
+    */
+
   });
-*/
+
 });

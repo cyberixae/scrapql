@@ -220,6 +220,7 @@ describe('result', () => {
       await processProperty2(reporters)(property2Result)();
     });
 
+    /*
     type RootResult = Partial<{
       property1: Property1Result
       property2: Property2Result
@@ -232,10 +233,9 @@ describe('result', () => {
       property2: processProperty2,
     });
     it('processResult', async () => {
-      await processRootResult(reporters)(result)();
+      await processRootResult(reporters)(rootResult)();
     });
 
-    /*
     const processor = processResult(reporters)
     it('should call stuff', async () => {
       const main = processor(result);
