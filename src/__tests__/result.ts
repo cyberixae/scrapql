@@ -132,6 +132,7 @@ describe('result', () => {
     const reporters = {
       learnExistence: loggerTask(jest.fn((...largs: any): void => undefined)),
       receiveData: loggerTask(jest.fn((...largs: any): void => undefined)),
+      receiveData2: loggerTask(jest.fn((...largs: any) => null)),
     };
 
     const result1 = Symbol('result1');
@@ -142,12 +143,13 @@ describe('result', () => {
         }),
         id2: Option_.none,
       },
+      property2: processQuery.leaf((r: typeof resolvers) => r.fetchData2)
     };
     const processor = processResult.properties({
       property1: processResult.ids(
         (r: typeof reporters) => r.learnExistence,
         processResult.keys(
-          processResult.leaf((r: typeof reporters) => r.receiveData)
+          processResult.leaf((r: typeof reporters) => r.receiveData2)
         ),
       ),
     })(reporters);
