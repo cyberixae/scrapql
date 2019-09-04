@@ -299,7 +299,7 @@ describe('query', () => {
       property2: Property2Query
     }>;
     const rootQuery: RootQuery = {
-      property1: property1Query
+      property1: property1Query,
     };
     type RootResult = Partial<{
       property1: Property1Result
