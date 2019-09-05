@@ -228,7 +228,44 @@ describe('query', () => {
   });
 
 */
+  describe('property isolate', () => {
 
+    const resolvers = {
+      fetchData: loggerTask(jest.fn((...largs: any) => property1Result)),
+    };
+    type QPF<Q, R> = QueryProcessorFactory<typeof resolvers, Q, R>
+
+    type Property1Query = true;
+    const property1Query: Property1Query = true;
+    type Property1Result = string;
+    const property1Result: Property1Result = 'result1';
+    const processProperty1: QPF<Property1Query, Property1Result> = processQuery.leaf((r: typeof resolvers) => r.fetchData);
+
+    it('processProperty1', async () => {
+      await processProperty1(resolvers)(property1Query)();
+    });
+
+    type RootQuery = Partial<{
+      property1: Property1Query
+    }>;
+    const rootQuery: RootQuery = {
+      property1: property1Query,
+    };
+    type RootResult = Partial<{
+      property1: Property1Result
+    }>;
+    const rootResult: RootResult = {
+      property1: property1Result,
+    };
+    const processRoot: QPF<RootQuery, RootResult> = processQuery.properties({
+      property1: processProperty1,
+    });
+    it('processQuery', async () => {
+      await processRoot(resolvers)(rootQuery)();
+    });
+
+  });
+    /*
   describe('processor combination explicit', () => {
 
     const resolvers = {
@@ -316,7 +353,6 @@ describe('query', () => {
       await processRoot(resolvers)(rootQuery)();
     });
 
-    /*
     const processor = processQuery(reporters)
     it('should call stuff', async () => {
       const main = processor(result);
@@ -332,8 +368,8 @@ describe('query', () => {
       expect(resolvers.fetchData.mock.calls).toMatchObject([['key1', 'id1']]);
       expect(got).toMatchObject(results);
     });
-    */
 
   });
+    */
 
 });
