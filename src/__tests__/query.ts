@@ -5,7 +5,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 import * as processQuery from '../query';
-import { QueryProcessorFactory } from '../query';
+import { QueryProcessor, QueryProcessorFactory, QueryProcessorFactoryMapping } from '../query';
 
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
@@ -228,10 +228,11 @@ describe('query', () => {
   });
 
 */
+
   describe('property isolate', () => {
 
     const resolvers = {
-      fetchData: loggerTask(jest.fn((...largs: any) => property1Result)),
+      fetchData: loggerTask(jest.fn((...largs: any): Property1Result => property1Result)),
     };
     type QPF<Q, R> = QueryProcessorFactory<typeof resolvers, Q, R>
 
@@ -239,10 +240,11 @@ describe('query', () => {
     const property1Query: Property1Query = true;
     type Property1Result = string;
     const property1Result: Property1Result = 'result1';
-    const processProperty1: QPF<Property1Query, Property1Result> = processQuery.leaf((r: typeof resolvers) => r.fetchData);
+    const processProperty1: QPF<Property1Query, Property1Result> = processQuery.leaf<typeof resolvers, Property1Result>((r: typeof resolvers) => r.fetchData);
 
     it('processProperty1', async () => {
-      await processProperty1(resolvers)(property1Query)();
+      const processor: QueryProcessor<Property1Query, Property1Result> = processProperty1(resolvers)
+      await processor(property1Query)();
     });
 
     type RootQuery = Partial<{
@@ -257,9 +259,12 @@ describe('query', () => {
     const rootResult: RootResult = {
       property1: property1Result,
     };
-    const processRoot: QPF<RootQuery, RootResult> = processQuery.properties({
+
+    const rootMap: QueryProcessorFactoryMapping<typeof resolvers, RootQuery, RootResult> = {
       property1: processProperty1,
-    });
+    };
+
+    const processRoot: QPF<RootQuery, RootResult> = processQuery.properties<typeof resolvers, RootQuery, RootResult>(rootMap);
     it('processQuery', async () => {
       await processRoot(resolvers)(rootQuery)();
     });

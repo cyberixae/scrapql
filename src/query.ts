@@ -6,62 +6,47 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 // all processors share these generic processor types
-// nop processor is neede because of this problem https://github.com/Microsoft/TypeScript/issues/13195
 export type Context = Array<string>;
 export type QP<Q, R> = (q: Q, ...c: Context) => Task<R>;
+
 export type QueryProcessor<Q, R> = {
   (q: Q, ...c: Context): Task<R>;
   (q: undefined, ...c: Context): Task<undefined>;
-};
+}
+
+
 export type QueryProcessorFactory<A, Q, R> = (a: A) => QueryProcessor<Q, R>;
 
-function handleUndefined<Q, R>(real: QP<Q, R>): QueryProcessor<Q, R> {
-  return (query: Q|undefined, ...context: Context) => {
+// wrap is needed because of this problem https://github.com/Microsoft/TypeScript/issues/13195
+
+function wrap<Q, R>(qp: QP<Q, R>): QueryProcessor<Q, R> {
+  return (query: any, ...context: Context) => {
     const strict: Task<R|undefined> = pipe(
       query,
       Option_.fromNullable,
       Option_.fold(
         (): Task<R|undefined> => Task_.of(undefined), 
-        (query: Q): Task<R|undefined> => real(query, ...context),
+        (query: Q): Task<R|undefined> => qp(query, ...context),
       ),
     );
     return strict as Task<any>;
   };
 }
 
-
-// helper functions
+// literal query contains static information that can be replaced with another literal
 
 export function literal<A, Q, R>(constant: R): QueryProcessorFactory<A, Q, R> {
-  return (_0) => (query: Q|undefined, ..._99: Context) => {
-    const strict: Task<R|undefined> = pipe(
-      query,
-      Option_.fromNullable,
-      Option_.fold(
-        (): Task<R|undefined> => Task_.of(undefined), 
-        (): Task<R|undefined> => Task_.of(constant),
-      ),
-    );
-    return strict as Task<any>;
-  };
+  return (_0) => wrap((query: Q, ..._99: Context) => {
+    return Task_.of(constant);
+  });
 }
 
 // leaf query contains information for retrieving a payload
 
-export type LeafQueryConnector<A, R> = (a: A) => (...k: Context) => Task<R|undefined>;
+export type LeafQueryConnector<A, R> = (a: A) => (...k: Context) => Task<R>;
 
 export function leaf<A, R>(connect: LeafQueryConnector<A, R>): QueryProcessorFactory<A, true, R> {
-  return (resolvers) => (query: true|undefined, ...context: Context): Task<any> => {
-    const strict: Task<R|undefined> = pipe(
-      query,
-      Option_.fromNullable,
-      Option_.fold(
-        () => Task_.of(undefined), 
-        () => connect(resolvers)(...context),
-      ),
-    );
-    return strict as Task<any>;
-  };
+  return (resolvers) => wrap((query: true, ...context: Context): Task<R> => connect(resolvers)(...context));
 }
 
 // keys query requests some information that is always present in database
@@ -69,14 +54,11 @@ export function leaf<A, R>(connect: LeafQueryConnector<A, R>): QueryProcessorFac
 export function keys<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
   subProcessor: QueryProcessorFactory<A, SQ, SR>,
 ): QueryProcessorFactory<A, Q, Record<I, SR>> {
-  return (resolvers: A) => (query: Q|undefined, ...context: Context): Task<any> => {
-    const strict: Task<Record<I, SR>> = pipe(
-      query,
-      Record_.mapWithIndex((id: I, subQuery: SQ): Task<SR> => subProcessor(resolvers)(subQuery, id, ...context)),
-      Record_.sequence(task),
-    );
-    return strict;
-  };
+  return (resolvers: A) => wrap((query: Q, ...context: Context): Task<Record<I, SR>> => pipe(
+    query,
+    Record_.mapWithIndex((id: I, subQuery: SQ): Task<SR> => subProcessor(resolvers)(subQuery, id, ...context)),
+    Record_.sequence(task),
+  ));
 }
 
 // keys query requests some information that may not be present in database
@@ -87,7 +69,7 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
   connect: ExistenceCheckConnector<A>,
   subProcessor: QueryProcessorFactory<A, SQ, SR>,
 ): QueryProcessorFactory<A, Q, Record<I, Option<SR>>> {
-  return (resolvers: A) => (query: Q|undefined, ...context: Context) => {
+  return (resolvers: A) => wrap((query: Q, ...context: Context) => {
     const tasks: Record<I, Task<Option<SR>>> = pipe(
       query,
       Record_.mapWithIndex(
@@ -110,7 +92,7 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
       ),
     );
     return Record_.sequence(task)(tasks);
-  };
+  });
 }
 
 // properties query contains optional queries that may or may not be present
@@ -118,16 +100,15 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
 export type QueryProcessorFactoryMapping<
   A,
   Q,
-  R extends Record<keyof Q, any>,
-> = { [I in keyof Required<Q>]: QueryProcessorFactory<A, Q[I], R[I]> };
+  R,
+> = { [I in keyof Q & keyof R]: QueryProcessorFactory<A, Required<Q>[I], Required<R>[I]> };
 
 export function properties<
   A,
   Q,
-  R extends Record<keyof Q, any>,
-  P extends string & keyof Q & keyof R
->(processors: QueryProcessorFactoryMapping<A, Q, R>): QueryProcessorFactory<A, Q, Record<P, R[P]>> {
-  return (resolvers: A) => (query: Q|undefined, ...context: Context) => {
+  R,
+>(processors: QueryProcessorFactoryMapping<A, Q, R>): QueryProcessorFactory<A, Q, R> {
+  return (resolvers: A) => wrap(<P extends string & keyof Q & keyof R>(query: Q, ...context: Context): Task<R> => {
     const tasks: Record<P, Task<R[P]>> = pipe(
       query,
       Record_.mapWithIndex((property, subQuery: Q[P]) => {
@@ -136,6 +117,8 @@ export function properties<
         return subResult;
       }),
     );
-    return Record_.sequence(task)(tasks);
-  };
+    const result: Task<Record<P, R[P]>> = Record_.sequence(task)(tasks);
+    
+    return result as Task<R>;
+  });
 }
