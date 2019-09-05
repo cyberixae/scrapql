@@ -27,7 +27,6 @@ function loggerTask<R, A extends Array<any>>(logger: Logger<R, A>): LoggerTask<R
 
 describe('query', () => {
 
-/*
   const nopResolvers = Symbol('resolvers');
   const nopProcessor = (...rargs: any) => Task_.of(undefined);
   const nopProcessorFactory = () => nopProcessor;
@@ -37,7 +36,7 @@ describe('query', () => {
 
   describe('literal processor', () => {
     const result = Symbol('result');
-    const query: unknown = undefined;
+    const query: unknown = Symbol('query');
     const processor = processQuery.literal(result)(nopResolvers);
     it('should return the predetermined result', async () => {
       const main = processor(query, ...exampleContext);
@@ -61,6 +60,7 @@ describe('query', () => {
     });
   });
 
+/*
   describe('keys processor', () => {
     const result1 = Symbol('result1');
     const result2 = Symbol('result2');
@@ -92,7 +92,7 @@ describe('query', () => {
       expect(got).toMatchObject(results);
     });
   });
-
+*/
   describe('ids processor', () => {
     const result1 = Symbol('result1');
     const results: Record<string, any> = {
@@ -127,7 +127,7 @@ describe('query', () => {
       expect(resolvers.existence.mock.calls).toContainEqual(['id2']);
       expect(resolvers.existence.mock.calls).toHaveLength(Object.keys(queries).length);
     });
-
+/*
     it('should call sub query processor for some queries', async () => {
       const processor = processQuery.ids((r: typeof resolvers) => r.existence, subProcessorFactory)(resolvers);
       const main = processor(queries, ...exampleContext);
@@ -136,6 +136,7 @@ describe('query', () => {
       expect(subProcessor.mock.calls).toMatchObject([[query1, 'id1', ctx2, ctx1]]);
       expect(got).toMatchObject(results);
     });
+*/
   });
 
   describe('properties processor', () => {
@@ -227,7 +228,6 @@ describe('query', () => {
     });
   });
 
-*/
 
   describe('property isolate', () => {
 
@@ -270,7 +270,7 @@ describe('query', () => {
     });
 
   });
-    /*
+
   describe('processor combination explicit', () => {
 
     const resolvers = {
@@ -358,6 +358,21 @@ describe('query', () => {
       await processRoot(resolvers)(rootQuery)();
     });
 
+    const processRoot2: QPF<RootQuery, RootResult> = processQuery.properties({
+      property1: processQuery.ids(
+        (r) => r.checkExistence,
+        processQuery.keys(
+          processQuery.leaf((r) => r.fetchData)
+        ),
+      ),
+      property2: processQuery.leaf((r) => r.fetchData2)
+    });
+
+    it('processQuery', async () => {
+      await processRoot2(resolvers)(rootQuery)();
+    });
+
+/*
     const processor = processQuery(reporters)
     it('should call stuff', async () => {
       const main = processor(result);
@@ -373,8 +388,8 @@ describe('query', () => {
       expect(resolvers.fetchData.mock.calls).toMatchObject([['key1', 'id1']]);
       expect(got).toMatchObject(results);
     });
+    */
 
   });
-    */
 
 });

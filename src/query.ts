@@ -14,7 +14,6 @@ export type QueryProcessor<Q, R> = {
   (q: undefined, ...c: Context): Task<undefined>;
 }
 
-
 export type QueryProcessorFactory<A, Q, R> = (a: A) => QueryProcessor<Q, R>;
 
 // wrap is needed because of this problem https://github.com/Microsoft/TypeScript/issues/13195
