@@ -11,33 +11,17 @@ export type QP<Q, R> = (q: Q, ...c: Context) => Task<R>;
 
 export type QueryProcessor<Q, R> = {
   (q: Q, ...c: Context): Task<R>;
-  (q: undefined, ...c: Context): Task<undefined>;
 }
 
 export type QueryProcessorFactory<A, Q, R> = (a: A) => QueryProcessor<Q, R>;
 
-// wrap is needed because of this problem https://github.com/Microsoft/TypeScript/issues/13195
-
-function wrap<Q, R>(qp: QP<Q, R>): QueryProcessor<Q, R> {
-  return (query: any, ...context: Context) => {
-    const strict: Task<R|undefined> = pipe(
-      query,
-      Option_.fromNullable,
-      Option_.fold(
-        (): Task<R|undefined> => Task_.of(undefined), 
-        (query: Q): Task<R|undefined> => qp(query, ...context),
-      ),
-    );
-    return strict as Task<any>;
-  };
-}
 
 // literal query contains static information that can be replaced with another literal
 
 export function literal<A, Q, R>(constant: R): QueryProcessorFactory<A, Q, R> {
-  return (_0) => wrap((query: Q, ..._99: Context) => {
+  return (_0) => (query: Q, ..._99: Context) => {
     return Task_.of(constant);
-  });
+  };
 }
 
 // leaf query contains information for retrieving a payload
@@ -45,7 +29,7 @@ export function literal<A, Q, R>(constant: R): QueryProcessorFactory<A, Q, R> {
 export type LeafQueryConnector<A, R> = (a: A) => (...k: Context) => Task<R>;
 
 export function leaf<A, R>(connect: LeafQueryConnector<A, R>): QueryProcessorFactory<A, true, R> {
-  return (resolvers) => wrap((query: true, ...context: Context): Task<R> => connect(resolvers)(...context));
+  return (resolvers) => (query: true, ...context: Context): Task<R> => connect(resolvers)(...context);
 }
 
 // keys query requests some information that is always present in database
@@ -53,11 +37,11 @@ export function leaf<A, R>(connect: LeafQueryConnector<A, R>): QueryProcessorFac
 export function keys<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
   subProcessor: QueryProcessorFactory<A, SQ, SR>,
 ): QueryProcessorFactory<A, Q, Record<I, SR>> {
-  return (resolvers: A) => wrap((query: Q, ...context: Context): Task<Record<I, SR>> => pipe(
+  return (resolvers: A) => (query: Q, ...context: Context): Task<Record<I, SR>> => pipe(
     query,
     Record_.mapWithIndex((id: I, subQuery: SQ): Task<SR> => subProcessor(resolvers)(subQuery, id, ...context)),
     Record_.sequence(task),
-  ));
+  );
 }
 
 // keys query requests some information that may not be present in database
@@ -68,7 +52,7 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
   connect: ExistenceCheckConnector<A>,
   subProcessor: QueryProcessorFactory<A, SQ, SR>,
 ): QueryProcessorFactory<A, Q, Record<I, Option<SR>>> {
-  return (resolvers: A) => wrap((query: Q, ...context: Context) => {
+  return (resolvers: A) => (query: Q, ...context: Context) => {
     const tasks: Record<I, Task<Option<SR>>> = pipe(
       query,
       Record_.mapWithIndex(
@@ -91,7 +75,7 @@ export function ids<A, Q extends Record<I, SQ>, I extends string, SQ, SR>(
       ),
     );
     return Record_.sequence(task)(tasks);
-  });
+  };
 }
 
 // properties query contains optional queries that may or may not be present
@@ -107,7 +91,7 @@ export function properties<
   Q,
   R,
 >(processors: QueryProcessorFactoryMapping<A, Q, R>): QueryProcessorFactory<A, Q, R> {
-  return (resolvers: A) => wrap(<P extends string & keyof Q & keyof R>(query: Q, ...context: Context): Task<R> => {
+  return (resolvers: A) => <P extends string & keyof Q & keyof R>(query: Q, ...context: Context): Task<R> => {
     const tasks: Record<P, Task<R[P]>> = pipe(
       query,
       Record_.mapWithIndex((property, subQuery: Q[P]) => {
@@ -119,5 +103,5 @@ export function properties<
     const result: Task<Record<P, R[P]>> = Record_.sequence(task)(tasks);
     
     return result as Task<R>;
-  });
+  };
 }
