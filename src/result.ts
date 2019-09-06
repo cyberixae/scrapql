@@ -9,16 +9,21 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 import { identity } from 'fp-ts/lib/function';
 
+function replace(v: Task<void>) {
+  return <R>(r: R): Task<R> => Task_.of(r);
+}
+
+
 // all processors share these generic processor types
 
 export type Context = Array<string>;
-export type ResultProcessor<R> = (r: R, ...c: Context) => Task<void>;
+export type ResultProcessor<R> = (r: R, ...c: Context) => Task<R>;
 export type ResultProcessorFactory<A, R> = (a: A) => ResultProcessor<R>;
 
 // helper functions
 
 export function literal(): ResultProcessorFactory<unknown, unknown> {
-  return (_0) => (r, ..._99) => Task_.of(undefined);
+  return (_0) => (r, ..._99) => replace(Task_.of(undefined))(r);
 }
 
 // leaf result contains part of the payload
@@ -26,7 +31,7 @@ export function literal(): ResultProcessorFactory<unknown, unknown> {
 export type LeafReporterConnector<A, R> = (a: A) => (r: R, ...c: Context) => Task<void>;
 
 export function leaf<A, R>(connect: LeafReporterConnector<A, R>): ResultProcessorFactory<A, R> {
-  return (reporters) => (result, ...context) => connect(reporters)(result, ...context);
+  return (reporters) => (result, ...context) => replace(connect(reporters)(result, ...context))(result);
 }
 
 // keys result contains data that always exists in database
@@ -35,13 +40,14 @@ export function keys<A, R extends Record<I, SR>, I extends string, SR>(
   subProcessor: ResultProcessorFactory<A, SR>,
 ): ResultProcessorFactory<A, R> {
   return (reporters: A) => (result: R, ...context: Context) => {
-    const tasks: Array<Task<void>> = pipe(
+    const tasks: Array<Task<SR>> = pipe(
       result,
       Record_.mapWithIndex((key: I, subResult: SR) => subProcessor(reporters)(subResult, key, ...context)),
       Record_.toUnfoldable(array),
       Array_.map(([k, v]) => v),
     );
-    return Foldable_.traverse_(taskSeq, array)(tasks, identity);
+    const v: Task<void> = Foldable_.traverse_(taskSeq, array)(tasks, identity)
+    return replace(v)(result);
   };
 }
 
@@ -54,7 +60,7 @@ export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
   subProcessor: ResultProcessorFactory<A, SR>,
 ): ResultProcessorFactory<A, R> {
   return (reporters: A) => (result: R, ...context: Context) => {
-    const tasks: Array<Task<void>> = pipe(
+    const tasks: Array<Task<SR|void>> = pipe(
       result,
       Record_.mapWithIndex((id: I, maybeSubResult: Option<SR>) => {
         return pipe(
@@ -69,8 +75,9 @@ export function ids<A, R extends Record<I, Option<SR>>, I extends string, SR>(
       Array_.map(([k, v]) => v),
       Array_.flatten,
     );
-    return Foldable_.traverse_(taskSeq, array)(tasks, identity);
-  };
+    const v: Task<void> = Foldable_.traverse_(taskSeq, array)(tasks, identity);
+    return replace(v)(result);
+  }
 }
 
 // properties result contains results for a set of optional queries
@@ -80,19 +87,20 @@ export type ResultProcessorFactoryMapping<A, R> = {[I in keyof Required<R>]: Res
 export function properties<A, R>(
   processors: ResultProcessorFactoryMapping<A, R>,
 ): ResultProcessorFactory<A, R> {
-  return (reporters: A) => <P extends string & keyof R>(result: R, ...context: Context): Task<void> => {
-    const taskRecord: Record<P, Task<void>> = pipe(
+  return (reporters: A) => <P extends string & keyof R>(result: R, ...context: Context): Task<R> => {
+    const taskRecord: Record<P, Task<Required<R>[P]>> = pipe(
       result,
       Record_.mapWithIndex((property, subResult: R[P]) => {
         const processor = processors[property];
         return processor(reporters)(subResult, ...context);
       }),
     );
-    const tasks: Array<Task<void>> = pipe(
+    const tasks: Array<Task<Required<R>[P]>> = pipe(
       taskRecord,
       Record_.toUnfoldable(array),
       Array_.map(([k, v]) => v),
     );
-    return Foldable_.traverse_(taskSeq, array)(tasks, identity);
+    const v: Task<void> = Foldable_.traverse_(taskSeq, array)(tasks, identity);
+    return replace(v)(result);
   };
 }

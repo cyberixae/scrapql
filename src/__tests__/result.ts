@@ -115,13 +115,12 @@ describe('result', () => {
   };
 
   it('processRoot (composed)', async () => {
-    const omg: ResultProcessorFactoryMapping<Reporters, RootResult> = {
+    const processRoot: RPF<RootResult> = scrapqlResult.properties({
       property1: processProperty1,
       property2: processProperty2,
-    };
-    const processRoot: RPF<RootResult> = scrapqlResult.properties(omg);
+    });
     const reporters = createReporters();
-    const main = processRoot(reporters)(rootResult);
+    const main: Task<RootResult> = processRoot(reporters)(rootResult);
     await main();
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([['id1', true], ['id2', false]]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([[key1Result, 'key1', 'id1']]);
