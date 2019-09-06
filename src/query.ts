@@ -6,13 +6,9 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 // all processors share these generic processor types
+
 export type Context = Array<string>;
-export type QP<Q, R> = (q: Q, ...c: Context) => Task<R>;
-
-export type QueryProcessor<Q, R> = {
-  (q: Q, ...c: Context): Task<R>;
-}
-
+export type QueryProcessor<Q, R> = (q: Q, ...c: Context) => Task<R>;
 export type QueryProcessorFactory<A, Q, R> = (a: A) => QueryProcessor<Q, R>;
 
 
