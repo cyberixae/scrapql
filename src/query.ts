@@ -63,7 +63,9 @@ export function keys<
 
 // keys query requests some information that may not be present in database
 
-export type ExistenceCheckConnector<A, I> = (a: A) => (i: I) => Task<boolean>;
+export type ExistenceCheckConnector<A, I extends string> = (
+  a: A,
+) => (i: I) => Task<boolean>;
 
 export function ids<
   A,

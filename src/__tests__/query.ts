@@ -5,7 +5,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { name, version } from '../../package.json';
 
 import * as scrapqlQuery from '../query';
-import { Build, QueryProcessor } from '../types';
+import { Context, Build, QueryProcessor } from '../types';
 import { init } from '../scrapql';
 
 interface Logger<R, A extends Array<any>> {
@@ -30,8 +30,8 @@ describe('query', () => {
   /* eslint-disable @typescript-eslint/no-use-before-define */
 
   interface Resolvers {
-    checkProperty1Existence: (id: Id) => Task<boolean>;
-    fetchKeyResult: (id: Id, key: Key) => Task<KeyResult>;
+    checkProperty1Existence: (i: Id) => Task<boolean>;
+    fetchKeyResult: (i: Id, k: Key) => Task<KeyResult>;
     fetchProperty2Result: () => Task<Property2Result>;
   }
 
@@ -40,12 +40,12 @@ describe('query', () => {
       checkProperty1Existence: loggerTask(
         jest.fn((id: Id) => Option_.isSome(property1Result[id])),
       ),
-      fetchKeyResult: loggerTask(jest.fn((_x0: Id, _x1: Key) => key1Result)),
+      fetchKeyResult: loggerTask(jest.fn((_0: Id, _1: Key) => key1Result)),
       fetchProperty2Result: loggerTask(jest.fn(() => property2Result)),
     };
   }
 
-  type QPF<Q, R, C extends Array<any>> = Build<QueryProcessor<Q, R>, Resolvers, C>;
+  type QPB<Q, R, C extends Context> = Build<QueryProcessor<Q, R>, Resolvers, C>;
 
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
@@ -60,7 +60,7 @@ describe('query', () => {
   type KeyQuery = true;
   const key1Result: KeyResult = 'result1';
   const key1Query: KeyQuery = true;
-  const processKey: QPF<KeyQuery, KeyResult, [Key, Id]> = scrapqlQuery.leaf(
+  const processKey: QPB<KeyQuery, KeyResult, [Key, Id]> = scrapqlQuery.leaf(
     (r) => r.fetchKeyResult,
   );
 
@@ -82,7 +82,7 @@ describe('query', () => {
   const keysQuery: KeysQuery = {
     [key1]: key1Query,
   };
-  const processKeys: QPF<KeysQuery, KeysResult, [Id]> = scrapqlQuery.keys(processKey);
+  const processKeys: QPB<KeysQuery, KeysResult, [Id]> = scrapqlQuery.keys(processKey);
 
   it('processKeys', async () => {
     const resolvers = createResolvers();
@@ -104,7 +104,7 @@ describe('query', () => {
     [id1]: keysQuery,
     [id2]: keysQuery,
   };
-  const processProperty1: QPF<Property1Query, Property1Result, []> = scrapqlQuery.ids(
+  const processProperty1: QPB<Property1Query, Property1Result, []> = scrapqlQuery.ids(
     (r) => r.checkProperty1Existence,
     processKeys,
   );
@@ -127,7 +127,7 @@ describe('query', () => {
   type Property2Query = true;
   const property2Result: Property2Result = 'result2';
   const property2Query: Property2Query = true;
-  const processProperty2: QPF<Property2Query, Property2Result, []> = scrapqlQuery.leaf(
+  const processProperty2: QPB<Property2Query, Property2Result, []> = scrapqlQuery.leaf(
     (r) => r.fetchProperty2Result,
   );
 
@@ -161,7 +161,7 @@ describe('query', () => {
   };
 
   it('processRoot (composed)', async () => {
-    const processRoot: QPF<RootQuery, RootResult, []> = scrapqlQuery.properties({
+    const processRoot: QPB<RootQuery, RootResult, []> = scrapqlQuery.properties({
       protocol: scrapqlQuery.literal(RESULT),
       property1: processProperty1,
       property2: processProperty2,
