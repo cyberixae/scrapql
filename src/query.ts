@@ -17,17 +17,17 @@ export const prepend = <A extends Array<any>, X>(args: A, x: X): Prepend<A, X> =
 // all processors share these generic processor types
 
 export type Context = Array<string>;
-export type QueryProcessor<Q, R, C extends Context> = (q: Q, c: C) => Task<R>;
+export type QueryProcessor<Q, R> = (q: Q) => Task<R>;
 export type QueryProcessorFactory<A, Q, R, C extends Context> = (
   a: A,
-) => QueryProcessor<Q, R, C>;
+) => (c: C) => QueryProcessor<Q, R>;
 
 // literal query contains static information that can be replaced with another literal
 
 export function literal<A, Q, R, C extends Context>(
   constant: R,
 ): QueryProcessorFactory<A, Q, R, C> {
-  return (_0) => (_1, _2) => {
+  return (_0) => (_1) => (_2) => {
     return Task_.of(constant);
   };
 }
@@ -39,7 +39,7 @@ export type LeafQueryConnector<A, R, C extends Context> = (a: A) => (c: C) => Ta
 export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
 ): QueryProcessorFactory<A, true, R, C> {
-  return (resolvers) => (query: true, context: C): Task<R> => connect(resolvers)(context);
+  return (resolvers) => (context: C) => (query: true): Task<R> => connect(resolvers)(context);
 }
 
 // keys query requests some information that is always present in database
@@ -54,12 +54,12 @@ export function keys<
 >(
   subProcessor: QueryProcessorFactory<A, SQ, SR, Prepend<C, I>>,
 ): QueryProcessorFactory<A, Q, Record<I, SR>, C> {
-  return (resolvers: A) => (query: Q, context: C): Task<Record<I, SR>> =>
+  return (resolvers: A) => (context: C) => (query: Q): Task<Record<I, SR>> =>
     pipe(
       query,
       Record_.mapWithIndex(
         (id: I, subQuery: SQ): Task<SR> =>
-          subProcessor(resolvers)(subQuery, prepend(context, id)),
+          subProcessor(resolvers)(prepend(context, id))(subQuery),
       ),
       Record_.sequence(task),
     );
@@ -80,7 +80,7 @@ export function ids<
   connect: ExistenceCheckConnector<A>,
   subProcessor: QueryProcessorFactory<A, SQ, SR, Prepend<C, I>>,
 ): QueryProcessorFactory<A, Q, Record<I, Option<SR>>, C> {
-  return (resolvers: A) => (query: Q, context: C) => {
+  return (resolvers: A) => (context: C) => (query: Q) => {
     const tasks: Record<I, Task<Option<SR>>> = pipe(
       query,
       Record_.mapWithIndex(
@@ -91,7 +91,7 @@ export function ids<
               (exists): Task<Option<SR>> => {
                 if (exists) {
                   return pipe(
-                    subProcessor(resolvers)(subQuery, prepend(context, id)),
+                    subProcessor(resolvers)(prepend(context, id))(subQuery),
                     Task_.map(Option_.some),
                   );
                 }
@@ -115,15 +115,14 @@ export type QueryProcessorFactoryMapping<A, Q, R, C extends Context> = {
 export function properties<A, Q, R, C extends Context>(
   processors: QueryProcessorFactoryMapping<A, Q, R, C>,
 ): QueryProcessorFactory<A, Q, R, C> {
-  return (resolvers: A) => <P extends string & keyof Q & keyof R>(
+  return (resolvers: A) => (context: C) => <P extends string & keyof Q & keyof R>(
     query: Q,
-    context: C,
   ): Task<R> => {
     const tasks: Record<P, Task<R[P]>> = pipe(
       query,
       Record_.mapWithIndex((property, subQuery: Q[P]) => {
         const processor = processors[property];
-        const subResult = processor(resolvers)(subQuery, context);
+        const subResult = processor(resolvers)(context)(subQuery);
         return subResult;
       }),
     );
