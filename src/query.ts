@@ -7,7 +7,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 export const prepend = <A extends Array<any>, X>(args: A, x: X): Prepend<A, X> =>
-  [...args, x] as Prepend<A, X>;
+  [x, ...args] as Prepend<A, X>;
 
 // all processors share these generic processor types
 
@@ -28,24 +28,23 @@ export function literal<A, Q, R, C extends Context>(
 
 // leaf query contains information for retrieving a payload
 
-export type LeafQueryConnector<A, R, C extends Context> = (
-  a: A,
-) => (...c: Reverse<C>) => Task<R>;
+export type LeafQueryConnector<A, R, C extends Context> = (a: A) => (...c: Reverse<C>) => Task<R>;
 
 export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
 ): Build<QueryProcessor<true, R>, A, C> {
-  return (resolvers) => (context: C) => (query: true): Task<R> =>
-    /* eslint-disable-next-line fp/no-mutating-methods */
-    connect(resolvers)(...(context.reverse() as any));
+  return (resolvers) => (context: C) => (query: true): Task<R> => {
+    /* eslint-disable fp/no-mutating-methods */
+    return connect(resolvers)(...context.reverse() as Reverse<C>);
+  };
 }
 
 // keys query requests some information that is always present in database
 
 export function keys<
   A,
-  Q extends Record<I, SQ>,
-  I extends string,
+  Q extends Record<string, SQ>,
+  I extends string & keyof Q,
   SQ,
   SR,
   C extends Context
@@ -65,17 +64,17 @@ export function keys<
 
 // keys query requests some information that may not be present in database
 
-export type ExistenceCheckConnector<A> = (a: A) => (i: string) => Task<boolean>;
+export type ExistenceCheckConnector<A, I> = (a: A) => (i: I) => Task<boolean>;
 
 export function ids<
   A,
-  Q extends Record<I, SQ>,
-  I extends string,
+  Q extends Record<string, SQ>,
+  I extends string & keyof Q,
   SQ,
   SR,
   C extends Context
 >(
-  connect: ExistenceCheckConnector<A>,
+  connect: ExistenceCheckConnector<A, I>,
   subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
 ): Build<QueryProcessor<Q, Record<I, Option<SR>>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q) => {
