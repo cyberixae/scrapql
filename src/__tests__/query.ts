@@ -5,7 +5,8 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { name, version } from '../../package.json';
 
 import * as scrapqlQuery from '../query';
-import { Build, QueryProcessor, init } from '../query';
+import { Build, QueryProcessor } from '../types';
+import { init } from '../scrapql';
 
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;

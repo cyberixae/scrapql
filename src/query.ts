@@ -6,15 +6,8 @@ import { Option } from 'fp-ts/lib/Option';
 import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-export const prepend = <A extends Array<any>, X>(args: A, x: X): Prepend<A, X> =>
-  [x, ...args] as Prepend<A, X>;
-
-// all processors share these generic processor types
-
-export type Context = Array<string>;
-export type Build<P, A, C extends Context> = (a: A) => (c: C) => P;
-
-export type QueryProcessor<Q, R> = (q: Q) => Task<R>;
+import * as Tuple_ from './tuple';
+import { Build, QueryProcessor, Context } from './types';
 
 // literal query contains static information that can be replaced with another literal
 
@@ -36,8 +29,7 @@ export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
 ): Build<QueryProcessor<true, R>, A, C> {
   return (resolvers) => (context: C) => (query: true): Task<R> => {
-    /* eslint-disable fp/no-mutating-methods */
-    return connect(resolvers)(...(context.reverse() as Reverse<C>));
+    return connect(resolvers)(...Tuple_.reverse(context));
   };
 }
 
@@ -57,8 +49,13 @@ export function keys<
     pipe(
       query,
       Record_.mapWithIndex(
-        (id: I, subQuery: SQ): Task<SR> =>
-          subProcessor(resolvers)(prepend(context, id))(subQuery),
+        (key: I, subQuery: SQ): Task<SR> => {
+          const subContext = pipe(
+            context,
+            Tuple_.prepend(key),
+          );
+          return subProcessor(resolvers)(subContext)(subQuery);
+        },
       ),
       Record_.sequence(task),
     );
@@ -84,13 +81,17 @@ export function ids<
       query,
       Record_.mapWithIndex(
         (id: I, subQuery: SQ): Task<Option<SR>> => {
+          const subContext = pipe(
+            context,
+            Tuple_.prepend(id),
+          );
           return pipe(
             connect(resolvers)(id),
             Task_.chain(
               (exists): Task<Option<SR>> => {
                 if (exists) {
                   return pipe(
-                    subProcessor(resolvers)(prepend(context, id))(subQuery),
+                    subProcessor(resolvers)(subContext)(subQuery),
                     Task_.map(Option_.some),
                   );
                 }
@@ -129,10 +130,4 @@ export function properties<A, Q, R, C extends Context>(
 
     return result as Task<R>;
   };
-}
-
-// initialize
-
-export function init<P, A>(builder: Build<P, A, []>, api: A): P {
-  return builder(api)([]);
 }
