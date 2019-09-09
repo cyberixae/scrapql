@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest --config jestconfig.json --no-cache",
     "clean": "rm -rf lib",
-    "build": "yarn clean && tsc",
+    "build": "yarn clean && tsc --version && tsc",
     "eslint": "eslint --max-warnings=0 '**/*.{ts,json}' --ignore-path .gitignore",
     "lint": "yarn eslint",
     "ci": "yarn lint && yarn test && yarn build",
