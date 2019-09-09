@@ -28,14 +28,16 @@ export function literal<A, Q, R, C extends Context>(
 
 // leaf query contains information for retrieving a payload
 
-export type LeafQueryConnector<A, R, C extends Context> = (a: A) => (...c: Reverse<C>) => Task<R>;
+export type LeafQueryConnector<A, R, C extends Context> = (
+  a: A,
+) => (...c: Reverse<C>) => Task<R>;
 
 export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
 ): Build<QueryProcessor<true, R>, A, C> {
   return (resolvers) => (context: C) => (query: true): Task<R> => {
     /* eslint-disable fp/no-mutating-methods */
-    return connect(resolvers)(...context.reverse() as Reverse<C>);
+    return connect(resolvers)(...(context.reverse() as Reverse<C>));
   };
 }
 

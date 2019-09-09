@@ -179,7 +179,7 @@ describe('query', () => {
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);
   });
-  /*
+
   it('processRoot (standalone)', async () => {
     const processRoot = scrapqlQuery.properties<Resolvers, RootQuery, RootResult, []>({
       protocol: scrapqlQuery.literal(RESULT),
@@ -202,5 +202,4 @@ describe('query', () => {
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);
   });
-*/
 });
