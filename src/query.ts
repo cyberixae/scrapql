@@ -1,9 +1,18 @@
+import { Prepend, Reverse } from 'typescript-tuple';
 import * as Record_ from 'fp-ts/lib/Record';
 import { Task, task } from 'fp-ts/lib/Task';
 import * as Task_ from 'fp-ts/lib/Task';
 import { Option } from 'fp-ts/lib/Option';
 import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
+
+export const reverse = <A extends Array<any>>(a: Reverse<A>): A => {
+  /* eslint-disable fp/no-mutating-methods */
+  return (a.reverse() as unknown) as A;
+};
+
+export const prepend = <A extends Array<any>, X>(args: A, x: X) =>
+  [...args, x] as Prepend<A, X>;
 
 // all processors share these generic processor types
 
