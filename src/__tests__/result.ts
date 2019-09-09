@@ -168,7 +168,11 @@ describe('result', () => {
       protocol: scrapqlResult.literal(),
       property1: scrapqlResult.ids(
         (r: Reporters) => r.learnProperty1Existence,
-        scrapqlResult.keys(scrapqlResult.leaf<Reporters, KeyResult, [Key, Id]>((r: Reporters) => r.receiveKeyResult)),
+        scrapqlResult.keys(
+          scrapqlResult.leaf<Reporters, KeyResult, [Key, Id]>(
+            (r: Reporters) => r.receiveKeyResult,
+          ),
+        ),
       ),
       property2: scrapqlResult.leaf((r: Reporters) => r.receiveProperty2Result),
     });
@@ -185,5 +189,4 @@ describe('result', () => {
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
-
 });
