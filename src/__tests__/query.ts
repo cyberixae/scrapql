@@ -43,7 +43,7 @@ describe('query', () => {
     };
   }
 
-  type QPF<Q, R> = QueryProcessorFactory<Resolvers, Q, R>;
+  type QPF<Q, R, C> = QueryProcessorFactory<Resolvers, Q, R, C>;
 
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
@@ -55,7 +55,7 @@ describe('query', () => {
   type KeyQuery = true;
   const key1Result: KeyResult = 'result1';
   const key1Query: KeyQuery = true;
-  const processKey: QPF<KeyQuery, KeyResult> = scrapqlQuery.leaf((r) => r.fetchKeyResult);
+  const processKey: QPF<KeyQuery, KeyResult, []> = scrapqlQuery.leaf((r) => r.fetchKeyResult);
 
   it('processKey', async () => {
     const resolvers = createResolvers();
@@ -75,7 +75,7 @@ describe('query', () => {
   const keysQuery: KeysQuery = {
     key1: key1Query,
   };
-  const processKeys: QPF<KeysQuery, KeysResult> = scrapqlQuery.keys(processKey);
+  const processKeys: QPF<KeysQuery, KeysResult, []> = scrapqlQuery.keys(processKey);
 
   it('processKeys', async () => {
     const resolvers = createResolvers();
@@ -97,7 +97,7 @@ describe('query', () => {
     id1: keysQuery,
     id2: keysQuery,
   };
-  const processProperty1: QPF<Property1Query, Property1Result> = scrapqlQuery.ids(
+  const processProperty1: QPF<Property1Query, Property1Result, []> = scrapqlQuery.ids(
     (r) => r.checkProperty1Existence,
     processKeys,
   );
@@ -120,7 +120,7 @@ describe('query', () => {
   type Property2Query = true;
   const property2Result: Property2Result = 'result2';
   const property2Query: Property2Query = true;
-  const processProperty2: QPF<Property2Query, Property2Result> = scrapqlQuery.leaf(
+  const processProperty2: QPF<Property2Query, Property2Result, []> = scrapqlQuery.leaf(
     (r) => r.fetchProperty2Result,
   );
 
@@ -154,7 +154,7 @@ describe('query', () => {
   };
 
   it('processRoot (composed)', async () => {
-    const processRoot: QPF<RootQuery, RootResult> = scrapqlQuery.properties({
+    const processRoot: QPF<RootQuery, RootResult, []> = scrapqlQuery.properties({
       protocol: scrapqlQuery.literal(RESULT),
       property1: processProperty1,
       property2: processProperty2,
