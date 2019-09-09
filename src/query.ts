@@ -17,16 +17,15 @@ export const prepend = <A extends Array<any>, X>(args: A, x: X): Prepend<A, X> =
 // all processors share these generic processor types
 
 export type Context = Array<string>;
+export type Build<P, A, C extends Context> = (a: A) => (c: C) => P;
+
 export type QueryProcessor<Q, R> = (q: Q) => Task<R>;
-export type QueryProcessorFactory<A, Q, R, C extends Context> = (
-  a: A,
-) => (c: C) => QueryProcessor<Q, R>;
 
 // literal query contains static information that can be replaced with another literal
 
 export function literal<A, Q, R, C extends Context>(
   constant: R,
-): QueryProcessorFactory<A, Q, R, C> {
+): Build<QueryProcessor<Q, R>, A, C> {
   return (_0) => (_1) => (_2) => {
     return Task_.of(constant);
   };
@@ -34,12 +33,15 @@ export function literal<A, Q, R, C extends Context>(
 
 // leaf query contains information for retrieving a payload
 
-export type LeafQueryConnector<A, R, C extends Context> = (a: A) => (c: Reverse<C>) => Task<R>;
+export type LeafQueryConnector<A, R, C extends Context> = (
+  a: A,
+) => (c: Reverse<C>) => Task<R>;
 
 export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
-): QueryProcessorFactory<A, true, R, C> {
-  return (resolvers) => (context: C) => (query: true): Task<R> => connect(resolvers)(reverse(context));
+): Build<QueryProcessor<true, R>, A, C> {
+  return (resolvers) => (context: C) => (query: true): Task<R> =>
+    connect(resolvers)(reverse(context));
 }
 
 // keys query requests some information that is always present in database
@@ -52,8 +54,8 @@ export function keys<
   SR,
   C extends Context
 >(
-  subProcessor: QueryProcessorFactory<A, SQ, SR, Prepend<C, I>>,
-): QueryProcessorFactory<A, Q, Record<I, SR>, C> {
+  subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
+): Build<QueryProcessor<Q, Record<I, SR>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q): Task<Record<I, SR>> =>
     pipe(
       query,
@@ -78,8 +80,8 @@ export function ids<
   C extends Context
 >(
   connect: ExistenceCheckConnector<A>,
-  subProcessor: QueryProcessorFactory<A, SQ, SR, Prepend<C, I>>,
-): QueryProcessorFactory<A, Q, Record<I, Option<SR>>, C> {
+  subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
+): Build<QueryProcessor<Q, Record<I, Option<SR>>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q) => {
     const tasks: Record<I, Task<Option<SR>>> = pipe(
       query,
@@ -108,13 +110,13 @@ export function ids<
 
 // properties query contains optional queries that may or may not be present
 
-export type QueryProcessorFactoryMapping<A, Q, R, C extends Context> = {
-  [I in keyof Q & keyof R]: QueryProcessorFactory<A, Required<Q>[I], Required<R>[I], C>;
+export type QueryProcessorBuilderMapping<A, Q, R, C extends Context> = {
+  [I in keyof Q & keyof R]: Build<QueryProcessor<Required<Q>[I], Required<R>[I]>, A, C>;
 };
 
 export function properties<A, Q, R, C extends Context>(
-  processors: QueryProcessorFactoryMapping<A, Q, R, C>,
-): QueryProcessorFactory<A, Q, R, C> {
+  processors: QueryProcessorBuilderMapping<A, Q, R, C>,
+): Build<QueryProcessor<Q, R>, A, C> {
   return (resolvers: A) => (context: C) => <P extends string & keyof Q & keyof R>(
     query: Q,
   ): Task<R> => {
@@ -130,4 +132,10 @@ export function properties<A, Q, R, C extends Context>(
 
     return result as Task<R>;
   };
+}
+
+// initialize
+
+export function init<P, A>(builder: Build<P, A, []>, api: A): P {
+  return builder(api)([]);
 }

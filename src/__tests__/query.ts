@@ -55,7 +55,9 @@ describe('query', () => {
   type KeyQuery = true;
   const key1Result: KeyResult = 'result1';
   const key1Query: KeyQuery = true;
-  const processKey: QPF<KeyQuery, KeyResult, []> = scrapqlQuery.leaf((r) => r.fetchKeyResult);
+  const processKey: QPF<KeyQuery, KeyResult, []> = scrapqlQuery.leaf(
+    (r) => r.fetchKeyResult,
+  );
 
   it('processKey', async () => {
     const resolvers = createResolvers();
