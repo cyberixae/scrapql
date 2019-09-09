@@ -6,11 +6,6 @@ import { Option } from 'fp-ts/lib/Option';
 import * as Option_ from 'fp-ts/lib/Option';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-export const reverse = <A extends Array<any>>(a: A): Reverse<A> => {
-  /* eslint-disable fp/no-mutating-methods */
-  return (a.reverse() as unknown) as Reverse<A>;
-};
-
 export const prepend = <A extends Array<any>, X>(args: A, x: X): Prepend<A, X> =>
   [...args, x] as Prepend<A, X>;
 
@@ -35,13 +30,14 @@ export function literal<A, Q, R, C extends Context>(
 
 export type LeafQueryConnector<A, R, C extends Context> = (
   a: A,
-) => (c: Reverse<C>) => Task<R>;
+) => (...c: Reverse<C>) => Task<R>;
 
 export function leaf<A, R, C extends Context>(
   connect: LeafQueryConnector<A, R, C>,
 ): Build<QueryProcessor<true, R>, A, C> {
   return (resolvers) => (context: C) => (query: true): Task<R> =>
-    connect(resolvers)(reverse(context));
+    /* eslint-disable-next-line fp/no-mutating-methods */
+    connect(resolvers)(...(context.reverse() as any));
 }
 
 // keys query requests some information that is always present in database
