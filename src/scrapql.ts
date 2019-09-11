@@ -1,12 +1,31 @@
 import { Concat, Reverse } from 'typescript-tuple';
+import { Option } from 'fp-ts/lib/Option';
 import { Task } from 'fp-ts/lib/Task';
 import * as query from './query';
 import * as result from './result';
 
 export type Json = unknown;
 
-export type Query = Json;
-export type Result = Json;
+export type Id = string;
+export type Key = string;
+export type Property = string;
+export type IdExistence = boolean;
+
+export type LiteralQuery = Json;
+export type LeafQuery = true;
+export type KeysQuery<S extends Query=Json> = Record<Key, S>
+export type IdsQuery<S extends Query=Json> = Record<Id, S>;
+export type PropertiesQuery = any;
+
+export type Query = LiteralQuery|LeafQuery|KeysQuery|IdsQuery|PropertiesQuery;
+
+export type LiteralResult = Json;
+export type LeafResult = Json;
+export type KeysResult<S extends Result=Json> = Record<Key, S>
+export type IdsResult<S extends Result=Json> = Record<Id, Option<S>>;
+export type PropertiesResult = any;
+
+export type Result = LiteralResult|LeafResult|KeysResult|IdsResult|PropertiesResult;
 
 export type Context = Array<string>; // really a tuple (T extends Array<string>)
 

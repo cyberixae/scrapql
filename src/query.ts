@@ -17,6 +17,15 @@ import {
   ResolverConnector,
   ResolverAPI,
   QueryProcessorBuilderMapping,
+  LiteralQuery,
+  LeafQuery,
+  Key,
+  KeysQuery,
+  Id,
+  IdExistence,
+  IdsQuery,
+  Property,
+  PropertiesQuery,
 } from './scrapql';
 
 // helper functions
@@ -32,7 +41,7 @@ function resolverArgsFrom<C extends Context>(context: C): Reverse<C> {
 
 export function literal<
   A extends ResolverAPI,
-  Q extends Query,
+  Q extends LiteralQuery,
   R extends Result,
   C extends Context
 >(constant: R): Build<QueryProcessor<Q, R>, A, C> {
@@ -43,10 +52,13 @@ export function literal<
 
 // leaf query contains information for retrieving a payload
 
-export function leaf<A extends ResolverAPI, R extends Result, C extends Context>(
-  connect: ResolverConnector<A, R, C>,
-): Build<QueryProcessor<true, R>, A, C> {
-  return (resolvers) => (context) => (query: true) => {
+export function leaf<
+  A extends ResolverAPI,
+  Q extends LeafQuery,
+  R extends Result,
+  C extends Context
+>(connect: ResolverConnector<A, R, C>): Build<QueryProcessor<Q, R>, A, C> {
+  return (resolvers) => (context) => (_query: Q) => {
     const resolver = connect(resolvers);
     const args = resolverArgsFrom(context);
     return resolver(...args);
@@ -57,8 +69,8 @@ export function leaf<A extends ResolverAPI, R extends Result, C extends Context>
 
 export function keys<
   A extends ResolverAPI,
-  Q extends Query & Record<string, SQ>,
-  I extends string & keyof Q,
+  Q extends KeysQuery<SQ>,
+  I extends Key & keyof Q,
   SQ extends Query,
   SR extends Result,
   C extends Context
@@ -85,13 +97,13 @@ export function keys<
 
 export function ids<
   A extends ResolverAPI,
-  Q extends Query & Record<string, SQ>,
-  I extends string & keyof Q,
+  Q extends IdsQuery<SQ>,
+  I extends Id & keyof Q,
   SQ extends Query,
   SR extends Result,
   C extends Context
 >(
-  connect: ResolverConnector<A, boolean, Prepend<C, I>>,
+  connect: ResolverConnector<A, IdExistence, Prepend<C, I>>,
   subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
 ): Build<QueryProcessor<Q, Record<I, Option<SR>>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q) => {
@@ -128,13 +140,13 @@ export function ids<
 
 export function properties<
   A extends ResolverAPI,
-  Q extends Query,
+  Q extends PropertiesQuery,
   R extends Result,
   C extends Context
 >(
   processors: QueryProcessorBuilderMapping<A, Q, R, C>,
 ): Build<QueryProcessor<Q, R>, A, C> {
-  return (resolvers: A) => (context: C) => <P extends string & keyof Q & keyof R>(
+  return (resolvers: A) => (context: C) => <P extends Property & keyof Q & keyof R>(
     query: Q,
   ): Task<R> => {
     const tasks: Record<P, Task<R[P]>> = pipe(
