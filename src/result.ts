@@ -18,7 +18,7 @@ import {
   Context,
   ReporterConnector,
   ReporterAPI,
-  ResultProcessorBuilderMapping,
+  ProcessorBuilderMapping,
   Key,
   Id,
   Property,
@@ -33,14 +33,14 @@ import {
 
 // helper functions
 
-function reporterArgsFrom<R extends ActionableQuery['R'], C extends Context>(
+function reporterArgsFrom<Q extends ActionableQuery, C extends Context>(
   context: C,
-  result: R,
-): Concat<Reverse<C>, [R]> {
+  result: Q['R'],
+): Concat<Reverse<C>, [Q['R']]> {
   return pipe(
     context,
     Tuple_.reverse,
-    Tuple_.concat([result] as [R]),
+    Tuple_.concat([result] as [Q['R']]),
   );
 }
 
@@ -48,19 +48,20 @@ function reporterArgsFrom<R extends ActionableQuery['R'], C extends Context>(
 
 export function literal<
   A extends ReporterAPI,
-  R extends LiteralQuery['R'],
+  Q extends LiteralQuery,
   C extends Context
->(): Build<ResultProcessor<R>, A, C> {
-  return (_0: A) => (_1: C) => (_3: R) => Task_.of(undefined);
+>(): Build<ResultProcessor<Q>, A, C> {
+  return (_0) => (_1) => (_3) => Task_.of(undefined);
 }
 
 // leaf result contains part of the payload
 
-export function leaf<A extends ReporterAPI, R extends LeafQuery['R'], C extends Context>(
-  connect: ReporterConnector<A, R, C>,
-): Build<ResultProcessor<R>, A, C> {
-  return (reporters: A) => (context: C) => (result: R) => {
-    return connect(reporters)(...reporterArgsFrom(context, result));
+export function leaf<A extends ReporterAPI, Q extends LeafQuery, C extends Context>(
+  connect: ReporterConnector<A, Q, C>,
+): Build<ResultProcessor<Q>, A, C> {
+  return (reporters: A) => (context: C) => (result: Q['R']) => {
+    const reporter = connect(reporters);
+    return reporter(...reporterArgsFrom(context, result));
   };
 }
 
@@ -68,14 +69,14 @@ export function leaf<A extends ReporterAPI, R extends LeafQuery['R'], C extends 
 
 export function keys<
   A extends ReporterAPI,
-  R extends KeysQuery<K, SQ>['R'],
-  K extends Key & keyof R,
+  Q extends KeysQuery<K, SQ>,
+  K extends Key & keyof Q,
   SQ extends Query,
   C extends Context
 >(
-  subProcessor: Build<ResultProcessor<SQ['R']>, A, Prepend<C, K>>,
-): Build<ResultProcessor<R>, A, C> {
-  return (reporters: A) => (context: C) => (result: R) => {
+  subProcessor: Build<ResultProcessor<SQ>, A, Prepend<C, K>>,
+): Build<ResultProcessor<Q>, A, C> {
+  return (reporters: A) => (context: C) => (result: Q['R']) => {
     const tasks: Array<Task<void>> = pipe(
       result,
       Record_.mapWithIndex((key: K, subResult: SQ['R']) => {
@@ -96,15 +97,15 @@ export function keys<
 
 export function ids<
   A extends ReporterAPI,
-  R extends IdsQuery<I, SQ>['R'],
-  I extends Id & keyof R,
+  Q extends IdsQuery<I, SQ>,
+  I extends Id & keyof Q,
   SQ extends Query,
   C extends Context
 >(
-  connect: ReporterConnector<A, ExistenceQuery['R'], Prepend<C, I>>,
-  subProcessor: Build<ResultProcessor<SQ['R']>, A, Prepend<C, I>>,
-): Build<ResultProcessor<R>, A, C> {
-  return (reporters: A) => (context: C) => (result: R) => {
+  connect: ReporterConnector<A, ExistenceQuery, Prepend<C, I>>,
+  subProcessor: Build<ResultProcessor<SQ>, A, Prepend<C, I>>,
+): Build<ResultProcessor<Q>, A, C> {
+  return (reporters: A) => (context: C) => (result: Q['R']) => {
     const tasks: Array<Task<void>> = pipe(
       result,
       Record_.mapWithIndex((id: I, maybeSubResult: Option<SQ['R']>) => {
@@ -135,15 +136,15 @@ export function ids<
 
 export function properties<
   A extends ReporterAPI,
-  R extends PropertiesQuery['R'],
+  Q extends PropertiesQuery,
   C extends Context
->(processors: ResultProcessorBuilderMapping<A, R, C>): Build<ResultProcessor<R>, A, C> {
-  return (reporters: A) => (context: C) => <P extends Property & keyof R>(
-    result: R,
+>(processors: ProcessorBuilderMapping<A, Q, C>): Build<ResultProcessor<Q>, A, C> {
+  return (reporters: A) => (context: C) => <P extends Property & keyof Q>(
+    result: Q['R'],
   ): Task<void> => {
     const taskRecord: Record<P, Task<void>> = pipe(
       result,
-      Record_.mapWithIndex((property, subResult: R[P]) => {
+      Record_.mapWithIndex((property, subResult: Q['R'][P]) => {
         const processor = processors[property];
         return processor(reporters)(context)(subResult);
       }),

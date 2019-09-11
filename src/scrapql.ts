@@ -42,10 +42,13 @@ export type IdsQuery<I extends Id = Id, S extends Query = JsonQuery> = {
 
 export type PropertiesQuery<
   O extends { [I in Property]: Query } = { [I in Property]: JsonQuery }
-> = Partial<O>;
+> = {
+  Q: Partial<O>;
+  R: Partial<O>;
+};
 
 export type ActionableQuery = {
-  Q: LeafQuery['Q'] | ExistenceQuery['Q'];
+  Q: LeafQuery['Q']; //| ExistenceQuery['Q'];
   R: LeafQuery['R'] | ExistenceQuery['R'];
 };
 export type StructuralQuery = {
@@ -61,8 +64,8 @@ export type Query = {
 export type Context = Array<string>; // really a tuple (T extends Array<string>)
 
 export type Processor<I, O> = (i: I) => Task<O>;
-export type QueryProcessor<Q extends Query['Q'], R> = Processor<Q, R>;
-export type ResultProcessor<R extends Query['R']> = Processor<R, void>;
+export type QueryProcessor<Q extends Query> = Processor<Q['Q'], Q['R']>;
+export type ResultProcessor<Q extends Query> = Processor<Q['R'], void>;
 
 export type API<T> = Record<string, T>;
 export type ResolverAPI = API<any>; // should be API<Resolver>
@@ -74,17 +77,9 @@ export type Reporter<R extends Query['R'], C extends Context> = (
 
 export type ReporterConnector<
   A extends ReporterAPI,
-  R extends Query['R'],
+  Q extends Query,
   C extends Context
-> = (a: A) => Reporter<R, C>;
-
-export type ResultProcessorBuilderMapping<
-  A extends ReporterAPI,
-  R extends PropertiesQuery['R'],
-  C extends Context
-> = {
-  [I in keyof Required<R>]: Build<ResultProcessor<Required<R>[I]>, A, C>;
-};
+> = (a: A) => Reporter<Q['R'], C>;
 
 export type Resolver<R extends Query['R'], C extends Context> = (
   ...c: Reverse<C>
@@ -92,17 +87,16 @@ export type Resolver<R extends Query['R'], C extends Context> = (
 
 export type ResolverConnector<
   A extends ResolverAPI,
-  R extends Query['R'],
+  Q extends Query,
   C extends Context
-> = (a: A) => Resolver<R, C>;
+> = (a: A) => Resolver<Q['R'], C>;
 
 export type QueryProcessorBuilderMapping<
   A extends ResolverAPI,
-  Q extends PropertiesQuery['Q'],
-  R extends PropertiesQuery['R'],
+  Q extends PropertiesQuery,
   C extends Context
 > = {
-  [I in keyof Q & keyof R]: Build<QueryProcessor<Required<Q>[I], Required<R>[I]>, A, C>;
+  [P in keyof Q]: Build<QueryProcessor<Required<Q>[P]>, A, C>;
 };
 
 export type Build<
