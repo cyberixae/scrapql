@@ -45,7 +45,7 @@ describe('query', () => {
     };
   }
 
-  type QPB<Q, R, C extends Context> = Build<QueryProcessor<{ Q: Q, R: R}>, Resolvers, C>;
+  type QPB<Q, R, C extends Context> = Build<QueryProcessor<{ Q: Q; R: R }>, Resolvers, C>;
 
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
@@ -182,13 +182,21 @@ describe('query', () => {
   });
 
   it('processRoot (standalone)', async () => {
-    const processRoot = scrapqlQuery.properties<Resolvers, RootQuery, RootResult, []>({
+    const processRoot = scrapqlQuery.properties<
+      Resolvers,
+      { Q: RootQuery; R: RootResult },
+      []
+    >({
       protocol: scrapqlQuery.literal(RESULT),
       property1: scrapqlQuery.ids(
         (r: Resolvers) => r.checkProperty1Existence,
-        scrapqlQuery.keys<Resolvers, KeysQuery, Id, KeyQuery, KeyResult, [Id]>(
-          scrapqlQuery.leaf((r: Resolvers) => r.fetchKeyResult),
-        ),
+        scrapqlQuery.keys<
+          Resolvers,
+          { Q: KeysQuery; R: KeysResult },
+          Id,
+          { Q: KeyQuery; R: KeyResult },
+          [Id]
+        >(scrapqlQuery.leaf((r: Resolvers) => r.fetchKeyResult)),
       ),
       property2: scrapqlQuery.leaf((r: Resolvers) => r.fetchProperty2Result),
     });

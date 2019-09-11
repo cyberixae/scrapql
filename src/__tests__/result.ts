@@ -43,7 +43,11 @@ describe('result', () => {
     };
   }
 
-  type RPB<R, C extends Context> = Build<ResultProcessor<{ Q: never, R: R }>, Reporters, C>;
+  type RPB<R, C extends Context> = Build<
+    ResultProcessor<{ Q: never; R: R }>,
+    Reporters,
+    C
+  >;
 
   const RESULT = `${name}/${version}/scrapql/test/result`;
 
@@ -142,7 +146,7 @@ describe('result', () => {
   it('processRoot (composed)', async () => {
     const processRoot: RPB<RootResult, []> = scrapqlResult.properties<
       Reporters,
-      RootResult,
+      { Q: never; R: RootResult },
       []
     >({
       protocol: scrapqlResult.literal(),
@@ -164,18 +168,22 @@ describe('result', () => {
   });
 
   it('processRoot (standalone)', async () => {
-    const processRoot = scrapqlResult.properties<Reporters, RootResult, []>({
+    const processRoot = scrapqlResult.properties<
+      Reporters,
+      { Q: never; R: RootResult },
+      []
+    >({
       protocol: scrapqlResult.literal(),
       property1: scrapqlResult.ids(
         (r: Reporters) => r.learnProperty1Existence,
         scrapqlResult.keys<
           Reporters,
-          KeysResult,
+          { Q: never; R: KeysResult },
           keyof KeysResult,
-          KeysResult[keyof KeysResult],
+          { Q: never; R: KeysResult[keyof KeysResult] },
           [Id]
         >(
-          scrapqlResult.leaf<Reporters, KeyResult, [Key, Id]>(
+          scrapqlResult.leaf<Reporters, { Q: never; R: KeyResult }, [Key, Id]>(
             (r: Reporters) => r.receiveKeyResult,
           ),
         ),
