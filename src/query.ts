@@ -22,10 +22,15 @@ import {
   Key,
   KeysQuery,
   Id,
-  IdExistence,
   IdsQuery,
   Property,
   PropertiesQuery,
+  LiteralResult,
+  LeafResult,
+  KeysResult,
+  ExistenceResult,
+  IdsResult,
+  PropertiesResult,
 } from './scrapql';
 
 // helper functions
@@ -42,7 +47,7 @@ function resolverArgsFrom<C extends Context>(context: C): Reverse<C> {
 export function literal<
   A extends ResolverAPI,
   Q extends LiteralQuery,
-  R extends Result,
+  R extends LiteralResult,
   C extends Context
 >(constant: R): Build<QueryProcessor<Q, R>, A, C> {
   return (_resolvers: A) => (_context: C) => (_query: Q) => {
@@ -55,7 +60,7 @@ export function literal<
 export function leaf<
   A extends ResolverAPI,
   Q extends LeafQuery,
-  R extends Result,
+  R extends LeafResult,
   C extends Context
 >(connect: ResolverConnector<A, R, C>): Build<QueryProcessor<Q, R>, A, C> {
   return (resolvers) => (context) => (_query: Q) => {
@@ -70,18 +75,18 @@ export function leaf<
 export function keys<
   A extends ResolverAPI,
   Q extends KeysQuery<SQ>,
-  I extends Key & keyof Q,
+  K extends Key & keyof Q,
   SQ extends Query,
   SR extends Result,
   C extends Context
 >(
-  subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
-): Build<QueryProcessor<Q, Record<I, SR>>, A, C> {
-  return (resolvers: A) => (context: C) => (query: Q): Task<Record<I, SR>> =>
+  subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, K>>,
+): Build<QueryProcessor<Q, KeysResult<SR>>, A, C> {
+  return (resolvers: A) => (context: C) => (query: Q): Task<KeysResult<SR>> =>
     pipe(
       query,
       Record_.mapWithIndex(
-        (key: I, subQuery: SQ): Task<SR> => {
+        (key: K, subQuery: SQ): Task<SR> => {
           const subContext = pipe(
             context,
             Tuple_.prepend(key),
@@ -103,9 +108,9 @@ export function ids<
   SR extends Result,
   C extends Context
 >(
-  connect: ResolverConnector<A, IdExistence, Prepend<C, I>>,
+  connect: ResolverConnector<A, ExistenceResult, Prepend<C, I>>,
   subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
-): Build<QueryProcessor<Q, Record<I, Option<SR>>>, A, C> {
+): Build<QueryProcessor<Q, IdsResult<SR>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q) => {
     const tasks: Record<I, Task<Option<SR>>> = pipe(
       query,
@@ -115,8 +120,9 @@ export function ids<
             context,
             Tuple_.prepend(id),
           );
+          const existenceCheck = connect(resolvers);
           return pipe(
-            connect(resolvers)(...resolverArgsFrom(subContext)),
+            existenceCheck(...resolverArgsFrom(subContext)),
             Task_.chain(
               (exists): Task<Option<SR>> => {
                 if (exists) {
@@ -141,7 +147,7 @@ export function ids<
 export function properties<
   A extends ResolverAPI,
   Q extends PropertiesQuery,
-  R extends Result,
+  R extends PropertiesResult,
   C extends Context
 >(
   processors: QueryProcessorBuilderMapping<A, Q, R, C>,

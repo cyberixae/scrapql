@@ -24,15 +24,16 @@ import {
   Key,
   KeysResult,
   Id,
-  IdExistence,
+  ExistenceResult,
   IdsResult,
   Property,
   PropertiesResult,
+  ReportableResult,
 } from './scrapql';
 
 // helper functions
 
-function reporterArgsFrom<R extends Result, C extends Context>(
+function reporterArgsFrom<R extends ReportableResult, C extends Context>(
   context: C,
   result: R,
 ): Concat<Reverse<C>, [R]> {
@@ -100,7 +101,7 @@ export function ids<
   SR extends Result,
   C extends Context
 >(
-  connect: ReporterConnector<A, IdExistence, Prepend<C, I>>,
+  connect: ReporterConnector<A, ExistenceResult, Prepend<C, I>>,
   subProcessor: Build<ResultProcessor<SR>, A, Prepend<C, I>>,
 ): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => (result: R) => {
