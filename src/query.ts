@@ -38,11 +38,9 @@ function resolverArgsFrom<C extends Context>(context: C): Reverse<C> {
 
 // literal query contains static information that can be replaced with another literal
 
-export function literal<
-  A extends ResolverAPI,
-  Q extends LiteralQuery,
-  C extends Context
->(constant: Q['R']): Build<QueryProcessor<Q>, A, C> {
+export function literal<A extends ResolverAPI, Q extends LiteralQuery, C extends Context>(
+  constant: Q['R'],
+): Build<QueryProcessor<Q>, A, C> {
   return (_resolvers) => (_context) => (_query) => {
     return Task_.of(constant);
   };
@@ -50,11 +48,9 @@ export function literal<
 
 // leaf query contains information for retrieving a payload
 
-export function leaf<
-  A extends ResolverAPI,
-  Q extends LeafQuery,
-  C extends Context
->(connect: ResolverConnector<A, Q, C>): Build<QueryProcessor<Q>, A, C> {
+export function leaf<A extends ResolverAPI, Q extends LeafQuery, C extends Context>(
+  connect: ResolverConnector<A, Q, C>,
+): Build<QueryProcessor<Q>, A, C> {
   return (resolvers) => (context) => (_query: Q['Q']) => {
     const resolver = connect(resolvers);
     const args = resolverArgsFrom(context);
@@ -136,24 +132,24 @@ export function ids<
 
 export function properties<
   A extends ResolverAPI,
-  Q extends PropertiesQuery,
+  X extends PropertiesQuery,
   C extends Context
->(
-  processors: QueryProcessorBuilderMapping<A, Q, C>,
-): Build<QueryProcessor<Q>, A, C> {
-  return (resolvers: A) => (context: C) => <P extends Property & keyof Q & keyof R>(
-    query: Q,
-  ): Task<R> => {
-    const tasks: Record<P, Task<R[P]>> = pipe(
+>(processors: QueryProcessorBuilderMapping<A, X, C>): Build<QueryProcessor<X>, A, C> {
+  return (resolvers: A) => (context: C) => <
+    P extends Property & keyof X['Q'] & keyof X['R']
+  >(
+    query: X['Q'],
+  ): Task<X['R']> => {
+    const tasks: Record<P, Task<X['R'][P]>> = pipe(
       query,
-      Record_.mapWithIndex((property, subQuery: Q[P]) => {
+      Record_.mapWithIndex((property: P, subQuery: X['Q'][P]) => {
         const processor = processors[property];
         const subResult = processor(resolvers)(context)(subQuery);
         return subResult;
       }),
     );
-    const result: Task<Record<P, R[P]>> = Record_.sequence(task)(tasks);
+    const result: Task<Record<P, X['R'][P]>> = Record_.sequence(task)(tasks);
 
-    return result as Task<R>;
+    return result as Task<X['R']>;
   };
 }

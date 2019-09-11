@@ -31,20 +31,23 @@ export type LeafQuery = {
 };
 
 export type KeysQuery<K extends Key = Key, S extends Query = JsonQuery> = {
+  K: K;
   Q: Record<K, S['Q']>;
   R: Record<K, S['R']>;
 };
 
 export type IdsQuery<I extends Id = Id, S extends Query = JsonQuery> = {
+  I: I;
   Q: Record<I, S['Q']>;
   R: Record<I, Option<S['R']>>;
 };
 
 export type PropertiesQuery<
-  O extends { [I in Property]: Query } = { [I in Property]: JsonQuery }
+  P extends Property = Property,
+  M extends { [I in P]: Query } = { [I in P]: JsonQuery }
 > = {
-  Q: Partial<O>;
-  R: Partial<O>;
+  Q: Partial<{ [I in P]: M[I]['Q'] }>;
+  R: Partial<{ [I in P]: M[I]['R'] }>;
 };
 
 export type ActionableQuery = {
@@ -93,10 +96,26 @@ export type ResolverConnector<
 
 export type QueryProcessorBuilderMapping<
   A extends ResolverAPI,
-  Q extends PropertiesQuery,
+  X extends PropertiesQuery,
   C extends Context
 > = {
-  [P in keyof Q]: Build<QueryProcessor<Required<Q>[P]>, A, C>;
+  [P in keyof X['Q'] & keyof X['R']]: Build<
+    QueryProcessor<{ Q: X['Q'][P]; R: X['R'][P] }>,
+    A,
+    C
+  >;
+};
+
+export type ResultProcessorBuilderMapping<
+  A extends ReporterAPI,
+  X extends PropertiesQuery,
+  C extends Context
+> = {
+  [P in keyof X['Q'] & keyof X['R']]: Build<
+    ResultProcessor<{ Q: X['Q'][P]; R: X['R'][P] }>,
+    A,
+    C
+  >;
 };
 
 export type Build<
