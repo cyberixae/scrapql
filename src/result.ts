@@ -132,9 +132,11 @@ export function ids<
 
 // properties result contains results for a set of optional queries
 
-export function properties<A extends ReporterAPI, R extends PropertiesResult, C extends Context>(
-  processors: ResultProcessorBuilderMapping<A, R, C>,
-): Build<ResultProcessor<R>, A, C> {
+export function properties<
+  A extends ReporterAPI,
+  R extends PropertiesResult,
+  C extends Context
+>(processors: ResultProcessorBuilderMapping<A, R, C>): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => <P extends Property & keyof R>(
     result: R,
   ): Task<void> => {

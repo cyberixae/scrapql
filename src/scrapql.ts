@@ -13,19 +13,28 @@ export type IdExistence = boolean;
 
 export type LiteralQuery = Json;
 export type LeafQuery = true;
-export type KeysQuery<S extends Query=Json> = Record<Key, S>
-export type IdsQuery<S extends Query=Json> = Record<Id, S>;
-export type PropertiesQuery = any;
+export type KeysQuery<S extends Query = Json> = Record<Key, S>;
+export type IdsQuery<S extends Query = Json> = Record<Id, S>;
+export type PropertiesQuery<
+  Q extends { [I in Property]: Query } = { [I in Property]: Json }
+> = Partial<Q>;
 
-export type Query = LiteralQuery|LeafQuery|KeysQuery|IdsQuery|PropertiesQuery;
+export type Query = LiteralQuery | LeafQuery | KeysQuery | IdsQuery | PropertiesQuery;
 
 export type LiteralResult = Json;
 export type LeafResult = Json;
-export type KeysResult<S extends Result=Json> = Record<Key, S>
-export type IdsResult<S extends Result=Json> = Record<Id, Option<S>>;
-export type PropertiesResult = any;
+export type KeysResult<S extends Result = Json> = Record<Key, S>;
+export type IdsResult<S extends Result = Json> = Record<Id, Option<S>>;
+export type PropertiesResult<
+  R extends { [I in Property]: Result } = { [I in Property]: Json }
+> = Partial<R>;
 
-export type Result = LiteralResult|LeafResult|KeysResult|IdsResult|PropertiesResult;
+export type Result =
+  | LiteralResult
+  | LeafResult
+  | KeysResult
+  | IdsResult
+  | PropertiesResult;
 
 export type Context = Array<string>; // really a tuple (T extends Array<string>)
 
