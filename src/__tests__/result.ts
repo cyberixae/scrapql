@@ -43,7 +43,7 @@ describe('result', () => {
     };
   }
 
-  type RPB<R, C extends Context> = Build<ResultProcessor<R>, Reporters, C>;
+  type RPB<R, C extends Context> = Build<ResultProcessor<{ Q: never, R: R }>, Reporters, C>;
 
   const RESULT = `${name}/${version}/scrapql/test/result`;
 

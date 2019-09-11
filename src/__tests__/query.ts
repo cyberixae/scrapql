@@ -45,7 +45,7 @@ describe('query', () => {
     };
   }
 
-  type QPB<Q, R, C extends Context> = Build<QueryProcessor<Q, R>, Resolvers, C>;
+  type QPB<Q, R, C extends Context> = Build<QueryProcessor<{ Q: Q, R: R}>, Resolvers, C>;
 
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
