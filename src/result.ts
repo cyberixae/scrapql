@@ -13,27 +13,27 @@ import { identity } from 'fp-ts/lib/function';
 import * as Tuple_ from './tuple';
 import {
   Build,
-  Result,
+  Query,
   ResultProcessor,
   Context,
   ReporterConnector,
   ReporterAPI,
   ResultProcessorBuilderMapping,
-  LiteralResult,
-  LeafResult,
   Key,
-  KeysResult,
   Id,
-  ExistenceResult,
-  IdsResult,
   Property,
-  PropertiesResult,
-  ReportableResult,
+  LiteralQuery,
+  LeafQuery,
+  KeysQuery,
+  ExistenceQuery,
+  IdsQuery,
+  PropertiesQuery,
+  ActionableQuery,
 } from './scrapql';
 
 // helper functions
 
-function reporterArgsFrom<R extends ReportableResult, C extends Context>(
+function reporterArgsFrom<R extends ActionableQuery['R'], C extends Context>(
   context: C,
   result: R,
 ): Concat<Reverse<C>, [R]> {
@@ -48,7 +48,7 @@ function reporterArgsFrom<R extends ReportableResult, C extends Context>(
 
 export function literal<
   A extends ReporterAPI,
-  R extends LiteralResult,
+  R extends LiteralQuery['R'],
   C extends Context
 >(): Build<ResultProcessor<R>, A, C> {
   return (_0: A) => (_1: C) => (_3: R) => Task_.of(undefined);
@@ -56,7 +56,7 @@ export function literal<
 
 // leaf result contains part of the payload
 
-export function leaf<A extends ReporterAPI, R extends LeafResult, C extends Context>(
+export function leaf<A extends ReporterAPI, R extends LeafQuery['R'], C extends Context>(
   connect: ReporterConnector<A, R, C>,
 ): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => (result: R) => {
@@ -68,17 +68,17 @@ export function leaf<A extends ReporterAPI, R extends LeafResult, C extends Cont
 
 export function keys<
   A extends ReporterAPI,
-  R extends KeysResult<SR>,
+  R extends KeysQuery<K, SQ>['R'],
   K extends Key & keyof R,
-  SR extends Result,
+  SQ extends Query,
   C extends Context
 >(
-  subProcessor: Build<ResultProcessor<SR>, A, Prepend<C, K>>,
+  subProcessor: Build<ResultProcessor<SQ['R']>, A, Prepend<C, K>>,
 ): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => (result: R) => {
     const tasks: Array<Task<void>> = pipe(
       result,
-      Record_.mapWithIndex((key: K, subResult: SR) => {
+      Record_.mapWithIndex((key: K, subResult: SQ['R']) => {
         const subContext = pipe(
           context,
           Tuple_.prepend(key),
@@ -96,18 +96,18 @@ export function keys<
 
 export function ids<
   A extends ReporterAPI,
-  R extends IdsResult<SR>,
+  R extends IdsQuery<I, SQ>['R'],
   I extends Id & keyof R,
-  SR extends Result,
+  SQ extends Query,
   C extends Context
 >(
-  connect: ReporterConnector<A, ExistenceResult, Prepend<C, I>>,
-  subProcessor: Build<ResultProcessor<SR>, A, Prepend<C, I>>,
+  connect: ReporterConnector<A, ExistenceQuery['R'], Prepend<C, I>>,
+  subProcessor: Build<ResultProcessor<SQ['R']>, A, Prepend<C, I>>,
 ): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => (result: R) => {
     const tasks: Array<Task<void>> = pipe(
       result,
-      Record_.mapWithIndex((id: I, maybeSubResult: Option<SR>) => {
+      Record_.mapWithIndex((id: I, maybeSubResult: Option<SQ['R']>) => {
         const subContext = pipe(
           context,
           Tuple_.prepend(id),
@@ -135,7 +135,7 @@ export function ids<
 
 export function properties<
   A extends ReporterAPI,
-  R extends PropertiesResult,
+  R extends PropertiesQuery['R'],
   C extends Context
 >(processors: ResultProcessorBuilderMapping<A, R, C>): Build<ResultProcessor<R>, A, C> {
   return (reporters: A) => (context: C) => <P extends Property & keyof R>(

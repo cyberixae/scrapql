@@ -10,74 +10,96 @@ export type Id = string;
 export type Key = string;
 export type Property = string;
 
-export type ExistenceQuery = never;
-export type LiteralQuery = Json;
-export type LeafQuery = true;
-export type KeysQuery<S extends Query = Json> = Record<Key, S>;
-export type IdsQuery<S extends Query = Json> = Record<Id, S>;
+export type JsonQuery = {
+  Q: Json;
+  R: Json;
+};
+
+export type ExistenceQuery = {
+  Q: never;
+  R: boolean;
+};
+
+export type LiteralQuery = {
+  Q: Json;
+  R: Json;
+};
+
+export type LeafQuery = {
+  Q: true;
+  R: Json;
+};
+
+export type KeysQuery<K extends Key = Key, S extends Query = JsonQuery> = {
+  Q: Record<K, S['Q']>;
+  R: Record<K, S['R']>;
+};
+
+export type IdsQuery<I extends Id = Id, S extends Query = JsonQuery> = {
+  Q: Record<I, S['Q']>;
+  R: Record<I, Option<S['R']>>;
+};
+
 export type PropertiesQuery<
-  Q extends { [I in Property]: Query } = { [I in Property]: Json }
-> = Partial<Q>;
+  O extends { [I in Property]: Query } = { [I in Property]: JsonQuery }
+> = Partial<O>;
 
-export type FetchableQuery = LeafQuery | ExistenceQuery;
-export type StructuralQuery = LiteralQuery | KeysQuery | IdsQuery | PropertiesQuery;
+export type ActionableQuery = {
+  Q: LeafQuery['Q'] | ExistenceQuery['Q'];
+  R: LeafQuery['R'] | ExistenceQuery['R'];
+};
+export type StructuralQuery = {
+  Q: LiteralQuery['Q'] | KeysQuery['Q'] | IdsQuery['Q'] | PropertiesQuery['Q'];
+  R: LiteralQuery['R'] | KeysQuery['R'] | IdsQuery['R'] | PropertiesQuery['R'];
+};
 
-export type Query = StructuralQuery | FetchableQuery;
-
-export type ExistenceResult = boolean;
-export type LiteralResult = Json;
-export type LeafResult = Json;
-export type KeysResult<S extends Result = Json> = Record<Key, S>;
-export type IdsResult<S extends Result = Json> = Record<Id, Option<S>>;
-export type PropertiesResult<
-  R extends { [I in Property]: Result } = { [I in Property]: Json }
-> = Partial<R>;
-
-export type ReportableResult = LeafResult | ExistenceResult;
-export type StructuralResult = LiteralResult | KeysResult | IdsResult | PropertiesResult;
-
-export type Result = StructuralResult | ReportableResult;
+export type Query = {
+  Q: StructuralQuery['Q'] | ActionableQuery['Q'];
+  R: StructuralQuery['R'] | ActionableQuery['R'];
+};
 
 export type Context = Array<string>; // really a tuple (T extends Array<string>)
 
 export type Processor<I, O> = (i: I) => Task<O>;
-export type QueryProcessor<Q extends Query, R> = Processor<Q, R>;
-export type ResultProcessor<R extends Result> = Processor<R, void>;
+export type QueryProcessor<Q extends Query['Q'], R> = Processor<Q, R>;
+export type ResultProcessor<R extends Query['R']> = Processor<R, void>;
 
 export type API<T> = Record<string, T>;
 export type ResolverAPI = API<any>; // should be API<Resolver>
 export type ReporterAPI = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = (
+export type Reporter<R extends Query['R'], C extends Context> = (
   ...a: Concat<Reverse<C>, [R]>
 ) => Task<void>;
 
 export type ReporterConnector<
   A extends ReporterAPI,
-  R extends Result,
+  R extends Query['R'],
   C extends Context
 > = (a: A) => Reporter<R, C>;
 
 export type ResultProcessorBuilderMapping<
   A extends ReporterAPI,
-  R extends PropertiesResult,
+  R extends PropertiesQuery['R'],
   C extends Context
 > = {
   [I in keyof Required<R>]: Build<ResultProcessor<Required<R>[I]>, A, C>;
 };
 
-export type Resolver<R extends Result, C extends Context> = (...c: Reverse<C>) => Task<R>;
+export type Resolver<R extends Query['R'], C extends Context> = (
+  ...c: Reverse<C>
+) => Task<R>;
 
 export type ResolverConnector<
   A extends ResolverAPI,
-  R extends Result,
+  R extends Query['R'],
   C extends Context
 > = (a: A) => Resolver<R, C>;
 
 export type QueryProcessorBuilderMapping<
   A extends ResolverAPI,
-  Q extends PropertiesQuery,
-  R extends PropertiesResult,
+  Q extends PropertiesQuery['Q'],
+  R extends PropertiesQuery['R'],
   C extends Context
 > = {
   [I in keyof Q & keyof R]: Build<QueryProcessor<Required<Q>[I], Required<R>[I]>, A, C>;
