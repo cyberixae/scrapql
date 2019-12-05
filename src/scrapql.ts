@@ -30,7 +30,10 @@ export type ExistenceResult<E extends Err = Err> = Either<E, boolean>;
 export type LiteralResult = Json;
 export type LeafResult = Json;
 export type KeysResult<S extends Result = Json> = Record<Key, S>;
-export type IdsResult<S extends Result = Json, E extends Err = Err> = Record<Id, Either<E, Option<S>>>;
+export type IdsResult<S extends Result = Json, E extends Err = Err> = Record<
+  Id,
+  Either<E, Option<S>>
+>;
 export type PropertiesResult<
   R extends { [I in Property]: Result } = { [I in Property]: Json }
 > = Partial<R>;

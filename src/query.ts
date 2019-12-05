@@ -7,8 +7,6 @@ import { Task, task } from 'fp-ts/lib/Task';
 import * as Task_ from 'fp-ts/lib/Task';
 import { Option } from 'fp-ts/lib/Option';
 import * as Option_ from 'fp-ts/lib/Option';
-import { Either } from 'fp-ts/lib/Option';
-import * as Either_ from 'fp-ts/lib/Option';
 import * as boolean_ from 'fp-ts/lib/boolean';
 import { pipe } from 'fp-ts/lib/pipeable';
 
@@ -130,16 +128,17 @@ export function ids<
           const existenceCheck = connect(resolvers);
           return pipe(
             existenceCheck(...resolverArgsFrom(subContext)),
-            TaskEither_.chain(
-              (exists: boolean) => pipe(
+            TaskEither_.chain((exists: boolean) =>
+              pipe(
                 exists,
                 boolean_.fold(
                   (): TaskEither<E, Option<SR>> => TaskEither_.right(Option_.none),
-                  (): TaskEither<E, Option<SR>> => pipe(
-                    subProcessor(resolvers)(subContext)(subQuery),
-                    Task_.map(Option_.some),
-                    TaskEither_.rightTask,
-                  ),
+                  (): TaskEither<E, Option<SR>> =>
+                    pipe(
+                      subProcessor(resolvers)(subContext)(subQuery),
+                      Task_.map(Option_.some),
+                      TaskEither_.rightTask,
+                    ),
                 ),
               ),
             ),
