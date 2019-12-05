@@ -96,7 +96,7 @@ describe('result', () => {
     [id1]: Either_.right(Option_.some(keysResult)),
     [id2]: Either_.right(Option_.none),
   };
-  const processProperty1: RPB<Property1Result, []> = scrapqlResult.ids(
+  const processProperty1: RPB<Property1Result, []> = scrapqlResult.ids<Reporters, Property1Result, Id, KeysResult, [], Err1>(
     (r) => r.learnProperty1Existence,
     processKeys,
   );
@@ -107,8 +107,8 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1, true],
-      [id2, false],
+      [id1, Either_.right(true)],
+      [id2, Either_.right(false)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
       [id1, key1, key1Result],
@@ -158,8 +158,8 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1, true],
-      [id2, false],
+      [id1, Either_.right(true)],
+      [id2, Either_.right(false)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
       [id1, key1, key1Result],
@@ -170,7 +170,7 @@ describe('result', () => {
   it('processRoot (standalone)', async () => {
     const processRoot = scrapqlResult.properties<Reporters, RootResult, []>({
       protocol: scrapqlResult.literal(),
-      property1: scrapqlResult.ids(
+      property1: scrapqlResult.ids<Reporters, Property1Result, Id, KeysResult, [], Err1>(
         (r: Reporters) => r.learnProperty1Existence,
         scrapqlResult.keys<
           Reporters,
@@ -191,8 +191,8 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1, true],
-      [id2, false],
+      [id1, Either_.right(true)],
+      [id2, Either_.right(false)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
       [id1, key1, key1Result],
