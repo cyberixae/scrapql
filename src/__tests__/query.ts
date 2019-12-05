@@ -12,8 +12,6 @@ import * as scrapqlQuery from '../query';
 import { Context, Build, QueryProcessor, ResolverAPI, Existence } from '../scrapql';
 import { init } from '../scrapql';
 
-type Err1 = 'error';
-
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
   mock: any;
@@ -58,6 +56,8 @@ describe('query', () => {
 
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
+
+  type Err1 = 'error';
 
   type Id = string & ('id1' | 'id2');
   const id1: Id = 'id1';

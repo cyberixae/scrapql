@@ -116,7 +116,7 @@ export function ids<
 >(
   connect: ResolverConnector<A, ExistenceResult<E>, Prepend<C, I>>,
   subProcessor: Build<QueryProcessor<SQ, SR>, A, Prepend<C, I>>,
-): Build<QueryProcessor<Q, IdsResult<SR>>, A, C> {
+): Build<QueryProcessor<Q, IdsResult<SR, E>>, A, C> {
   return (resolvers: A) => (context: C) => (query: Q) => {
     const tasks: Record<I, TaskEither<E, Option<SR>>> = pipe(
       query,
