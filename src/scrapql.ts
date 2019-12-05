@@ -26,7 +26,8 @@ export type StructuralQuery = LiteralQuery | KeysQuery | IdsQuery | PropertiesQu
 
 export type Query = StructuralQuery | FetchableQuery;
 
-export type ExistenceResult<E extends Err = Err> = Either<E, boolean>;
+export type Existence = boolean;
+export type ExistenceResult<E extends Err = Err> = Either<E, Existence>;
 export type LiteralResult = Json;
 export type LeafResult = Json;
 export type KeysResult<S extends Result = Json> = Record<Key, S>;

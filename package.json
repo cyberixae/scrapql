@@ -11,9 +11,10 @@
     "test": "jest --no-cache",
     "clean": "rm -rf lib",
     "build": "yarn clean && tsc",
+    "typecheck": "tsc -p src/tsconfig.json",
     "eslint": "eslint --max-warnings=0 '**/*.{ts,js,json}' --ignore-path .gitignore",
     "lint": "yarn eslint",
-    "ci": "yarn lint && yarn test && yarn build",
+    "ci": "yarn lint && yarn typecheck && yarn test && yarn build",
     "deploy-npm": "yarn ci && yarn publish"
   },
   "peerDependencies": {

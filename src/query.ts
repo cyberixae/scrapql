@@ -34,6 +34,7 @@ import {
   ExistenceResult,
   IdsResult,
   PropertiesResult,
+  Existence,
   Err,
 } from './scrapql';
 
@@ -128,7 +129,7 @@ export function ids<
           const existenceCheck = connect(resolvers);
           return pipe(
             existenceCheck(...resolverArgsFrom(subContext)),
-            TaskEither_.chain((exists: boolean) =>
+            TaskEither_.chain((exists: Existence) =>
               pipe(
                 exists,
                 boolean_.fold(
