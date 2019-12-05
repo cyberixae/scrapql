@@ -17,7 +17,7 @@
     "deploy-npm": "yarn ci && yarn publish"
   },
   "peerDependencies": {
-    "fp-ts": "^2.0.0"
+    "fp-ts": "^2.2.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.12",
@@ -29,7 +29,7 @@
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-json": "^1.4.0",
     "eslint-plugin-prettier": "^3.1.0",
-    "fp-ts": "^2.0.0",
+    "fp-ts": "^2.2.0",
     "io-ts": "^2.0.1",
     "io-ts-types": "^0.5.0",
     "jest": "^24.8.0",
