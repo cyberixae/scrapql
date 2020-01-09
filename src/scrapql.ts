@@ -6,7 +6,7 @@ import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 
-import { Tuple } from './tuple';
+import { Tuple, reverse } from './tuple';
 export { process } from './process';
 export { reduce } from './reduce';
 
@@ -58,10 +58,11 @@ export type Result = StructuralResult | ReportableResult;
 export type Context = Tuple<string>;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, A extends API<any>>(
-  processor: Processor<I, O, A, []>,
+export const processorInstance = <I, O, A extends API<any>, C extends Context>(
+  processor: Processor<I, O, A, Reverse<C>>,
   api: A,
-): ProcessorInstance<I, O> => (input: I) => processor(input)([])(api);
+  ...rest: C
+): ProcessorInstance<I, O> => (input: I) => processor(input)(reverse(rest))(api);
 
 export type QueryProcessorInstance<Q extends Query, R> = ProcessorInstance<Q, R>;
 export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
