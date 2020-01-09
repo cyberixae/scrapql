@@ -65,7 +65,7 @@ describe('result', () => {
 
   it('processKey', async () => {
     const reporters = createReporters();
-    const main = processKey(reporters)([key1, id1])(key1Result);
+    const main = processKey(key1Result)([key1, id1])(reporters);
     await main();
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
@@ -82,7 +82,7 @@ describe('result', () => {
 
   it('processKeys', async () => {
     const reporters = createReporters();
-    const main = processKeys(reporters)([id1])(keysResult);
+    const main = processKeys(keysResult)([id1])(reporters);
     await main();
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([

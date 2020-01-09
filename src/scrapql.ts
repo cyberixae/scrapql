@@ -4,6 +4,7 @@ import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
+import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 
 import { Tuple } from './tuple';
 export { process } from './process';
@@ -60,14 +61,14 @@ export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>>(
   builder: Processor<I, O, A, []>,
   api: A,
-): ProcessorInstance<I, O> => builder(api)([]);
+): ProcessorInstance<I, O> => (i: I) => builder(i)([])(api);
 
 export type QueryProcessorInstance<Q extends Query, R> = ProcessorInstance<Q, R>;
 export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
 
 export type Processor<I, O, A extends API<any>, C extends Context> = (
-  a: A,
-) => (c: C) => ProcessorInstance<I, O>;
+  i: I,
+) => (c: C) => ReaderTask<A, O>;
 
 export type QueryProcessor<
   Q extends Query,
