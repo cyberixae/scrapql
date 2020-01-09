@@ -5,6 +5,7 @@ import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
 
+import { Tuple } from './tuple';
 export { process } from './process';
 export { reduce } from './reduce';
 
@@ -53,7 +54,7 @@ export type StructuralResult = LiteralResult | KeysResult | IdsResult | Properti
 
 export type Result = StructuralResult | ReportableResult;
 
-export type Context = Array<string>; // really a tuple (T extends Array<string>)
+export type Context = Tuple<string>;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>>(
@@ -81,7 +82,7 @@ export type ResultProcessor<
   C extends Context = []
 > = Processor<R, void, A, C>;
 
-export type Handler<A extends Array<any>, R> = (...a: A) => Task<R>;
+export type Handler<A extends Tuple, R> = (...a: A) => Task<R>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
@@ -135,21 +136,52 @@ export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
 
-export type Constructor<T> = (...args: any) => T;
+export type Constructor<A extends Tuple, T> = (...args: A) => T;
+
+export type QueryConstructorArgs = Tuple;
+export type ResultConstructorArgs = Tuple;
+
+export type QueryConstructor<
+  A extends QueryConstructorArgs,
+  Q extends Query
+> = Constructor<A, Q>;
+export type ResultConstructor<
+  A extends ResultConstructorArgs,
+  R extends Result
+> = Constructor<A, R>;
+
+export type QueryProtocol<
+  Q extends Query,
+  QA extends QueryConstructorArgs,
+  QR extends Resolvers,
+  R extends Result,
+  E extends Err
+> = {
+  Query: t.Type<Q>;
+  query: QueryConstructor<QA, Q>;
+  processQuery: QueryProcessor<Q, R, QR>;
+  Err: t.Type<E>;
+};
+
+export type ResultProtocol<
+  R extends Result,
+  RA extends ResultConstructorArgs,
+  RR extends Reporters,
+  E extends Err
+> = {
+  Result: t.Type<R>;
+  result: ResultConstructor<RA, R>;
+  processResult: ResultProcessor<R, RR>;
+  reduceResult: ResultReducer<R>;
+  Err: t.Type<E>;
+};
 
 export type Protocol<
   Q extends Query,
+  QA extends Tuple,
+  QR extends Resolvers,
   R extends Result,
   E extends Err,
-  QA extends Resolvers,
-  RA extends Reporters
-> = {
-  Query: t.Type<Q>;
-  query: Constructor<Q>;
-  Result: t.Type<R>;
-  result: Constructor<R>;
-  Err: t.Type<E>;
-  processResult: ResultProcessor<R, RA>;
-  processQuery: QueryProcessor<Q, R, QA>;
-  reduceResult: ResultReducer<R>;
-};
+  RA extends Tuple,
+  RR extends Reporters
+> = QueryProtocol<Q, QA, QR, R, E> & ResultProtocol<R, RA, RR, E>;
