@@ -59,9 +59,9 @@ export type Context = Tuple<string>;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>>(
-  builder: Processor<I, O, A, []>,
+  processor: Processor<I, O, A, []>,
   api: A,
-): ProcessorInstance<I, O> => (i: I) => builder(i)([])(api);
+): ProcessorInstance<I, O> => (input: I) => processor(input)([])(api);
 
 export type QueryProcessorInstance<Q extends Query, R> = ProcessorInstance<Q, R>;
 export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
@@ -137,19 +137,19 @@ export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
 
-export type Constructor<A extends Tuple, T> = (...args: A) => T;
+export type Constructor<T, A extends Tuple = Tuple> = (...args: A) => T;
 
 export type QueryConstructorArgs = Tuple;
 export type ResultConstructorArgs = Tuple;
 
 export type QueryConstructor<
-  A extends QueryConstructorArgs,
-  Q extends Query
-> = Constructor<A, Q>;
+  Q extends Query,
+  A extends QueryConstructorArgs = QueryConstructorArgs
+> = Constructor<Q, A>;
 export type ResultConstructor<
-  A extends ResultConstructorArgs,
-  R extends Result
-> = Constructor<A, R>;
+  R extends Result,
+  A extends ResultConstructorArgs = ResultConstructorArgs
+> = Constructor<R, A>;
 
 export type QueryProtocol<
   Q extends Query,
@@ -159,7 +159,7 @@ export type QueryProtocol<
   E extends Err
 > = {
   Query: t.Type<Q>;
-  query: QueryConstructor<QA, Q>;
+  query: QueryConstructor<Q, QA>;
   processQuery: QueryProcessor<Q, R, QR>;
   Err: t.Type<E>;
 };
@@ -171,7 +171,7 @@ export type ResultProtocol<
   E extends Err
 > = {
   Result: t.Type<R>;
-  result: ResultConstructor<RA, R>;
+  result: ResultConstructor<R, RA>;
   processResult: ResultProcessor<R, RR>;
   reduceResult: ResultReducer<R>;
   Err: t.Type<E>;
@@ -179,10 +179,10 @@ export type ResultProtocol<
 
 export type Protocol<
   Q extends Query,
-  QA extends Tuple,
+  QA extends QueryConstructorArgs,
   QR extends Resolvers,
   R extends Result,
   E extends Err,
-  RA extends Tuple,
+  RA extends ResultConstructorArgs,
   RR extends Reporters
 > = QueryProtocol<Q, QA, QR, R, E> & ResultProtocol<R, RA, RR, E>;
