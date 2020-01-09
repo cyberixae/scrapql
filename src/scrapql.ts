@@ -64,7 +64,10 @@ export const processorInstance = <I, O, A extends API<any>, C extends Context>(
   ...rest: C
 ): ProcessorInstance<I, O> => (input: I) => processor(input)(reverse(rest))(api);
 
-export type QueryProcessorInstance<Q extends Query, R> = ProcessorInstance<Q, R>;
+export type QueryProcessorInstance<Q extends Query, R extends Result> = ProcessorInstance<
+  Q,
+  R
+>;
 export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
 
 export type Processor<I, O, A extends API<any>, C extends Context> = (
@@ -142,48 +145,49 @@ export type Constructor<T, A extends Tuple = Tuple> = (...args: A) => T;
 
 export type QueryConstructorArgs = Tuple;
 export type ResultConstructorArgs = Tuple;
+export type ErrConstructorArgs = Tuple;
 
 export type QueryConstructor<
-  Q extends Query,
+  Q extends Query = Query,
   A extends QueryConstructorArgs = QueryConstructorArgs
 > = Constructor<Q, A>;
+
 export type ResultConstructor<
-  R extends Result,
+  R extends Result = Result,
   A extends ResultConstructorArgs = ResultConstructorArgs
 > = Constructor<R, A>;
 
-export type QueryProtocol<
-  Q extends Query,
-  QA extends QueryConstructorArgs,
-  QR extends Resolvers,
-  R extends Result,
-  E extends Err
+export type ErrConstructor<
+  E extends Err = Err,
+  A extends ErrConstructorArgs = ErrConstructorArgs
+> = Constructor<E, A>;
+
+export type QueryUtils<
+  QC extends QueryConstructor,
+  RC extends ResultConstructor,
+  QA extends Resolvers
 > = {
-  Query: t.Type<Q>;
-  query: QueryConstructor<Q, QA>;
-  processQuery: QueryProcessor<Q, R, QR>;
-  Err: t.Type<E>;
+  Query: t.Type<ReturnType<QC>>;
+  query: QC;
+  processQuery: QueryProcessor<ReturnType<QC>, ReturnType<RC>, QA>;
 };
 
-export type ResultProtocol<
-  R extends Result,
-  RA extends ResultConstructorArgs,
-  RR extends Reporters,
-  E extends Err
-> = {
-  Result: t.Type<R>;
-  result: ResultConstructor<R, RA>;
-  processResult: ResultProcessor<R, RR>;
-  reduceResult: ResultReducer<R>;
-  Err: t.Type<E>;
+export type ResultUtils<RC extends ResultConstructor, RA extends Reporters> = {
+  Result: t.Type<ReturnType<RC>>;
+  result: RC;
+  processResult: ResultProcessor<ReturnType<RC>, RA>;
+  reduceResult: ResultReducer<ReturnType<RC>>;
+};
+
+export type ErrUtils<EC extends ErrConstructor> = {
+  Err: t.Type<ReturnType<EC>>;
+  error: EC;
 };
 
 export type Protocol<
-  Q extends Query,
-  QA extends QueryConstructorArgs,
-  QR extends Resolvers,
-  R extends Result,
-  E extends Err,
-  RA extends ResultConstructorArgs,
-  RR extends Reporters
-> = QueryProtocol<Q, QA, QR, R, E> & ResultProtocol<R, RA, RR, E>;
+  QC extends QueryConstructor,
+  RC extends ResultConstructor,
+  EC extends ErrConstructor,
+  QA extends Resolvers,
+  RA extends Reporters
+> = QueryUtils<QC, RC, QA> & ResultUtils<RC, RA> & ErrUtils<EC>;
