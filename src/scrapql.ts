@@ -25,7 +25,7 @@ export const existenceQuery = <I extends Id = Id>(id: I): ExistenceQuery<I> =>
 
 export type LiteralQuery = Json;
 export type LeafQuery = Json;
-export type KeysQuery<SQ extends Query = Json, K extends Key = Key> = Record<Key, SQ>;
+export type KeysQuery<SQ extends Query = Json, K extends Key = Key> = Record<K, SQ>;
 export type IdsQuery<SQ extends Query = Json, I extends Id = Id> = Record<I, SQ>;
 export type PropertiesQuery<
   Q extends { [I in Property]: Query } = { [I in Property]: Json }
@@ -40,7 +40,7 @@ export type Existence = boolean;
 export type ExistenceResult<E extends Err = Err> = Either<E, Existence>;
 export type LiteralResult = Json;
 export type LeafResult = Json;
-export type KeysResult<SR extends Result = Json, K extends Key = Key> = Record<Key, SR>;
+export type KeysResult<SR extends Result = Json, K extends Key = Key> = Record<K, SR>;
 export type IdsResult<
   SR extends Result = Json,
   I extends Id = Id,
