@@ -148,12 +148,12 @@ export type ResultConstructorArgs = Tuple;
 export type ErrConstructorArgs = Tuple;
 
 export type QueryConstructor<
-  Q extends Query = Query,
+  Q extends Query = any, //Query,
   A extends QueryConstructorArgs = QueryConstructorArgs
 > = Constructor<Q, A>;
 
 export type ResultConstructor<
-  R extends Result = Result,
+  R extends Result = any, //Result,
   A extends ResultConstructorArgs = ResultConstructorArgs
 > = Constructor<R, A>;
 
@@ -181,7 +181,7 @@ export type ResultUtils<RC extends ResultConstructor, RA extends Reporters> = {
 
 export type ErrUtils<EC extends ErrConstructor> = {
   Err: t.Type<ReturnType<EC>>;
-  error: EC;
+  err: EC;
 };
 
 export type Protocol<
