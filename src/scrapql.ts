@@ -163,31 +163,39 @@ export type ErrConstructor<
 > = Constructor<E, A>;
 
 export type QueryUtils<
-  QC extends QueryConstructor,
-  RC extends ResultConstructor,
-  QA extends Resolvers
+  QA extends QueryConstructorArgs,
+  Q extends Query,
+  R extends Result,
+  QR extends Resolvers
 > = {
-  Query: t.Type<ReturnType<QC>>;
-  query: QC;
-  processQuery: QueryProcessor<ReturnType<QC>, ReturnType<RC>, QA>;
+  Query: t.Type<Q>;
+  query: QueryConstructor<Q, QA>;
+  processQuery: QueryProcessor<Q, R, QR>;
 };
 
-export type ResultUtils<RC extends ResultConstructor, RA extends Reporters> = {
-  Result: t.Type<ReturnType<RC>>;
-  result: RC;
-  processResult: ResultProcessor<ReturnType<RC>, RA>;
-  reduceResult: ResultReducer<ReturnType<RC>>;
+export type ResultUtils<
+  RA extends ResultConstructorArgs,
+  R extends Result,
+  RR extends Reporters
+> = {
+  Result: t.Type<R>;
+  result: ResultConstructor<R, RA>;
+  processResult: ResultProcessor<R, RR>;
+  reduceResult: ResultReducer<R>;
 };
 
-export type ErrUtils<EC extends ErrConstructor> = {
-  Err: t.Type<ReturnType<EC>>;
-  err: EC;
+export type ErrUtils<EA extends ErrConstructorArgs, E extends Err> = {
+  Err: t.Type<E>;
+  err: ErrConstructor<E, EA>;
 };
 
 export type Protocol<
-  QC extends QueryConstructor,
-  RC extends ResultConstructor,
-  EC extends ErrConstructor,
-  QA extends Resolvers,
-  RA extends Reporters
-> = QueryUtils<QC, RC, QA> & ResultUtils<RC, RA> & ErrUtils<EC>;
+  QA extends QueryConstructorArgs,
+  Q extends Query,
+  RA extends ResultConstructorArgs,
+  R extends Result,
+  EA extends ErrConstructorArgs,
+  E extends Err,
+  QR extends Resolvers,
+  RR extends Reporters
+> = QueryUtils<QA, Q, R, QR> & ResultUtils<RA, R, RR> & ErrUtils<EA, E>;
