@@ -36,7 +36,7 @@ describe('query', () => {
   interface Resolvers extends scrapql.Resolvers {
     checkProperty1Existence: (q: Id) => TaskEither<Err1, scrapql.Existence>;
     fetchKeyResult: (c: Prepend<Key, Prepend<Id, Empty>>) => Task<KeyResult>;
-    fetchProperty2Result: (c: Empty) => Task<Property2Result>;
+    fetchProperty2Result: (q: Property2Query, c: Empty) => Task<Property2Result>;
   }
 
   function createResolvers(): Resolvers {
@@ -50,7 +50,7 @@ describe('query', () => {
         ),
       ),
       fetchKeyResult: loggerTask(jest.fn((_0: Prepend<Key, Prepend<Id, Empty>>) => key1Result)),
-      fetchProperty2Result: loggerTask(jest.fn(() => property2Result)),
+      fetchProperty2Result: loggerTask(jest.fn((_0: Property2Query, _1: Empty) => property2Result)),
     };
   }
 

@@ -44,7 +44,7 @@ describe('result', () => {
       receiveKeyResult: loggerTask(
         jest.fn((_0: KeyResult, _1: Prepend<Key, Prepend<Id, Empty>>) => undefined),
       ),
-      receiveProperty2Result: loggerTask(jest.fn((_0: Property2Result) => undefined)),
+      receiveProperty2Result: loggerTask(jest.fn((_0: Property2Result, _1: Empty) => undefined)),
     };
   }
 
