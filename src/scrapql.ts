@@ -1,14 +1,15 @@
 import * as t from 'io-ts';
-import { Concat, Reverse } from 'typescript-tuple';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 
-import { Tuple, reverse } from './tuple';
 export { process } from './process';
 export { reduce } from './reduce';
+import { Context, Zero } from './context';
+
+export { Context };
 
 export type Json = unknown;
 
@@ -55,14 +56,12 @@ export type StructuralResult = LiteralResult | KeysResult | IdsResult | Properti
 
 export type Result = StructuralResult | ReportableResult;
 
-export type Context = Tuple<string>;
-
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>, C extends Context>(
-  processor: Processor<I, O, A, Reverse<C>>,
+  processor: Processor<I, O, A, C>,
   api: A,
-  ...rest: C
-): ProcessorInstance<I, O> => (input: I) => processor(input)(reverse(rest))(api);
+  context: C,
+): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
 export type QueryProcessorInstance<Q extends Query, R extends Result> = ProcessorInstance<
   Q,
@@ -78,25 +77,22 @@ export type QueryProcessor<
   Q extends Query,
   R extends Result,
   A extends Resolvers,
-  C extends Context = []
+  C extends Context = Zero
 > = Processor<Q, R, A, C>;
 
 export type ResultProcessor<
   R extends Result,
   A extends Reporters,
-  C extends Context = []
+  C extends Context = Zero
 > = Processor<R, void, A, C>;
 
-export type Handler<A extends Tuple, R> = (...a: A) => Task<R>;
+export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = Handler<
-  Concat<Reverse<C>, [R]>,
-  void
->;
+export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   A extends Reporters,
@@ -113,8 +109,9 @@ export type ResultProcessorMapping<
 };
 
 export type Resolver<Q extends Query, R extends Result, C extends Context> = Handler<
-  Concat<Reverse<C>, [Q]>,
-  R
+  Q,
+  R,
+  C
 >;
 
 export type ResolverConnector<
@@ -141,11 +138,13 @@ export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
 
-export type Constructor<T, A extends Tuple = Tuple> = (...args: A) => T;
+export type Args<T extends any = any> = Array<T>;
 
-export type QueryConstructorArgs = Tuple;
-export type ResultConstructorArgs = Tuple;
-export type ErrConstructorArgs = Tuple;
+export type Constructor<T, A extends Args> = (...args: A) => T;
+
+export type QueryConstructorArgs = Args;
+export type ResultConstructorArgs = Args;
+export type ErrConstructorArgs = Args;
 
 export type QueryConstructor<
   Q extends Query = any, //Query,
