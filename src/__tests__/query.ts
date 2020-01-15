@@ -34,7 +34,7 @@ describe('query', () => {
   /* eslint-disable @typescript-eslint/no-use-before-define */
 
   interface Resolvers extends scrapql.Resolvers {
-    checkProperty1Existence: (c: Prepend<Id, Empty>) => TaskEither<Err1, scrapql.Existence>;
+    checkProperty1Existence: (q: Id) => TaskEither<Err1, scrapql.Existence>;
     fetchKeyResult: (c: Prepend<Key, Prepend<Id, Empty>>) => Task<KeyResult>;
     fetchProperty2Result: (c: Empty) => Task<Property2Result>;
   }
@@ -42,7 +42,7 @@ describe('query', () => {
   function createResolvers(): Resolvers {
     return {
       checkProperty1Existence: loggerTask(
-        jest.fn(([id]: Prepend<Id, Empty>) =>
+        jest.fn((id: Id) =>
           pipe(
             property1Result[id],
             Either_.map(Option_.isSome),
@@ -138,7 +138,7 @@ describe('query', () => {
   const processProperty1: CustomQP<
     Property1Query,
     Property1Result,
-    []
+    Empty
   > = scrapql.process.query.ids((r) => r.checkProperty1Existence, processKeys);
 
   it('processProperty1', async () => {
@@ -165,7 +165,7 @@ describe('query', () => {
   const processProperty2: CustomQP<
     Property2Query,
     Property2Result,
-    []
+    Empty
   > = scrapql.process.query.leaf((r) => r.fetchProperty2Result);
 
   it('processProperty2', async () => {
@@ -204,7 +204,7 @@ describe('query', () => {
     const processRoot: CustomQP<
       RootQuery,
       RootResult,
-      []
+      Empty
     > = scrapql.process.query.properties({
       protocol: scrapql.process.query.literal(RESULT),
       property1: processProperty1,
@@ -233,7 +233,7 @@ describe('query', () => {
       Resolvers,
       RootQuery,
       RootResult,
-      []
+      Empty
     >({
       protocol: scrapql.process.query.literal(RESULT),
       property1: scrapql.process.query.ids(

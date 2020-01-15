@@ -113,7 +113,7 @@ describe('result', () => {
     Property1Result,
     Id,
     KeysResult,
-    [],
+    Empty,
     Err1
   >((r) => r.learnProperty1Existence, processKeys);
 
@@ -165,7 +165,7 @@ describe('result', () => {
     const processRoot: CustomRP<RootResult, Empty> = scrapql.process.result.properties<
       Reporters,
       RootResult,
-      []
+      Empty
     >({
       protocol: scrapql.process.result.literal(),
       property1: processProperty1,
@@ -194,7 +194,7 @@ describe('result', () => {
         Property1Result,
         Id,
         KeysResult,
-        [],
+        Empty,
         Err1
       >(
         (r: Reporters) => r.learnProperty1Existence,
@@ -203,7 +203,7 @@ describe('result', () => {
           KeysResult,
           keyof KeysResult,
           KeysResult[keyof KeysResult],
-          [Id]
+          Prepend<Id, Empty>
         >(
           scrapql.process.result.leaf<Reporters, KeyResult, Prepend<Key, Prepend<Id, Empty>>>(
             (r: Reporters) => r.receiveKeyResult,
