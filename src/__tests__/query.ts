@@ -8,7 +8,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import { name, version } from '../../package.json';
 
-import { Prepend, Empty } from '../context';
+import { Ctx, NoCtx } from '../context';
 import * as Context_ from '../context';
 import * as scrapql from '../scrapql';
 
@@ -35,8 +35,8 @@ describe('query', () => {
 
   interface Resolvers extends scrapql.Resolvers {
     checkProperty1Existence: (q: Id) => TaskEither<Err1, scrapql.Existence>;
-    fetchKeyResult: (q: KeyQuery, c: Prepend<Key, Prepend<Id, Empty>>) => Task<KeyResult>;
-    fetchProperty2Result: (q: Property2Query, c: Empty) => Task<Property2Result>;
+    fetchKeyResult: (q: KeyQuery, c: Ctx<Key, Ctx<Id>>) => Task<KeyResult>;
+    fetchProperty2Result: (q: Property2Query, c: NoCtx) => Task<Property2Result>;
   }
 
   function createResolvers(): Resolvers {
@@ -50,10 +50,10 @@ describe('query', () => {
         ),
       ),
       fetchKeyResult: loggerTask(
-        jest.fn((_0: KeyQuery, _1: Prepend<Key, Prepend<Id, Empty>>) => key1Result),
+        jest.fn((_0: KeyQuery, _1: Ctx<Key, Ctx<Id>>) => key1Result),
       ),
       fetchProperty2Result: loggerTask(
-        jest.fn((_0: Property2Query, _1: Empty) => property2Result),
+        jest.fn((_0: Property2Query, _1: NoCtx) => property2Result),
       ),
     };
   }
@@ -83,13 +83,13 @@ describe('query', () => {
   const processKey: CustomQP<
     KeyQuery,
     KeyResult,
-    Prepend<Key, Prepend<Id, Empty>>
+    Ctx<Key, Ctx<Id>>
   > = scrapql.process.query.leaf((r) => r.fetchKeyResult);
 
   it('processKey', async () => {
     const resolvers = createResolvers();
     const context = pipe(
-      Context_.empty,
+      Context_.zero,
       Context_.prepend<Id>(id1),
       Context_.prepend<Key>(key1),
     );
@@ -114,13 +114,13 @@ describe('query', () => {
   const processKeys: CustomQP<
     KeysQuery,
     KeysResult,
-    Prepend<Id, Empty>
+    Ctx<Id>
   > = scrapql.process.query.keys(processKey);
 
   it('processKeys', async () => {
     const resolvers = createResolvers();
     const context = pipe(
-      Context_.empty,
+      Context_.zero,
       Context_.prepend<Id>(id1),
     );
     const main = scrapql.processorInstance(processKeys, resolvers, context)(keysQuery);
@@ -146,12 +146,12 @@ describe('query', () => {
   const processProperty1: CustomQP<
     Property1Query,
     Property1Result,
-    Empty
+    NoCtx
   > = scrapql.process.query.ids((r) => r.checkProperty1Existence, processKeys);
 
   it('processProperty1', async () => {
     const resolvers = createResolvers();
-    const context = Context_.empty;
+    const context = Context_.zero;
     const main = scrapql.processorInstance(processProperty1, resolvers, context)(
       property1Query,
     );
@@ -175,12 +175,12 @@ describe('query', () => {
   const processProperty2: CustomQP<
     Property2Query,
     Property2Result,
-    Empty
+    NoCtx
   > = scrapql.process.query.leaf((r) => r.fetchProperty2Result);
 
   it('processProperty2', async () => {
     const resolvers = createResolvers();
-    const context = Context_.empty;
+    const context = Context_.zero;
     const main = scrapql.processorInstance(processProperty2, resolvers, context)(
       property2Query,
     );
@@ -216,7 +216,7 @@ describe('query', () => {
     const processRoot: CustomQP<
       RootQuery,
       RootResult,
-      Empty
+      NoCtx
     > = scrapql.process.query.properties({
       protocol: scrapql.process.query.literal(RESULT),
       property1: processProperty1,
@@ -224,7 +224,7 @@ describe('query', () => {
     });
 
     const resolvers = createResolvers();
-    const context = Context_.empty;
+    const context = Context_.zero;
     const main = scrapql.processorInstance(processRoot, resolvers, context)(rootQuery);
     const result = await main();
 
@@ -245,7 +245,7 @@ describe('query', () => {
       Resolvers,
       RootQuery,
       RootResult,
-      Empty
+      NoCtx
     >({
       protocol: scrapql.process.query.literal(RESULT),
       property1: scrapql.process.query.ids(
@@ -256,14 +256,14 @@ describe('query', () => {
           Id,
           KeyQuery,
           KeyResult,
-          Prepend<Id, Empty>
+          Ctx<Id>
         >(scrapql.process.query.leaf((r: Resolvers) => r.fetchKeyResult)),
       ),
       property2: scrapql.process.query.leaf((r: Resolvers) => r.fetchProperty2Result),
     });
 
     const resolvers = createResolvers();
-    const context = Context_.empty;
+    const context = Context_.zero;
     const main = scrapql.processorInstance(processRoot, resolvers, context)(rootQuery);
     const result = await main();
     // eslint-disable-next-line fp/no-mutating-methods

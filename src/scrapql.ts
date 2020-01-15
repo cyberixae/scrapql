@@ -7,7 +7,7 @@ import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 
 export { process } from './process';
 export { reduce } from './reduce';
-import { Context, Empty } from './context';
+import { Context, Zero } from './context';
 
 export { Context };
 
@@ -77,13 +77,13 @@ export type QueryProcessor<
   Q extends Query,
   R extends Result,
   A extends Resolvers,
-  C extends Context = Empty
+  C extends Context = Zero
 > = Processor<Q, R, A, C>;
 
 export type ResultProcessor<
   R extends Result,
   A extends Reporters,
-  C extends Context = Empty
+  C extends Context = Zero
 > = Processor<R, void, A, C>;
 
 export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
@@ -138,13 +138,13 @@ export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
 
-export type Tuple<T extends any = any> = Array<T>;
+export type Args<T extends any = any> = Array<T>;
 
-export type Constructor<T, A extends Tuple> = (...args: A) => T;
+export type Constructor<T, A extends Args> = (...args: A) => T;
 
-export type QueryConstructorArgs = Tuple;
-export type ResultConstructorArgs = Tuple;
-export type ErrConstructorArgs = Tuple;
+export type QueryConstructorArgs = Args;
+export type ResultConstructorArgs = Args;
+export type ErrConstructorArgs = Args;
 
 export type QueryConstructor<
   Q extends Query = any, //Query,
