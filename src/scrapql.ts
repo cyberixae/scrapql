@@ -7,7 +7,7 @@ import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 
 export { process } from './process';
 export { reduce } from './reduce';
-import { Context, Empty } from './tuple';
+import { Context, Empty } from './context';
 
 export { Context };
 
@@ -86,7 +86,7 @@ export type ResultProcessor<
   C extends Context = Empty
 > = Processor<R, void, A, C>;
 
-export type Handler<I, O, C extends Context> = (c: C, i: I) => Task<O>;
+export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>

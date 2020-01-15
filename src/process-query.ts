@@ -9,8 +9,8 @@ import * as Option_ from 'fp-ts/lib/Option';
 import * as boolean_ from 'fp-ts/lib/boolean';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import { Prepend } from './tuple';
-import * as Tuple_ from './tuple';
+import { Prepend } from './context';
+import * as Context_ from './context';
 import {
   Query,
   Result,
@@ -63,7 +63,7 @@ export function leaf<
   return (query: Q) => (context: C): ReaderTask<A, R> => {
     return (resolvers) => {
       const resolver = connect(resolvers);
-      return resolver(context, query);
+      return resolver(query, context);
     };
   };
 }
@@ -88,7 +88,7 @@ export function keys<
           (key: K, subQuery: SQ): Task<SR> => {
             const subContext = pipe(
               context,
-              Tuple_.prepend(key),
+              Context_.prepend(key),
             );
             return subProcessor(subQuery)(subContext)(resolvers);
           },
@@ -120,11 +120,11 @@ export function ids<
           (id: I, subQuery: SQ): TaskEither<E, Option<SR>> => {
             const subContext = pipe(
               context,
-              Tuple_.prepend(id),
+              Context_.prepend(id),
             );
             const existenceCheck = connect(resolvers);
             return pipe(
-              existenceCheck(context, existenceQuery(id)),
+              existenceCheck(existenceQuery(id), context),
               TaskEither_.chain((exists: Existence) =>
                 pipe(
                   exists,

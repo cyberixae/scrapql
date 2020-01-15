@@ -12,8 +12,8 @@ import * as Either_ from 'fp-ts/lib/Either';
 import { pipe } from 'fp-ts/lib/pipeable';
 import { identity } from 'fp-ts/lib/function';
 
-import { Prepend } from './tuple';
-import * as Context_ from './tuple';
+import { Prepend } from './context';
+import * as Context_ from './context';
 
 import {
   ResultProcessor,
@@ -55,7 +55,7 @@ export function leaf<A extends Reporters, R extends LeafResult, C extends Contex
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
-      return reporter(context, result);
+      return reporter(result, context);
     };
   };
 }
@@ -115,7 +115,7 @@ export function ids<
             Either_.fold(
               (err) => [
                 connect(reporters)(
-                  subContext, Either_.left<E, Existence>(err),
+                  Either_.left<E, Existence>(err), subContext,
                 ),
               ],
               (opt) =>
@@ -124,14 +124,14 @@ export function ids<
                   Option_.fold(
                     () => [
                       connect(reporters)(
-                          subContext,
                           Either_.right<E, Existence>(false),
+                          subContext,
                       ),
                     ],
                     (subResult) => [
                       connect(reporters)(
-                          subContext,
                           Either_.right<E, Existence>(true),
+                          subContext,
                       ),
                       subProcessor(subResult)(subContext)(reporters),
                     ],
