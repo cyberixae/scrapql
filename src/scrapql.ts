@@ -60,7 +60,7 @@ export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>, C extends Context>(
   processor: Processor<I, O, A, C>,
   api: A,
-  context: C
+  context: C,
 ): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
 export type QueryProcessorInstance<Q extends Query, R extends Result> = ProcessorInstance<
@@ -92,9 +92,7 @@ export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = Handler<
-  R, void, C
->;
+export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   A extends Reporters,
@@ -111,7 +109,9 @@ export type ResultProcessorMapping<
 };
 
 export type Resolver<Q extends Query, R extends Result, C extends Context> = Handler<
-  Q, R, C
+  Q,
+  R,
+  C
 >;
 
 export type ResolverConnector<
@@ -138,7 +138,7 @@ export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
 
-export type Tuple<T extends any = any> = Array<T>
+export type Tuple<T extends any = any> = Array<T>;
 
 export type Constructor<T, A extends Tuple> = (...args: A) => T;
 

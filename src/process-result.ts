@@ -113,26 +113,16 @@ export function ids<
           return pipe(
             maybeSubResult,
             Either_.fold(
-              (err) => [
-                connect(reporters)(
-                  Either_.left<E, Existence>(err), subContext,
-                ),
-              ],
+              (err) => [connect(reporters)(Either_.left<E, Existence>(err), subContext)],
               (opt) =>
                 pipe(
                   opt,
                   Option_.fold(
                     () => [
-                      connect(reporters)(
-                          Either_.right<E, Existence>(false),
-                          subContext,
-                      ),
+                      connect(reporters)(Either_.right<E, Existence>(false), subContext),
                     ],
                     (subResult) => [
-                      connect(reporters)(
-                          Either_.right<E, Existence>(true),
-                          subContext,
-                      ),
+                      connect(reporters)(Either_.right<E, Existence>(true), subContext),
                       subProcessor(subResult)(subContext)(reporters),
                     ],
                   ),
