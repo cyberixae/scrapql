@@ -1,24 +1,24 @@
 
-export type Tuple<C, N extends Tuple<any, any, L>, L> = L|[C, N]
-export const tuple = <C, N extends L|Tuple<any, any, L>, L>(c: C, n: N): Tuple<C, N, L> => [c, n]
-
 export type Empty = Array<never>
 export const empty: Empty = []
 
-export type Open<C, L> = <N extends L|Tuple<any, any, L>>(n: N) => Tuple<C, N, L>
-export const open = <C, L>(c: C): Open<C, L> => <N extends L|Tuple<any, any, L>>(n: N): Tuple<C, N, L> => tuple(c, n)
+export type Tuple<C, N extends Tuple<any, any>> = Empty|[C, N]
+export const tuple = <C, N extends Empty|Tuple<any, any>>(c: C, n: N): Tuple<C, N> => [c, n]
+export const closed = <C>(t: Open<C>): Tuple<C, Empty> => t(empty)
 
-const foo: Open<'foo', Empty> = open<'foo', Empty>('foo');
-const bar: Open<'bar', Empty> = open<'bar', Empty>('bar');
-const lol: Open<'lol', Empty> = open<'lol', Empty>('lol');
+export type Open<C> = <N extends Tuple<any, any>>(n: N) => Tuple<C, N>
+export const open = <C>(c: C): Open<C> => <N extends Tuple<any, any>>(n: N): Tuple<C, N> => tuple(c, n)
 
-export type Plus<A, B, L> = <N extends Tuple<any, any, L>>(n: N) => Tuple<A, Tuple<B, N, L>, L>
-export const plus = <A, B, L>(a: Open<A, L>, b: Open<B, L>): Plus<A, B, L> => <N extends L|Tuple<Tuple<any, any, L>, any, L>>(n: N) => a(b(n))
+export type Plus<A, B> = <N extends Tuple<any, any>>(n: N) => Tuple<A, Tuple<B, N>>
+export const plus = <A, B>(a: Open<A>, b: Open<B>): Plus<A, B> => <N extends Tuple<Tuple<any, any>, any>>(n: N) => a(b(n))
 
-const muumi1: Plus<'foo', 'bar', Empty> = (n) => foo(bar(n))
-const muumi2: Plus<'foo', 'bar', Empty> = (n) => foo(bar(n))
+const foo: Open<'foo'> = open('foo');
+const bar: Open<'bar'> = open('bar');
+const lol: Open<'lol'> = open('lol');
 
-export type Closed<C, N extends Empty|Closed<any, any>> = Tuple<C, N, Empty>
-export const closed = <C, L>(t: Open<C, L>, l: L): Tuple<C, L, L> => t(l)
+const omg1: Tuple<'foo', Tuple<'bar', Tuple<'lol', Empty>>> = foo(bar(lol(empty)))
+const omg2: Tuple<'foo', Tuple<'bar', Tuple<'lol', Empty>>> = foo(plus(bar,lol)(empty))
+
+const foobar: Plus<'foo', 'bar'> = plus(foo, bar)
 
 export {}
