@@ -92,7 +92,7 @@ describe('query', () => {
     const result = await main();
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [id1, key1, key1Query],
+      [key1Query, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(key1Result);
@@ -119,7 +119,7 @@ describe('query', () => {
     const result = await main();
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, [key1, [id1, []]]],
+      [key1Query, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(keysResult);
@@ -150,11 +150,11 @@ describe('query', () => {
     const result = await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((resolvers.checkProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1],
-      [id2],
+      ctx(id1),
+      ctx(id2),
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [id1, key1, key1Query],
+      [key1Query, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(property1Result);
@@ -180,7 +180,7 @@ describe('query', () => {
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([
-      [property2Query, []],
+      [property2Query, ctx0],
     ]);
     expect(result).toEqual(property2Result);
   });
@@ -222,11 +222,11 @@ describe('query', () => {
 
     // eslint-disable-next-line fp/no-mutating-methods
     expect((resolvers.checkProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1],
-      [id2],
+      ctx(id1),
+      ctx(id2),
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, [key1, [id1, []]]],
+      [key1Query, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);
@@ -260,11 +260,11 @@ describe('query', () => {
     const result = await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((resolvers.checkProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [id1],
-      [id2],
+      ctx(id1),
+      ctx(id2),
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, [key1, [id1, []]]],
+      [key1Query, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);

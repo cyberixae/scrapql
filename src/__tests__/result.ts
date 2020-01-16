@@ -76,7 +76,7 @@ describe('result', () => {
     await main();
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, [key1, [id1, []]]],
+      [key1Result, ctx(key1, ctx(id1))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -96,7 +96,7 @@ describe('result', () => {
     await main();
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, [key1, [id1, []]]],
+      [key1Result, ctx(key1, ctx(id1))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -124,11 +124,11 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [Either_.right(true), [id1, []]],
-      [Either_.right(false), [id2, []]],
+      [Either_.right(true), ctx(id1)],
+      [Either_.right(false), ctx(id2)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [id1, key1, key1Result],
+      [key1Result, ctx(key1, ctx(id1))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -149,7 +149,7 @@ describe('result', () => {
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([
-      [property2Result, []],
+      [property2Result, ctx0],
     ]);
   });
 
@@ -179,11 +179,11 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [Either_.right(true), [id1, []]],
-      [Either_.right(false), [id2, []]],
+      [Either_.right(true), ctx(id1)],
+      [Either_.right(false), ctx(id2)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [id1, key1, key1Result],
+      [key1Result, ctx(key1, ctx(id1))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -220,11 +220,11 @@ describe('result', () => {
     await main();
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [Either_.right(true), [id1, []]],
-      [Either_.right(false), [id2, []]],
+      [Either_.right(true), ctx(id1)],
+      [Either_.right(false), ctx(id2)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [id1, key1, key1Result],
+      [key1Result, ctx(key1, ctx(id1))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
