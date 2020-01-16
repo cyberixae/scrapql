@@ -110,7 +110,7 @@ import { failure } from 'io-ts/lib/PathReporter'
 
 interface Resolvers {
   readonly fetchReport: (a: Year) => TaskEither<Errors, Report>;
-  readonly fetchCustomer: (a: CustomerId) => TaskEither<Errors, Customer>;
+  readonly fetchCustomer: (a: true, b: CustomerId) => TaskEither<Errors, Customer>;
   readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Errors, boolean>;
 }
 

@@ -8,8 +8,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import { name, version } from '../../package.json';
 
-import { Ctx, NoCtx } from '../context';
-import * as Context_ from '../context';
+import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
 import * as scrapql from '../scrapql';
 
 interface Logger<R, A extends Array<any>> {
@@ -36,7 +35,7 @@ describe('query', () => {
   interface Resolvers extends scrapql.Resolvers {
     checkProperty1Existence: (q: Id) => TaskEither<Err1, scrapql.Existence>;
     fetchKeyResult: (q: KeyQuery, c: Ctx<Key, Ctx<Id>>) => Task<KeyResult>;
-    fetchProperty2Result: (q: Property2Query, c: NoCtx) => Task<Property2Result>;
+    fetchProperty2Result: (q: Property2Query, c: Ctx0) => Task<Property2Result>;
   }
 
   function createResolvers(): Resolvers {
@@ -53,7 +52,7 @@ describe('query', () => {
         jest.fn((_0: KeyQuery, _1: Ctx<Key, Ctx<Id>>) => key1Result),
       ),
       fetchProperty2Result: loggerTask(
-        jest.fn((_0: Property2Query, _1: NoCtx) => property2Result),
+        jest.fn((_0: Property2Query, _1: Ctx0) => property2Result),
       ),
     };
   }
@@ -88,11 +87,7 @@ describe('query', () => {
 
   it('processKey', async () => {
     const resolvers = createResolvers();
-    const context = pipe(
-      Context_.zero,
-      Context_.prepend<Id>(id1),
-      Context_.prepend<Key>(key1),
-    );
+    const context: Ctx<Key, Ctx<Id>> = ctx(key1, ctx<Id>(id1));
     const main = scrapql.processorInstance(processKey, resolvers, context)(key1Query);
     const result = await main();
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
@@ -119,10 +114,7 @@ describe('query', () => {
 
   it('processKeys', async () => {
     const resolvers = createResolvers();
-    const context = pipe(
-      Context_.zero,
-      Context_.prepend<Id>(id1),
-    );
+    const context: Ctx<Id> = ctx(id1);
     const main = scrapql.processorInstance(processKeys, resolvers, context)(keysQuery);
     const result = await main();
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
@@ -146,12 +138,12 @@ describe('query', () => {
   const processProperty1: CustomQP<
     Property1Query,
     Property1Result,
-    NoCtx
+    Ctx0
   > = scrapql.process.query.ids((r) => r.checkProperty1Existence, processKeys);
 
   it('processProperty1', async () => {
     const resolvers = createResolvers();
-    const context = Context_.zero;
+    const context: Ctx0 = ctx0;
     const main = scrapql.processorInstance(processProperty1, resolvers, context)(
       property1Query,
     );
@@ -175,12 +167,12 @@ describe('query', () => {
   const processProperty2: CustomQP<
     Property2Query,
     Property2Result,
-    NoCtx
+    Ctx0
   > = scrapql.process.query.leaf((r) => r.fetchProperty2Result);
 
   it('processProperty2', async () => {
     const resolvers = createResolvers();
-    const context = Context_.zero;
+    const context: Ctx0 = ctx0;
     const main = scrapql.processorInstance(processProperty2, resolvers, context)(
       property2Query,
     );
@@ -216,7 +208,7 @@ describe('query', () => {
     const processRoot: CustomQP<
       RootQuery,
       RootResult,
-      NoCtx
+      Ctx0
     > = scrapql.process.query.properties({
       protocol: scrapql.process.query.literal(RESULT),
       property1: processProperty1,
@@ -224,7 +216,7 @@ describe('query', () => {
     });
 
     const resolvers = createResolvers();
-    const context = Context_.zero;
+    const context: Ctx0 = ctx0;
     const main = scrapql.processorInstance(processRoot, resolvers, context)(rootQuery);
     const result = await main();
 
@@ -245,7 +237,7 @@ describe('query', () => {
       Resolvers,
       RootQuery,
       RootResult,
-      NoCtx
+      Ctx0
     >({
       protocol: scrapql.process.query.literal(RESULT),
       property1: scrapql.process.query.ids(
@@ -263,7 +255,7 @@ describe('query', () => {
     });
 
     const resolvers = createResolvers();
-    const context = Context_.zero;
+    const context: Ctx0 = ctx0;
     const main = scrapql.processorInstance(processRoot, resolvers, context)(rootQuery);
     const result = await main();
     // eslint-disable-next-line fp/no-mutating-methods

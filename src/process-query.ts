@@ -9,8 +9,8 @@ import * as Option_ from 'fp-ts/lib/Option';
 import * as boolean_ from 'fp-ts/lib/boolean';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import { Prepend } from './context';
-import * as Context_ from './context';
+import { Prepend } from './tuple';
+import * as Context_ from './tuple';
 import {
   Query,
   Result,

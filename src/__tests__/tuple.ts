@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../context';
-import { Prepend, Zero } from '../context';
+import * as Context_ from '../tuple';
+import { Prepend, Zero } from '../tuple';
 
 describe('context', () => {
   it('prepend', () => {

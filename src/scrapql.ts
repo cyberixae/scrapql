@@ -4,12 +4,12 @@ import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
+import { pipe } from 'fp-ts/lib/pipeable';
+import * as Option_ from 'fp-ts/lib/Option';
 
 export { process } from './process';
 export { reduce } from './reduce';
-import { Context, Zero } from './context';
-
-export { Context };
+import { Zero, zero, Prepend, prepend, Tuple } from './tuple';
 
 export type Json = unknown;
 
@@ -17,6 +17,38 @@ export type Id = string;
 export type Key = string;
 export type Property = string;
 export type Err = Json;
+
+export type Args<T extends any = any> = Array<T>;
+
+export type Ctx0 = Zero;
+export const ctx0 = zero;
+
+export type Ctx<N, C extends Tuple<any, any> = Zero> = Prepend<N, C>;
+export function ctx<N, A = never, B extends Tuple<any, any> = Zero>(
+  n: N,
+): Prepend<N, Zero>;
+export function ctx<N, A = never, B extends Tuple<any, any> = Zero>(
+  n: N,
+  c: Zero,
+): Prepend<N, Zero>;
+export function ctx<N, A = never, B extends Tuple<any, any> = Zero>(
+  n: N,
+  c: Prepend<A, B>,
+): Prepend<N, Prepend<A, B>>;
+export function ctx<N, A = never, B extends Tuple<any, any> = Zero>(
+  n: N,
+  c?: Tuple<A, B>,
+): Prepend<N, Tuple<A, B>> {
+  return pipe(
+    Option_.fromNullable(c),
+    Option_.fold(
+      () => prepend(n)(ctx0),
+      (old: Tuple<A, B>): Prepend<N, Tuple<A, B>> => prepend(n)(old),
+    ),
+  );
+}
+
+export type Context = Ctx<any, any> | Ctx0;
 
 export type ExistenceQuery<Q extends Id = Id> = Q & {
   readonly ExistenceQuery: unique symbol;
@@ -137,8 +169,6 @@ export type LeafResultCombiner<R extends Result> = (w: R, r: R) => R;
 export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
 };
-
-export type Args<T extends any = any> = Array<T>;
 
 export type Constructor<T, A extends Args> = (...args: A) => T;
 

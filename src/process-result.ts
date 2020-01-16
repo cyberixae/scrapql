@@ -12,8 +12,8 @@ import * as Either_ from 'fp-ts/lib/Either';
 import { pipe } from 'fp-ts/lib/pipeable';
 import { identity } from 'fp-ts/lib/function';
 
-import { Prepend } from './context';
-import * as Context_ from './context';
+import { Prepend } from './tuple';
+import * as Context_ from './tuple';
 
 import {
   ResultProcessor,
