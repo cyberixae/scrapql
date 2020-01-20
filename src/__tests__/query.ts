@@ -11,6 +11,8 @@ import { name, version } from '../../package.json';
 import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
 import * as scrapql from '../scrapql';
 
+import { Dict } from '../dict';
+
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
   mock: any;
@@ -98,8 +100,8 @@ describe('query', () => {
     expect(result).toEqual(key1Result);
   });
 
-  type KeysResult = Record<Key, KeyResult>;
-  type KeysQuery = Record<Key, KeyQuery>;
+  type KeysResult = Dict<Key, KeyResult>;
+  type KeysQuery = Dict<Key, KeyQuery>;
   const keysResult: KeysResult = {
     [key1]: key1Result,
   };
@@ -125,8 +127,8 @@ describe('query', () => {
     expect(result).toEqual(keysResult);
   });
 
-  type Property1Result = Record<Id, Either<Err1, Option<KeysResult>>>;
-  type Property1Query = Record<Id, KeysQuery>;
+  type Property1Result = Dict<Id, Either<Err1, Option<KeysResult>>>;
+  type Property1Query = Dict<Id, KeysQuery>;
   const property1Result: Property1Result = {
     [id1]: Either_.right(Option_.some(keysResult)),
     [id2]: Either_.right(Option_.none),

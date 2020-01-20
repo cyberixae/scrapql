@@ -1,4 +1,5 @@
 import { Either, either } from 'fp-ts/lib/Either';
+import { array } from 'fp-ts/lib/Array';
 import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import { Option, None, Some, option } from 'fp-ts/lib/Option';
@@ -6,8 +7,12 @@ import * as Either_ from 'fp-ts/lib/Either';
 import * as Array_ from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';
 import * as Record_ from 'fp-ts/lib/Record';
+import * as boolean_ from 'fp-ts/lib/boolean';
+import { sequenceS } from 'fp-ts/lib/Apply';
 import { Lazy } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
+
+import * as Dict_ from './dict';
 
 import {
   Result,
@@ -53,19 +58,57 @@ export const leaf = <R extends LeafResult>(combineLeafResult: LeafResultCombiner
   );
 };
 
+const getSubResults = <K extends Key>(k: K) => <SR extends Result>(results: Results<KeysResult<SR, K>>): Option<Results<SR>> => pipe(
+  results,
+  NonEmptyArray_.map((result) => pipe(
+    result,
+    Dict_.lookup(k),
+  )),
+  nonEmptyArray.sequence(option),
+);
+
+// returns Some if all values are equal or None if some values differ
+const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> => pipe(
+    duplicates,
+    Array_.uniq({ equals: (a: T, b: T) => a === b}),
+    NonEmptyArray_.fromArray,
+    Option_.chain(([k, ...ks]: NonEmptyArray<T>): Option<T> => pipe(
+      ks.length === 0,
+      boolean_.fold(
+        () => Option_.none,
+        () => Option_.some(k),
+      ),
+    )),
+);
+
 export const keys = <K extends Key, SR extends Result>(
   reduceSubResults: ResultReducer<SR>,
-) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> =>
-  pipe(
-    NonEmptyArray_.head(results),
-    Record_.mapWithIndex((key: K) => {
-      const subResults = pipe(
-        results,
-        NonEmptyArray_.map((r) => r[key]),
-      );
-      return reduceSubResults(subResults);
-    }),
-  );
+) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> => pipe(
+  results,
+  nonEmptyArray.sequence(array),
+  Array_.map((variants) => pipe(
+    {
+      k: pipe(
+        variants,
+        NonEmptyArray_.map(([k, _v]) => k),
+        reduceDuplicateKeys,
+      ),
+      v: pipe(
+        variants,
+        NonEmptyArray_.map(([_k, v]) => v),
+        reduceSubResults,
+        Option_.some,
+      )
+    },
+    sequenceS(option),
+    Option_.map(({k, v}): [K, SR] => [k, v]),
+  )),
+  array.sequence(option),
+  Option_.getOrElse((): Array<[K, SR]> => {
+    // eslint-disable-next-line fp/no-throw
+    throw new Error('reduce error, keys result not symmetric');
+  }),
+);
 
 const isAllNone = <T>(
   options: NonEmptyArray<Option<T>>,
@@ -91,7 +134,7 @@ export const ids = <K extends Id, E extends Err, SR extends Result>(
 ) => (results: Results<IdsResult<SR, K, E>>): IdsResult<SR, K, E> =>
   pipe(
     NonEmptyArray_.head(results),
-    Record_.mapWithIndex(
+    Dict_.mapWithIndex(
       (key: K): Either<E, Option<SR>> => {
         return pipe(
           results,

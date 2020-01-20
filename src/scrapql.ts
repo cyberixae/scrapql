@@ -10,6 +10,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 export { process } from './process';
 export { reduce } from './reduce';
 import { Zero, zero, Prepend, prepend, Tuple } from './tuple';
+import { Dict } from './dict';
 
 export type Json = unknown;
 
@@ -58,8 +59,8 @@ export const existenceQuery = <I extends Id = Id>(id: I): ExistenceQuery<I> =>
 
 export type LiteralQuery = Json;
 export type LeafQuery = Json;
-export type KeysQuery<SQ extends Query = Json, K extends Key = Key> = Record<K, SQ>;
-export type IdsQuery<SQ extends Query = Json, I extends Id = Id> = Record<I, SQ>;
+export type KeysQuery<SQ extends Query = Json, K extends Key = Key> = Dict<K, SQ>;
+export type IdsQuery<SQ extends Query = Json, I extends Id = Id> = Dict<I, SQ>;
 export type PropertiesQuery<
   Q extends { [I in Property]: Query } = { [I in Property]: Json }
 > = Partial<Q>;
@@ -73,12 +74,12 @@ export type Existence = boolean;
 export type ExistenceResult<E extends Err = Err> = Either<E, Existence>;
 export type LiteralResult = Json;
 export type LeafResult = Json;
-export type KeysResult<SR extends Result = Json, K extends Key = Key> = Record<K, SR>;
+export type KeysResult<SR extends Result = Json, K extends Key = Key> = Dict<K, SR>;
 export type IdsResult<
   SR extends Result = Json,
   I extends Id = Id,
   E extends Err = Err
-> = Record<I, Either<E, Option<SR>>>;
+> = Dict<I, Either<E, Option<SR>>>;
 export type PropertiesResult<
   R extends { [I in Property]: Result } = { [I in Property]: Json }
 > = Partial<R>;

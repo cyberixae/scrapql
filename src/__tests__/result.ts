@@ -9,6 +9,8 @@ import { name, version } from '../../package.json';
 import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
 import * as scrapql from '../scrapql';
 
+import { Dict } from '../dict';
+
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
   mock: any;
@@ -81,7 +83,7 @@ describe('result', () => {
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
 
-  type KeysResult = Record<Key, KeyResult>;
+  type KeysResult = Dict<Key, KeyResult>;
   const keysResult: KeysResult = {
     [key1]: key1Result,
   };
@@ -101,7 +103,7 @@ describe('result', () => {
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
 
-  type Property1Result = Record<Id, Either<Err1, Option<KeysResult>>>;
+  type Property1Result = Dict<Id, Either<Err1, Option<KeysResult>>>;
   const property1Result: Property1Result = {
     [id1]: Either_.right(Option_.some(keysResult)),
     [id2]: Either_.right(Option_.none),
