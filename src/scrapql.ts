@@ -10,7 +10,6 @@ import * as Option_ from 'fp-ts/lib/Option';
 import { Zero, zero, Prepend, prepend, Tuple } from './tuple';
 import { Dict } from './dict';
 
-export { tuple, dict } from './format';
 export { process } from './process';
 export { reduce } from './reduce';
 

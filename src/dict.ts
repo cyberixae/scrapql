@@ -10,6 +10,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 export const Dict = (K: t.Mixed, V: t.Mixed) => t.array(t.tuple([K, V]));
 export type Dict<K, V> = Array<[K, V]>;
+export const dict = <D extends Dict<any, any>>(...d: D): D => d;
 
 export function mapWithIndex<K extends string, A, B>(
   f: (k: K, a: A) => B,

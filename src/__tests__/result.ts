@@ -9,7 +9,7 @@ import { name, version } from '../../package.json';
 import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
 import * as scrapql from '../scrapql';
 
-import { Dict } from '../dict';
+import { Dict, dict } from '../dict';
 
 interface Logger<R, A extends Array<any>> {
   (...a: A): R;
@@ -84,7 +84,7 @@ describe('result', () => {
   });
 
   type KeysResult = Dict<Key, KeyResult>;
-  const keysResult: KeysResult = [[key1, key1Result]];
+  const keysResult: KeysResult = dict([key1, key1Result]);
   const processKeys: CustomRP<KeysResult, Ctx<Id>> = scrapql.process.result.keys(
     processKey,
   );
@@ -102,10 +102,10 @@ describe('result', () => {
   });
 
   type Property1Result = Dict<Id, Either<Err1, Option<KeysResult>>>;
-  const property1Result: Property1Result = [
+  const property1Result: Property1Result = dict(
     [id1, Either_.right(Option_.some(keysResult))],
     [id2, Either_.right(Option_.none)],
-  ];
+  );
   const processProperty1: CustomRP<Property1Result, Ctx0> = scrapql.process.result.ids<
     Reporters,
     Property1Result,
