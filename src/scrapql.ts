@@ -7,10 +7,12 @@ import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 import * as Option_ from 'fp-ts/lib/Option';
 
-export { process } from './process';
-export { reduce } from './reduce';
 import { Zero, zero, Prepend, prepend, Tuple } from './tuple';
 import { Dict } from './dict';
+
+export { tuple, dict } from './format';
+export { process } from './process';
+export { reduce } from './reduce';
 
 export type Json = unknown;
 
