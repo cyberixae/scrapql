@@ -12,8 +12,6 @@ import { sequenceS } from 'fp-ts/lib/Apply';
 import { Lazy } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Dict_ from './dict';
-
 import {
   Result,
   LiteralResult,
@@ -57,20 +55,6 @@ export const leaf = <R extends LeafResult>(combineLeafResult: LeafResultCombiner
     Array_.reduce(writeResult, combineLeafResult),
   );
 };
-
-const getSubResults = <K extends Key>(k: K) => <SR extends Result>(
-  results: Results<KeysResult<SR, K>>,
-): Option<Results<SR>> =>
-  pipe(
-    results,
-    NonEmptyArray_.map((result) =>
-      pipe(
-        result,
-        Dict_.lookup(k),
-      ),
-    ),
-    nonEmptyArray.sequence(option),
-  );
 
 // returns Some if all values are equal or None if some values differ
 const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
@@ -157,9 +141,7 @@ export const ids = <K extends Id, E extends Err, SR extends Result>(
             ),
             v: pipe(
               variants,
-              (x: NonEmptyArray<[K, Either<E, Option<SR>>]>) => x,
               NonEmptyArray_.map(([_k, v]): Either<E, Option<SR>> => v),
-              (x: NonEmptyArray<Either<E, Option<SR>>>) => x,
               nonEmptyArray.sequence(either),
               Either_.chain(
                 (
@@ -182,15 +164,11 @@ export const ids = <K extends Id, E extends Err, SR extends Result>(
                   },
                 ),
               ),
-              (x: Either<E, Option<SR>>) => x,
               Option_.some,
             ),
           },
-          (x: { k: Option<K>; v: Option<Either<E, Option<SR>>> }) => x,
           sequenceS(option),
-          (x: Option<{ k: K; v: Either<E, Option<SR>> }>) => x,
-          Option_.map(({ k, v }): [K, Either<E, Option<SR>>] => [k, v]),
-          (x: Option<[K, Either<E, Option<SR>>]>) => x,
+          Option_.map(({ k, v }) => [k, v]),
         ),
     ),
     array.sequence(option),

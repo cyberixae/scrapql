@@ -40,7 +40,7 @@ export function lookup<K extends string>(k: K) {
     pipe(
       dict,
       Array_.findFirst(([ki, _v]) => ki === k),
-      Option_.map(([k, v]) => v),
+      Option_.map(([_k, v]) => v),
     );
 }
 
