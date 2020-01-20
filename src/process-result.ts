@@ -66,7 +66,7 @@ export function leaf<A extends Reporters, R extends LeafResult, C extends Contex
 export function keys<
   A extends Reporters,
   R extends KeysResult<SR, K>,
-  K extends Key & keyof R,
+  K extends Key,
   SR extends Result,
   C extends Context
 >(subProcessor: ResultProcessor<SR, A, Prepend<K, C>>): ResultProcessor<R, A, C> {

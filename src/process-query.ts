@@ -75,7 +75,7 @@ export function leaf<
 export function keys<
   A extends Resolvers,
   Q extends KeysQuery<SQ, K>,
-  K extends Key & keyof Q,
+  K extends Key,
   SQ extends Query,
   SR extends Result,
   C extends Context
