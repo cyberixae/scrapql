@@ -8,7 +8,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 import * as Array_ from 'fp-ts/lib/Array';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-export const Dict = (K: t.Mixed, V: t.Mixed) => t.array(t.tuple([K, V]));
+export const Dict = <KeyC extends t.Mixed, ValueC extends t.Mixed>(K: KeyC, V: ValueC) => t.array(t.tuple([K, V]));
 export type Dict<K, V> = Array<[K, V]>;
 export const dict = <D extends Dict<any, any>>(...d: D): D => d;
 

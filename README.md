@@ -35,7 +35,13 @@ const example: any = {
   },
 };
 
-type Json = unknown;
+type Json =
+    | string
+    | number
+    | boolean
+    | null
+    | { [property: string]: Json }
+    | Json[];
 
 interface Database {
   hasCustomer: (c: string) => Promise<boolean>;
@@ -80,6 +86,9 @@ type Errors = t.TypeOf<typeof Errors>;
 ## Define Query Validator
 
 ```typescript
+
+import { Dict } from 'scrapql/lib/dict';
+
 // name and version from package.json
 const packageName = 'scrapql-example-app';
 const packageVersion = '0.0.1';
@@ -89,11 +98,33 @@ const QUERY_PROTOCOL= `${packageName}/${packageVersion}/scrapql/query`;
 const Query = t.type({
   protocol: t.literal(QUERY_PROTOCOL),
   get: t.type({
-    reports: t.record(Year, Report),
-    customers: t.record(CustomerId, Customer),
+    reports: Dict(Year, Report),
+    customers: Dict(CustomerId, Customer),
   }),
 });
 export type Query = t.TypeOf<typeof Query>;
+```
+
+You can use the query validator to validate JSON queries as follows.
+
+```typescript
+import * as tPromise from 'io-ts-promise';
+
+const exampleJsonQuery: Json = {
+  protocol: QUERY_PROTOCOL,
+  get: {
+    reports: [
+      ['2018', true],
+      ['3030', true],
+    ],
+    customers: [
+      ['c002', true],
+      ['c007', true],
+    ],
+  },
+};
+
+const exampleQuery: Promise<Query> = tPromise.decode(Query, exampleJsonQuery);
 ```
 
 ## Define Query Resolvers
@@ -108,7 +139,7 @@ import * as Either_ from 'fp-ts/lib/Either';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
 import { failure } from 'io-ts/lib/PathReporter'
 
-import { Ctx } from './scrapql';
+import { Ctx } from 'scrapql';
 
 interface Resolvers {
   readonly fetchReport: (a: unknown, b: Ctx<Year>) => TaskEither<Errors, Report>;
@@ -141,7 +172,7 @@ const resolvers: Resolvers = {
 ## Define Query Processor
 
 ```typescript
-import { process, processorInstance, Ctx0, ctx0 } from './scrapql';
+import { process, processorInstance, Ctx0, ctx0 } from 'scrapql';
 
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
@@ -163,43 +194,17 @@ const processQuery = processorInstance(
 );
 ```
 
-## Running The Query Processor
-
-Now that we have a query processor we can finally use it to process queries.
-The query processor works as follows.
+You can run the query processor as follows.
 
 ```typescript
-const query: Json = {
-  protocol: QUERY_PROTOCOL,
-  get: {
-    reports: {
-      2018: true,
-      3030: true,
-    },
-    customers: {
-      c002: true,
-      c007: true,
-    },
-  },
-};
-
-async function jsonQueryProcessor<R>(query: Json): Promise<R> {
-  const main = pipe(
-    Query.decode(query),
-    TaskEither_.fromEither,
-    TaskEither_.mapLeft(failure),
-    TaskEither_.chain(processQuery),
-  );
-  return main();
-}
+// Set output to Promise<typeof exampleResult>, see exampleResult below
+const output = tPromise.decode(Query, exampleJsonQuery).then(processQuery).then((run) => run());
 ```
 
-Executing main should return a promise with the query result of type `R`. Which
-should look as follows. The top level wrapper contains the result of the query
-decode and should return `left` in case of an invalid query.
+The result object should look as follows.
 
 ```typescript
-const result: Json = {
+const exampleResult = {
   _tag: 'Right',
   right: {
     protocol: 'scrapql-example-app/0.0.1/scrapql/result',
@@ -227,6 +232,8 @@ const result: Json = {
 
 ## Define Result Validator
 
+Now that we know what the output will look like we can define a result validator.
+
 ```typescript
 import { option as tOption } from 'io-ts-types/lib/option';
 import { either as tEither } from 'io-ts-types/lib/either';
@@ -234,12 +241,24 @@ import { either as tEither } from 'io-ts-types/lib/either';
 const Result = t.type({
   protocol: t.literal(RESULT_PROTOCOL),
   get: t.type({
-    reports: t.record(Year, tEither(Errors, Report)),
-    customers: t.record(CustomerId, tEither(Errors, tOption(Customer))),
+    reports: Dict(Year, tEither(Errors, Report)),
+    customers: Dict(CustomerId, tEither(Errors, tOption(Customer))),
   }),
 });
 export type Result = t.TypeOf<typeof Result>;
 ```
+
+We can now use the result validator to encode the result as JSON.
+
+```typescript
+async function jsonQueryProcessor(jsonQuery: Json): Promise<Json> {
+  const q: Query = await tPromise.decode(Query, jsonQuery);
+  const r: Result = await processQuery(q)();
+  const jsonResult: Json = Result.encode(r)
+  return jsonResult;
+}
+```
+
 
 ## Define Result Reporters
 
