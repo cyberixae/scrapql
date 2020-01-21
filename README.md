@@ -176,6 +176,7 @@ import { QueryProcessor, process, Ctx0 } from 'scrapql';
 
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
+// Ideally the type casts would be unnecessary, see https://github.com/maasglobal/scrapql/issues/12
 const processQuery: QueryProcessor<Query, Result, Resolvers, Ctx0> = process.query.properties<Resolvers, Query, Result, Ctx0>({
   protocol: process.query.literal(RESULT_PROTOCOL),
     reports: process.query.keys(
@@ -336,6 +337,7 @@ const reporters: Reporters = {
 ```typescript
 import { ResultProcessor } from 'scrapql';
 
+// Ideally the type casts would be unnecessary, see https://github.com/maasglobal/scrapql/issues/12
 const processResult: ResultProcessor<Result, Reporters, Ctx0> = process.result.properties({
     protocol: process.result.literal(),
     reports: process.result.keys(
