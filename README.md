@@ -142,8 +142,8 @@ import { failure } from 'io-ts/lib/PathReporter'
 import { Ctx } from 'scrapql';
 
 interface Resolvers {
-  readonly fetchReport: (a: unknown, b: Ctx<Year>) => TaskEither<Errors, Report>;
-  readonly fetchCustomer: (a: unknown, b: Ctx<CustomerId>) => TaskEither<Errors, Customer>;
+  readonly fetchReport: (a: true, b: Ctx<Year>) => TaskEither<Errors, Report>;
+  readonly fetchCustomer: (a: true, b: Ctx<CustomerId>) => TaskEither<Errors, Customer>;
   readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Errors, boolean>;
 }
 
@@ -172,24 +172,24 @@ const resolvers: Resolvers = {
 ## Define Query Processor
 
 ```typescript
-import { process, processorInstance, Ctx0, ctx0 } from 'scrapql';
+import { QueryProcessor, process, Ctx0 } from 'scrapql';
 
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
-const processQuery = process.query.properties<Resolvers, Query, Result, Ctx0>({
+const processQuery: QueryProcessor<Query, Result, Resolvers, Ctx0> = process.query.properties<Resolvers, Query, Result, Ctx0>({
   protocol: process.query.literal(RESULT_PROTOCOL),
     reports: process.query.keys(
       process.query.properties({
         get: process.query.leaf((r: Resolvers) => r.fetchReport)
-      }),
+      }) as QueryProcessor<{ get: true }, { get: Either<Errors, Report> }, Resolvers, Ctx<Year>> ,
     ),
     customers: process.query.ids(
       (r: Resolvers) => r.checkCustomerExistence,
       process.query.properties({
         get: process.query.leaf((r: Resolvers) => r.fetchCustomer),
-      }),
-    ),
-  });
+      }) as QueryProcessor<{ get: true }, { get: Either<Errors, Customer> }, Resolvers, Ctx<CustomerId>>,
+    ) as QueryProcessor<Dict<CustomerId, { get: true; }>, Dict<CustomerId, Either<Errors, { get: Either<Errors, Option<Customer>>; }>>, Resolvers, Ctx0>,
+  }) as QueryProcessor<Query, Result, Resolvers, Ctx0>;
 ```
 
 Running the processor will produce the following result.
@@ -197,49 +197,53 @@ Running the processor will produce the following result.
 ```typescript
 const exampleResult = {
   protocol: 'scrapql-example-app/0.0.1/scrapql/result',
-    reports: [
-      ['2018', {
-        get: {
-          _tag: 'Right',
-          right: { profit: 100 }
-        },
-      }],
-      ['3030', {
-        get: {
-          _tag: 'Right',
-          right: { profit: 0 }
-        },
-      }],
-    ],
-    customers: [
-      ['c002', {
-        get: {
-          _tag: 'Right',
-          right: {
-            _tag: 'Some',
-            some: {
+  reports: [
+    ['2018', {
+      get: {
+        _tag: 'Right',  // get success
+        right: { profit: 100 }
+      },
+    }],
+    ['3030', {
+      get: {
+        _tag: 'Right',  // get success
+        right: { profit: 0 }
+      },
+    }],
+  ],
+  customers: [
+    ['c002', {
+      _tag: 'Right',  // identity check success
+      right: {
+        _tag: 'Some',  // customer exists
+        some: {
+          get: {
+            _tag: 'Right',  // get success
+            right: {
               name: 'Magica De Spell',
               age: '35',
             },
           },
         },
-      }],
-      ['c007', {
+      },
+    }],
+    ['c007', {
+      _tag: 'Right',  // identity check success
+      right: {
         get: {
-          _tag: 'Right',
-          right: {
-            _tag: 'None',
-          },
+          _tag: 'None',  // customer does not exist
         },
-      }],
-    ],
-  },
+      },
+    }],
+  ],
 };
 ```
 
 You can run the processor as follows.
 
 ```typescript
+import { processorInstance, ctx0 } from 'scrapql';
+
 async function generateExampleOutput() {
   const qp = processorInstance(processQuery, resolvers, ctx0);
   const q: Query = await tPromise.decode(Query, exampleJsonQuery);
@@ -265,9 +269,9 @@ const Result = t.type({
   reports: Dict(Year, t.type({
     get: tEither(Errors, Report),
   })),
-  customers: Dict(CustomerId, t.type({
+  customers: Dict(CustomerId, tEither(Errors, t.type({
     get: tEither(Errors, tOption(Customer)),
-  })),
+  }))),
 });
 type Result = t.TypeOf<typeof Result>;
 ```
@@ -330,12 +334,14 @@ const reporters: Reporters = {
 ## Define Result Processor
 
 ```typescript
-const processResult = process.result.properties({
+import { ResultProcessor } from 'scrapql';
+
+const processResult: ResultProcessor<Result, Reporters, Ctx0> = process.result.properties({
     protocol: process.result.literal(),
     reports: process.result.keys(
       process.result.properties({
         get: process.result.leaf((r: Reporters) => r.receiveReport)
-      }),
+      }) as ResultProcessor<{ get: Either<Errors, Report> }, Reporters, Ctx<string>>,
     ),
     customers: process.result.ids(
       (r: Reporters) => r.learnCustomerExistence,
@@ -343,7 +349,7 @@ const processResult = process.result.properties({
         get: process.result.leaf((r: Reporters) => r.receiveCustomer)
       }),
     ),
-  });
+  }) as ResultProcessor<Result, Reporters, Ctx0>;
 ```
 
 ## Define a Protocol Bundle
@@ -390,7 +396,6 @@ async function server(request: string): Promise<string> {
       Either_.parseJSON(body, (reason) => [String(reason)]),
       TaskEither_.fromEither,
     )),
-    (x: TaskEither<Array<string>,unknown>) => x,
     TaskEither_.chain((json: unknown) => pipe(
       json,
       Query.decode,
