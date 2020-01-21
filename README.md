@@ -98,11 +98,11 @@ const QUERY_PROTOCOL= `${packageName}/${packageVersion}/scrapql/query`;
 const Query = t.type({
   protocol: t.literal(QUERY_PROTOCOL),
   get: t.type({
-    reports: Dict(Year, Report),
-    customers: Dict(CustomerId, Customer),
+    reports: Dict(Year, t.literal(true)),
+    customers: Dict(CustomerId, t.literal(true)),
   }),
 });
-export type Query = t.TypeOf<typeof Query>;
+type Query = t.TypeOf<typeof Query>;
 ```
 
 You can use the query validator to validate JSON queries as follows.
@@ -194,41 +194,57 @@ const processQuery = processorInstance(
 );
 ```
 
-You can run the query processor as follows.
-
-```typescript
-// Set output to Promise<typeof exampleResult>, see exampleResult below
-const output = tPromise.decode(Query, exampleJsonQuery).then(processQuery).then((run) => run());
-```
-
-The result object should look as follows.
+Running the processor will produce the following result.
 
 ```typescript
 const exampleResult = {
-  _tag: 'Right',
-  right: {
-    protocol: 'scrapql-example-app/0.0.1/scrapql/result',
-    get: {
-      reports: {
-        2018: { profit: 100 },
-        3030: { profit: 0 },
-      },
-      customers: {
-        c002: {
+  protocol: 'scrapql-example-app/0.0.1/scrapql/result',
+  get: {
+    reports: [
+      ['2018', {
+        _tag: 'Right',
+        right: { profit: 100 }
+      }],
+      ['3030', {
+        _tag: 'Right',
+        right: { profit: 0 }
+      }],
+    ],
+    customers: [
+      ['c002', {
+        _tag: 'Right',
+        right: {
           _tag: 'Some',
-          value: {
+          some: {
             name: 'Magica De Spell',
             age: '35',
           },
         },
-        c007: {
+      }],
+      ['c007', {
+        _tag: 'Right',
+        right: {
           _tag: 'None',
         },
-      },
-    },
+      }],
+    ],
   },
 };
 ```
+
+You can run the processor as follows.
+
+```typescript
+async function generateExampleOutput() {
+  const q: Query = await tPromise.decode(Query, exampleJsonQuery);
+  const output = await processQuery(q)();
+  console.log(output);
+}
+
+generateExampleOutput();
+```
+
+The result object should look as follows.
 
 ## Define Result Validator
 
@@ -245,7 +261,7 @@ const Result = t.type({
     customers: Dict(CustomerId, tEither(Errors, tOption(Customer))),
   }),
 });
-export type Result = t.TypeOf<typeof Result>;
+type Result = t.TypeOf<typeof Result>;
 ```
 
 We can now use the result validator to encode the result as JSON.
@@ -254,7 +270,7 @@ We can now use the result validator to encode the result as JSON.
 async function jsonQueryProcessor(jsonQuery: Json): Promise<Json> {
   const q: Query = await tPromise.decode(Query, jsonQuery);
   const r: Result = await processQuery(q)();
-  const jsonResult: Json = Result.encode(r)
+  const jsonResult: Json = JSON.parse(JSON.stringify(Result.encode(r)));
   return jsonResult;
 }
 ```
@@ -394,4 +410,14 @@ async function client(query: Query): Promise<void> {
   );
   return main();
 }
+```
+
+
+The following exports are used by test code.
+
+```typescript
+export { Customer, CustomerId, Errors, Json, QUERY_PROTOCOL, Query,
+RESULT_PROTOCOL, Report, Result, Year, client, db, example, exampleJsonQuery,
+exampleQuery, exampleResult, jsonQueryProcessor, packageName, packageVersion,
+processQuery, processResult, reporters, resolvers, server }
 ```
