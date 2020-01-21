@@ -97,10 +97,12 @@ const QUERY_PROTOCOL= `${packageName}/${packageVersion}/scrapql/query`;
 
 const Query = t.type({
   protocol: t.literal(QUERY_PROTOCOL),
-  get: t.type({
-    reports: Dict(Year, t.literal(true)),
-    customers: Dict(CustomerId, t.literal(true)),
-  }),
+  reports: Dict(Year, t.type({
+    get: t.literal(true),
+  })),
+  customers: Dict(CustomerId, t.type({
+    get: t.literal(true),
+  })),
 });
 type Query = t.TypeOf<typeof Query>;
 ```
@@ -112,16 +114,14 @@ import * as tPromise from 'io-ts-promise';
 
 const exampleJsonQuery: Json = {
   protocol: QUERY_PROTOCOL,
-  get: {
-    reports: [
-      ['2018', true],
-      ['3030', true],
-    ],
-    customers: [
-      ['c002', true],
-      ['c007', true],
-    ],
-  },
+  reports: [
+    ['2018', {get: true}],
+    ['3030', {get: true}],
+  ],
+  customers: [
+    ['c002', {get: true}],
+    ['c007', {get: true}],
+  ],
 };
 
 const exampleQuery: Promise<Query> = tPromise.decode(Query, exampleJsonQuery);
@@ -177,16 +177,18 @@ import { process, processorInstance, Ctx0, ctx0 } from 'scrapql';
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
 const processQuery = process.query.properties<Resolvers, Query, Result, Ctx0>({
-    protocol: process.query.literal(RESULT_PROTOCOL),
-    get: process.query.properties({
-      reports: process.query.keys(
-        process.query.leaf((r: Resolvers) => r.fetchReport)
-      ),
-      customers: process.query.ids(
-        (r: Resolvers) => r.checkCustomerExistence,
-        process.query.leaf((r: Resolvers) => r.fetchCustomer),
-      ),
-    }),
+  protocol: process.query.literal(RESULT_PROTOCOL),
+    reports: process.query.keys(
+      process.query.properties({
+        get: process.query.leaf((r: Resolvers) => r.fetchReport)
+      }),
+    ),
+    customers: process.query.ids(
+      (r: Resolvers) => r.checkCustomerExistence,
+      process.query.properties({
+        get: process.query.leaf((r: Resolvers) => r.fetchCustomer),
+      }),
+    ),
   });
 ```
 
@@ -195,32 +197,39 @@ Running the processor will produce the following result.
 ```typescript
 const exampleResult = {
   protocol: 'scrapql-example-app/0.0.1/scrapql/result',
-  get: {
     reports: [
       ['2018', {
-        _tag: 'Right',
-        right: { profit: 100 }
+        get: {
+          _tag: 'Right',
+          right: { profit: 100 }
+        },
       }],
       ['3030', {
-        _tag: 'Right',
-        right: { profit: 0 }
+        get: {
+          _tag: 'Right',
+          right: { profit: 0 }
+        },
       }],
     ],
     customers: [
       ['c002', {
-        _tag: 'Right',
-        right: {
-          _tag: 'Some',
-          some: {
-            name: 'Magica De Spell',
-            age: '35',
+        get: {
+          _tag: 'Right',
+          right: {
+            _tag: 'Some',
+            some: {
+              name: 'Magica De Spell',
+              age: '35',
+            },
           },
         },
       }],
       ['c007', {
-        _tag: 'Right',
-        right: {
-          _tag: 'None',
+        get: {
+          _tag: 'Right',
+          right: {
+            _tag: 'None',
+          },
         },
       }],
     ],
@@ -253,10 +262,12 @@ import { either as tEither } from 'io-ts-types/lib/either';
 
 const Result = t.type({
   protocol: t.literal(RESULT_PROTOCOL),
-  get: t.type({
-    reports: Dict(Year, tEither(Errors, Report)),
-    customers: Dict(CustomerId, tEither(Errors, tOption(Customer))),
-  }),
+  reports: Dict(Year, t.type({
+    get: tEither(Errors, Report),
+  })),
+  customers: Dict(CustomerId, t.type({
+    get: tEither(Errors, tOption(Customer)),
+  })),
 });
 type Result = t.TypeOf<typeof Result>;
 ```
@@ -321,15 +332,17 @@ const reporters: Reporters = {
 ```typescript
 const processResult = process.result.properties({
     protocol: process.result.literal(),
-    get: process.result.properties({
-      reports: process.result.keys(
-        process.result.leaf((r: Reporters) => r.receiveReport)
-      ),
-      customers: process.result.ids(
-        (r: Reporters) => r.learnCustomerExistence,
-        process.result.leaf((r: Reporters) => r.receiveCustomer)
-      ),
-    }),
+    reports: process.result.keys(
+      process.result.properties({
+        get: process.result.leaf((r: Reporters) => r.receiveReport)
+      }),
+    ),
+    customers: process.result.ids(
+      (r: Reporters) => r.learnCustomerExistence,
+      process.result.properties({
+        get: process.result.leaf((r: Reporters) => r.receiveCustomer)
+      }),
+    ),
   });
 ```
 
