@@ -176,8 +176,7 @@ import { process, processorInstance, Ctx0, ctx0 } from 'scrapql';
 
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
-const processQuery = processorInstance(
-  process.query.properties<Resolvers, Query, Result, Ctx0>({
+const processQuery = process.query.properties<Resolvers, Query, Result, Ctx0>({
     protocol: process.query.literal(RESULT_PROTOCOL),
     get: process.query.properties({
       reports: process.query.keys(
@@ -188,10 +187,7 @@ const processQuery = processorInstance(
         process.query.leaf((r: Resolvers) => r.fetchCustomer),
       ),
     }),
-  }),
-  resolvers,
-  ctx0,
-);
+  });
 ```
 
 Running the processor will produce the following result.
@@ -236,8 +232,9 @@ You can run the processor as follows.
 
 ```typescript
 async function generateExampleOutput() {
+  const qp = processorInstance(processQuery, resolvers, ctx0);
   const q: Query = await tPromise.decode(Query, exampleJsonQuery);
-  const output = await processQuery(q)();
+  const output = await qp(q)();
   console.log(output);
 }
 
@@ -268,8 +265,9 @@ We can now use the result validator to encode the result as JSON.
 
 ```typescript
 async function jsonQueryProcessor(jsonQuery: Json): Promise<Json> {
+  const qp = processorInstance(processQuery, resolvers, ctx0);
   const q: Query = await tPromise.decode(Query, jsonQuery);
-  const r: Result = await processQuery(q)();
+  const r: Result = await qp(q)();
   const jsonResult: Json = JSON.parse(JSON.stringify(Result.encode(r)));
   return jsonResult;
 }
@@ -321,10 +319,7 @@ const reporters: Reporters = {
 ## Define Result Processor
 
 ```typescript
-
-
-const processResult = processorInstance(
-  process.result.properties({
+const processResult = process.result.properties({
     protocol: process.result.literal(),
     get: process.result.properties({
       reports: process.result.keys(
@@ -335,12 +330,36 @@ const processResult = processorInstance(
         process.result.leaf((r: Reporters) => r.receiveCustomer)
       ),
     }),
-  }),
-  reporters,
-  ctx0,
-);
+  });
 ```
 
+## Define a Protocol Bundle
+
+A scrapql protocol bundle contains all of the tools we created above.
+Creating one is not necessary but may be useful.
+
+```typescript
+import { Protocol } from 'scrapql';
+
+type Bundle = Protocol<
+  (q: Query) => Query,
+  (r: Result) => Result,
+  (e: Errors) => Errors,
+  Resolvers,
+  Reporters
+>;
+
+const exampleBundle: Partial<Bundle> = {
+  Query,
+  Result,
+  Err: Errors,
+  query: (q: Query) => q,
+  result: (r: Result) => r,
+  err: (e: Errors) => e,
+  processQuery,
+  processResult,
+}
+```
 
 ## Example Flow
 
@@ -366,7 +385,8 @@ async function server(request: string): Promise<string> {
       TaskEither_.fromEither,
     )),
     TaskEither_.chain((query: Query) => pipe(
-      processQuery(query),
+      processorInstance(processQuery, resolvers, ctx0),
+      (qp) => qp(query),
       Task_.map((result) => Either_.right(result)),
     )),
     Task_.map((result: Either<Errors, Result>) => tEither(Errors, Result).encode(result)),
@@ -405,7 +425,10 @@ async function client(query: Query): Promise<void> {
     )),
     TaskEither_.fold(
       (errors) => () => Promise.resolve(console.error(errors)),
-      (result: Result) => processResult(result),
+      (result: Result) => pipe(
+        processorInstance( processResult, reporters, ctx0 ),
+        (rp) => rp(result),
+      ),
     ),
   );
   return main();
@@ -416,8 +439,8 @@ async function client(query: Query): Promise<void> {
 The following exports are used by test code.
 
 ```typescript
-export { Customer, CustomerId, Errors, Json, QUERY_PROTOCOL, Query,
-RESULT_PROTOCOL, Report, Result, Year, client, db, example, exampleJsonQuery,
+export { Bundle, Customer, CustomerId, Errors, Json, QUERY_PROTOCOL, Query,
+RESULT_PROTOCOL, Report, Result, Year, client, db, example, exampleBundle, exampleJsonQuery,
 exampleQuery, exampleResult, jsonQueryProcessor, packageName, packageVersion,
 processQuery, processResult, reporters, resolvers, server }
 ```
