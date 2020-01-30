@@ -180,7 +180,7 @@ export const ids = <K extends Id, E extends Err, SR extends Result<any>>(
     ),
   );
 
-export const properties = <R extends PropertiesResult>(
+export const properties = <R extends PropertiesResult<any>>(
   processors: ResultReducerMapping<R>,
 ) => <P extends Property & keyof R>(results: Results<R>): R =>
   pipe(

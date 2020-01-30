@@ -39,7 +39,7 @@ import {
 // literal result is known on forehand so we throw it away
 
 export function literal<
-  A extends Reporters,
+  A extends Reporters<any>,
   R extends LiteralResult<any>,
   C extends Context
 >(): ResultProcessor<R, A, C> {
@@ -50,9 +50,11 @@ export function literal<
 
 // leaf result contains part of the payload
 
-export function leaf<A extends Reporters, R extends LeafResult<any>, C extends Context>(
-  connect: ReporterConnector<A, R, C>,
-): ResultProcessor<R, A, C> {
+export function leaf<
+  A extends Reporters<any>,
+  R extends LeafResult<any>,
+  C extends Context
+>(connect: ReporterConnector<A, R, C>): ResultProcessor<R, A, C> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
@@ -64,7 +66,7 @@ export function leaf<A extends Reporters, R extends LeafResult<any>, C extends C
 // keys result contains data that always exists in database
 
 export function keys<
-  A extends Reporters,
+  A extends Reporters<any>,
   R extends KeysResult<SR, K>,
   K extends Key,
   SR extends Result<any>,
@@ -91,7 +93,7 @@ export function keys<
 // ids result contains data that may not exist in database
 
 export function ids<
-  A extends Reporters,
+  A extends Reporters<any>,
   R extends IdsResult<SR, I, E>,
   I extends Id,
   SR extends Result<any>,
@@ -141,8 +143,8 @@ export function ids<
 // properties result contains results for a set of optional queries
 
 export function properties<
-  A extends Reporters,
-  R extends PropertiesResult,
+  A extends Reporters<any>,
+  R extends PropertiesResult<any>,
   C extends Context
 >(processors: ResultProcessorMapping<A, R, C>): ResultProcessor<R, A, C> {
   return <P extends Property & keyof R>(result: R) => (

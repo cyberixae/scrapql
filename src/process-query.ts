@@ -44,7 +44,7 @@ import {
 // literal query contains static information that can be replaced with another literal
 
 export function literal<
-  A extends Resolvers,
+  A extends Resolvers<any>,
   Q extends LiteralQuery<any>,
   R extends LiteralResult<any>,
   C extends Context
@@ -57,7 +57,7 @@ export function literal<
 // leaf query contains information for retrieving a payload
 
 export function leaf<
-  A extends Resolvers,
+  A extends Resolvers<any>,
   Q extends LeafQuery<any>,
   R extends LeafResult<any>,
   C extends Context
@@ -73,7 +73,7 @@ export function leaf<
 // keys query requests some information that is always present in database
 
 export function keys<
-  A extends Resolvers,
+  A extends Resolvers<any>,
   Q extends KeysQuery<SQ, K>,
   K extends Key,
   SQ extends Query<any>,
@@ -103,7 +103,7 @@ export function keys<
 // keys query requests some information that may not be present in database
 
 export function ids<
-  A extends Resolvers,
+  A extends Resolvers<any>,
   Q extends IdsQuery<SQ, I>,
   I extends Id,
   SQ extends Query<any>,
@@ -150,10 +150,9 @@ export function ids<
   };
 }
 
-
 /*
 export function search<
-  A extends Resolvers,
+  A extends Resolvers<any>,
   Q extends TermsQuery<SQ, EQ>,
   I extends Id,
   EQ extends ExistenceQuery<I>,
@@ -203,13 +202,12 @@ export function search<
 }
 */
 
-
 // properties query contains optional queries that may or may not be present
 
 export function properties<
-  A extends Resolvers,
-  Q extends PropertiesQuery,
-  R extends PropertiesResult,
+  A extends Resolvers<any>,
+  Q extends PropertiesQuery<any>,
+  R extends PropertiesResult<any>,
   C extends Context
 >(processors: QueryProcessorMapping<A, Q, R, C>): QueryProcessor<Q, R, A, C> {
   return <P extends Property & keyof Q & keyof R>(query: Q) => (
