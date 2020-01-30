@@ -18,8 +18,9 @@ export type Json =
   | number
   | boolean
   | null
-  | { [property: string]: Json }
+  | { [p: string]: Json }
   | Array<Json>;
+
 
 export type Id = string;
 export type Key = string;
@@ -143,7 +144,7 @@ export type ResultProcessor<
 export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
-export type Resolvers<A extends API<Resolver<any, any, any>>> = API<any>; // should be API<Resolver>
+export type Resolvers<A extends API<Resolver<any, any, any>>> = A;
 export type Reporters<A extends API<Reporter<any, any>>> = A;
 
 export type Reporter<R extends Result<any>, C extends Context> = Handler<R, void, C>;
