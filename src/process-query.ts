@@ -150,6 +150,60 @@ export function ids<
   };
 }
 
+
+/*
+export function search<
+  A extends Resolvers,
+  Q extends TermsQuery<SQ, EQ>,
+  I extends Id,
+  EQ extends ExistenceQuery<I>,
+  SQ extends Query,
+  SR extends Result,
+  C extends Context,
+  E extends Err
+>(
+  connect: ResolverConnector<A, EQ, ExistenceResult<E, I>, C>,
+  subProcessor: QueryProcessor<SQ, SR, A, Prepend<I, C>>,
+): QueryProcessor<Q, IdsResult<SR, EQ, I, E>, A, C> {
+  return (query: Q) => (context: C): ReaderTask<A, IdsResult<SR, EQ, I, E>> => {
+    return (resolvers) => {
+      const tasks: Dict<EQ, TaskEither<E, Option<[I, SR]>>> = pipe(
+        query,
+        Dict_.mapWithIndex(
+          (eq: EQ, subQuery: SQ): TaskEither<E, Option<[I, SR]>> => {
+            const existenceCheck = connect(resolvers);
+            return pipe(
+              existenceCheck(eq, context),
+              TaskEither_.chain((exists: Option<I>) =>
+                pipe(
+                  exists,
+                  Option_.fold(
+                    (): TaskEither<E, Option<[I, SR]>> => TaskEither_.right(Option_.none),
+                    (id: I): TaskEither<E, Option<[I, SR]>> => {
+                      const subContext = pipe(
+                        context,
+                        Context_.prepend(id),
+                      );
+                      return pipe(
+                        subProcessor(subQuery)(subContext)(resolvers),
+                        Task_.map((sr: SR): Option<[I, SR]> => Option_.some([id, sr])),
+                        TaskEither_.rightTask,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      return Dict_.sequenceTask(tasks);
+    };
+  };
+}
+*/
+
+
 // properties query contains optional queries that may or may not be present
 
 export function properties<
