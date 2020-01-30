@@ -45,8 +45,8 @@ import {
 
 export function literal<
   A extends Resolvers,
-  Q extends LiteralQuery,
-  R extends LiteralResult,
+  Q extends LiteralQuery<any>,
+  R extends LiteralResult<any>,
   C extends Context
 >(constant: R): QueryProcessor<Q, R, A, C> {
   return (_query: Q) => (_context: C): ReaderTask<A, R> => {
@@ -58,8 +58,8 @@ export function literal<
 
 export function leaf<
   A extends Resolvers,
-  Q extends LeafQuery,
-  R extends LeafResult,
+  Q extends LeafQuery<any>,
+  R extends LeafResult<any>,
   C extends Context
 >(connect: ResolverConnector<A, Q, R, C>): QueryProcessor<Q, R, A, C> {
   return (query: Q) => (context: C): ReaderTask<A, R> => {
@@ -76,8 +76,8 @@ export function keys<
   A extends Resolvers,
   Q extends KeysQuery<SQ, K>,
   K extends Key,
-  SQ extends Query,
-  SR extends Result,
+  SQ extends Query<any>,
+  SR extends Result<any>,
   C extends Context
 >(
   subProcessor: QueryProcessor<SQ, SR, A, Prepend<K, C>>,
@@ -106,8 +106,8 @@ export function ids<
   A extends Resolvers,
   Q extends IdsQuery<SQ, I>,
   I extends Id,
-  SQ extends Query,
-  SR extends Result,
+  SQ extends Query<any>,
+  SR extends Result<any>,
   C extends Context,
   E extends Err
 >(

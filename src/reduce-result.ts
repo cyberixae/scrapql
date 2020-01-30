@@ -29,7 +29,7 @@ import {
   ResultReducerMapping,
 } from './scrapql';
 
-export const literal = <L extends LiteralResult>(results: Results<L>): L =>
+export const literal = <L extends LiteralResult<any>>(results: Results<L>): L =>
   pipe(
     NonEmptyArray_.tail(results),
     Array_.reduce(
@@ -44,9 +44,9 @@ export const literal = <L extends LiteralResult>(results: Results<L>): L =>
     ),
   );
 
-export const leaf = <R extends LeafResult>(combineLeafResult: LeafResultCombiner<R>) => (
-  results: Results<R>,
-): R => {
+export const leaf = <R extends LeafResult<any>>(
+  combineLeafResult: LeafResultCombiner<R>,
+) => (results: Results<R>): R => {
   const writeResult: R = NonEmptyArray_.head(results);
   const readResult: Array<R> = NonEmptyArray_.tail(results);
 
@@ -71,7 +71,7 @@ const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
     ),
   );
 
-export const keys = <K extends Key, SR extends Result>(
+export const keys = <K extends Key, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
 ) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> =>
   pipe(
@@ -123,7 +123,7 @@ const isAllSome = <T>(
     Option_.isNone,
   );
 
-export const ids = <K extends Id, E extends Err, SR extends Result>(
+export const ids = <K extends Id, E extends Err, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   existenceChange: Lazy<E>,
 ) => (results: Results<IdsResult<SR, K, E>>): IdsResult<SR, K, E> =>

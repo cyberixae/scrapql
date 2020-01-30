@@ -40,7 +40,7 @@ import {
 
 export function literal<
   A extends Reporters,
-  R extends LiteralResult,
+  R extends LiteralResult<any>,
   C extends Context
 >(): ResultProcessor<R, A, C> {
   return (_result: R) => (_context: C): ReaderTask<A, void> => {
@@ -50,7 +50,7 @@ export function literal<
 
 // leaf result contains part of the payload
 
-export function leaf<A extends Reporters, R extends LeafResult, C extends Context>(
+export function leaf<A extends Reporters, R extends LeafResult<any>, C extends Context>(
   connect: ReporterConnector<A, R, C>,
 ): ResultProcessor<R, A, C> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -67,7 +67,7 @@ export function keys<
   A extends Reporters,
   R extends KeysResult<SR, K>,
   K extends Key,
-  SR extends Result,
+  SR extends Result<any>,
   C extends Context
 >(subProcessor: ResultProcessor<SR, A, Prepend<K, C>>): ResultProcessor<R, A, C> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -94,7 +94,7 @@ export function ids<
   A extends Reporters,
   R extends IdsResult<SR, I, E>,
   I extends Id,
-  SR extends Result,
+  SR extends Result<any>,
   C extends Context,
   E extends Err
 >(

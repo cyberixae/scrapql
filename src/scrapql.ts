@@ -58,37 +58,51 @@ export type ExistenceQuery<Q extends Id = Id> = Q & {
 export const existenceQuery = <I extends Id = Id>(id: I): ExistenceQuery<I> =>
   id as ExistenceQuery<I>;
 
-export type LiteralQuery = Json;
-export type LeafQuery = Json;
-export type KeysQuery<SQ extends Query = Json, K extends Key = Key> = Dict<K, SQ>;
-export type IdsQuery<SQ extends Query = Json, I extends Id = Id> = Dict<I, SQ>;
+export type TermsQuery<Q extends Json> = Q;
+export type LiteralQuery<Q extends Json> = Q;
+export type LeafQuery<Q extends Json> = Q;
+export type KeysQuery<SQ extends Query<any> = Json, K extends Key = Key> = Dict<K, SQ>;
+export type IdsQuery<SQ extends Query<any> = Json, I extends Id = Id> = Dict<I, SQ>;
+export type SearchQuery<
+  SQ extends Query<any> = Json,
+  TQ extends TermsQuery<any> = Json
+> = Dict<TQ, SQ>;
 export type PropertiesQuery<
-  Q extends { [I in Property]: Query } = { [I in Property]: Json }
+  Q extends { [I in Property]: Query<any> } = { [I in Property]: Json }
 > = Partial<Q>;
 
-export type FetchableQuery = LeafQuery | ExistenceQuery<any>;
-export type StructuralQuery = LiteralQuery | KeysQuery | IdsQuery | PropertiesQuery;
+export type FetchableQuery<Q extends LeafQuery<any> | ExistenceQuery<any>> = Q;
+export type StructuralQuery<
+  Q extends LiteralQuery<any> | KeysQuery | IdsQuery | PropertiesQuery
+> = Q;
 
-export type Query = StructuralQuery | FetchableQuery;
+export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
 
 export type Existence = boolean;
 export type ExistenceResult<E extends Err = Err> = Either<E, Existence>;
-export type LiteralResult = Json;
-export type LeafResult = Json;
-export type KeysResult<SR extends Result = Json, K extends Key = Key> = Dict<K, SR>;
+export type LiteralResult<Q extends Json> = Q;
+export type LeafResult<Q extends Json> = Q;
+export type KeysResult<SR extends Result<any> = Json, K extends Key = Key> = Dict<K, SR>;
 export type IdsResult<
-  SR extends Result = Json,
+  SR extends Result<any> = Json,
   I extends Id = Id,
   E extends Err = Err
 > = Dict<I, Either<E, Option<SR>>>;
+export type SearchResult<
+  SR extends Result<any> = Json,
+  TQ extends TermsQuery<any> = Json,
+  E extends Err = Err
+> = Dict<TQ, Either<E, Option<SR>>>;
 export type PropertiesResult<
-  R extends { [I in Property]: Result } = { [I in Property]: Json }
+  R extends { [I in Property]: Result<any> } = { [I in Property]: Json }
 > = Partial<R>;
 
-export type ReportableResult = LeafResult | ExistenceResult;
-export type StructuralResult = LiteralResult | KeysResult | IdsResult | PropertiesResult;
+export type ReportableResult<R extends LeafResult<any> | ExistenceResult> = R;
+export type StructuralResult<
+  R extends LiteralResult<any> | KeysResult | IdsResult | PropertiesResult
+> = R;
 
-export type Result = StructuralResult | ReportableResult;
+export type Result<R extends StructuralResult<any> | ReportableResult<any>> = R;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 export const processorInstance = <I, O, A extends API<any>, C extends Context>(
@@ -97,25 +111,25 @@ export const processorInstance = <I, O, A extends API<any>, C extends Context>(
   context: C,
 ): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
-export type QueryProcessorInstance<Q extends Query, R extends Result> = ProcessorInstance<
-  Q,
-  R
->;
-export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
+export type QueryProcessorInstance<
+  Q extends Query<any>,
+  R extends Result<any>
+> = ProcessorInstance<Q, R>;
+export type ResultProcessorInstance<R extends Result<any>> = ProcessorInstance<R, void>;
 
 export type Processor<I, O, A extends API<any>, C extends Context> = (
   i: I,
 ) => (c: C) => ReaderTask<A, O>;
 
 export type QueryProcessor<
-  Q extends Query,
-  R extends Result,
+  Q extends Query<any>,
+  R extends Result<any>,
   A extends Resolvers,
   C extends Context = Zero
 > = Processor<Q, R, A, C>;
 
 export type ResultProcessor<
-  R extends Result,
+  R extends Result<any>,
   A extends Reporters,
   C extends Context = Zero
 > = Processor<R, void, A, C>;
@@ -126,11 +140,11 @@ export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
+export type Reporter<R extends Result<any>, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   A extends Reporters,
-  R extends Result,
+  R extends Result<any>,
   C extends Context
 > = (a: A) => Reporter<R, C>;
 
@@ -142,16 +156,16 @@ export type ResultProcessorMapping<
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], A, C>;
 };
 
-export type Resolver<Q extends Query, R extends Result, C extends Context> = Handler<
-  Q,
-  R,
-  C
->;
+export type Resolver<
+  Q extends Query<any>,
+  R extends Result<any>,
+  C extends Context
+> = Handler<Q, R, C>;
 
 export type ResolverConnector<
   A extends Resolvers,
-  Q extends Query,
-  R extends Result,
+  Q extends Query<any>,
+  R extends Result<any>,
   C extends Context
 > = (a: A) => Resolver<Q, R, C>;
 
@@ -164,9 +178,9 @@ export type QueryProcessorMapping<
   [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], A, C>;
 };
 
-export type Results<R extends Result> = NonEmptyArray<R>;
-export type ResultReducer<R extends Result> = (r: Results<R>) => R;
-export type LeafResultCombiner<R extends Result> = (w: R, r: R) => R;
+export type Results<R extends Result<any>> = NonEmptyArray<R>;
+export type ResultReducer<R extends Result<any>> = (r: Results<R>) => R;
+export type LeafResultCombiner<R extends Result<any>> = (w: R, r: R) => R;
 
 export type ResultReducerMapping<R extends PropertiesResult> = {
   [I in keyof R]: ResultReducer<Required<R>[I]>;
@@ -179,12 +193,12 @@ export type ResultConstructorArgs = Args;
 export type ErrConstructorArgs = Args;
 
 export type QueryConstructor<
-  Q extends Query = any, //Query,
+  Q extends Query<any> = any, //Query,
   A extends QueryConstructorArgs = QueryConstructorArgs
 > = Constructor<Q, A>;
 
 export type ResultConstructor<
-  R extends Result = any, //Result,
+  R extends Result<any> = any, //Result,
   A extends ResultConstructorArgs = ResultConstructorArgs
 > = Constructor<R, A>;
 
