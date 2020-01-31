@@ -68,7 +68,7 @@ export function leaf<
 export function keys<
   A extends Reporters<any>,
   R extends KeysResult<SR, K>,
-  K extends Key,
+  K extends Key<any>,
   SR extends Result<any>,
   C extends Context
 >(subProcessor: ResultProcessor<SR, A, Prepend<K, C>>): ResultProcessor<R, A, C> {
@@ -95,10 +95,10 @@ export function keys<
 export function ids<
   A extends Reporters<any>,
   R extends IdsResult<SR, I, E>,
-  I extends Id,
+  I extends Id<any>,
   SR extends Result<any>,
   C extends Context,
-  E extends Err
+  E extends Err<any>
 >(
   connect: ReporterConnector<A, ExistenceResult<E>, Prepend<I, C>>,
   subProcessor: ResultProcessor<SR, A, Prepend<I, C>>,

@@ -13,7 +13,7 @@ export const Dict = <KeyC extends t.Mixed, ValueC extends t.Mixed>(K: KeyC, V: V
 export type Dict<K, V> = Array<[K, V]>;
 export const dict = <D extends Dict<any, any>>(...d: D): D => d;
 
-export function mapWithIndex<K extends string, A, B>(
+export function mapWithIndex<K, A, B>(
   f: (k: K, a: A) => B,
 ): (fa: Dict<K, A>) => Dict<K, B> {
   return (fa: Dict<K, A>) =>
@@ -23,13 +23,11 @@ export function mapWithIndex<K extends string, A, B>(
     );
 }
 
-export function sequenceKV<K extends string, V>([k, v]: [K, Task<V>]): Task<[K, V]> {
+export function sequenceKV<K, V>([k, v]: [K, Task<V>]): Task<[K, V]> {
   return sequenceT(task)(task.of(k), v);
 }
 
-export function sequenceTask<K extends string, V>(
-  dict: Dict<K, Task<V>>,
-): Task<Dict<K, V>> {
+export function sequenceTask<K, V>(dict: Dict<K, Task<V>>): Task<Dict<K, V>> {
   return pipe(
     dict,
     Array_.map(sequenceKV),
@@ -37,7 +35,7 @@ export function sequenceTask<K extends string, V>(
   );
 }
 
-export function lookup<K extends string>(k: K) {
+export function lookup<K>(k: K) {
   return <V>(dict: Dict<K, V>): Option<V> =>
     pipe(
       dict,
@@ -46,7 +44,7 @@ export function lookup<K extends string>(k: K) {
     );
 }
 
-export function keys<K extends string>(dict: Dict<K, unknown>): Array<K> {
+export function keys<K>(dict: Dict<K, unknown>): Array<K> {
   return pipe(
     dict,
     Array_.map(([k, _v]) => k),

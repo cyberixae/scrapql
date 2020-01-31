@@ -71,7 +71,7 @@ const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
     ),
   );
 
-export const keys = <K extends Key, SR extends Result<any>>(
+export const keys = <K extends Key<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
 ) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> =>
   pipe(
@@ -123,7 +123,7 @@ const isAllSome = <T>(
     Option_.isNone,
   );
 
-export const ids = <K extends Id, E extends Err, SR extends Result<any>>(
+export const ids = <K extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   existenceChange: Lazy<E>,
 ) => (results: Results<IdsResult<SR, K, E>>): IdsResult<SR, K, E> =>

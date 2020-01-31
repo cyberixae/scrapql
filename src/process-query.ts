@@ -75,7 +75,7 @@ export function leaf<
 export function keys<
   A extends Resolvers<any>,
   Q extends KeysQuery<SQ, K>,
-  K extends Key,
+  K extends Key<any>,
   SQ extends Query<any>,
   SR extends Result<any>,
   C extends Context
@@ -105,11 +105,11 @@ export function keys<
 export function ids<
   A extends Resolvers<any>,
   Q extends IdsQuery<SQ, I>,
-  I extends Id,
+  I extends Id<any>,
   SQ extends Query<any>,
   SR extends Result<any>,
   C extends Context,
-  E extends Err
+  E extends Err<any>
 >(
   connect: ResolverConnector<A, ExistenceQuery<I>, ExistenceResult<E>, C>,
   subProcessor: QueryProcessor<SQ, SR, A, Prepend<I, C>>,

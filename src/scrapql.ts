@@ -13,19 +13,12 @@ import { Dict } from './dict';
 export { process } from './process';
 export { reduce } from './reduce';
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [p: string]: Json }
-  | Array<Json>;
+export type Json = string | number | boolean | null | { [p: string]: Json } | Array<Json>;
 
-
-export type Id = string;
-export type Key = string;
+export type Id<I extends string> = I;
+export type Key<K extends string> = K;
 export type Property = string;
-export type Err = Json;
+export type Err<E extends Json> = E;
 
 export type Args<T extends any = any> = Array<T>;
 
@@ -59,17 +52,17 @@ export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
 
 export type Context = Ctx<any, any> | Ctx0;
 
-export type ExistenceQuery<Q extends Id> = Q & {
+export type ExistenceQuery<Q extends Id<any>> = Q & {
   readonly ExistenceQuery: unique symbol;
 };
-export const existenceQuery = <I extends Id>(id: I): ExistenceQuery<I> =>
+export const existenceQuery = <I extends Id<any>>(id: I): ExistenceQuery<I> =>
   id as ExistenceQuery<I>;
 
 export type TermsQuery<Q extends Json> = Q;
 export type LiteralQuery<Q extends Json> = Q;
 export type LeafQuery<Q extends Json> = Q;
-export type KeysQuery<SQ extends Query<any>, K extends Key> = Dict<K, SQ>;
-export type IdsQuery<SQ extends Query<any>, I extends Id> = Dict<I, SQ>;
+export type KeysQuery<SQ extends Query<any>, K extends Key<any>> = Dict<K, SQ>;
+export type IdsQuery<SQ extends Query<any>, I extends Id<any>> = Dict<I, SQ>;
 export type SearchQuery<SQ extends Query<any>, TQ extends TermsQuery<any>> = Dict<TQ, SQ>;
 export type PropertiesQuery<Q extends { [I in Property]: Query<any> }> = Partial<Q>;
 
@@ -85,18 +78,19 @@ export type StructuralQuery<
 export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
 
 export type Existence = boolean;
-export type ExistenceResult<E extends Err> = Either<E, Existence>;
+export type ExistenceResult<E extends Err<any>> = Either<E, Existence>;
 export type LiteralResult<Q extends Json> = Q;
 export type LeafResult<Q extends Json> = Q;
-export type KeysResult<SR extends Result<any>, K extends Key> = Dict<K, SR>;
-export type IdsResult<SR extends Result<any>, I extends Id, E extends Err> = Dict<
-  I,
-  Either<E, Option<SR>>
->;
+export type KeysResult<SR extends Result<any>, K extends Key<any>> = Dict<K, SR>;
+export type IdsResult<
+  SR extends Result<any>,
+  I extends Id<any>,
+  E extends Err<any>
+> = Dict<I, Either<E, Option<SR>>>;
 export type SearchResult<
   SR extends Result<any>,
   TQ extends TermsQuery<any>,
-  E extends Err
+  E extends Err<any>
 > = Dict<TQ, Either<E, Option<SR>>>;
 export type PropertiesResult<R extends { [I in Property]: Result<any> }> = Partial<R>;
 
@@ -209,10 +203,10 @@ export type ResultConstructor<
   A extends ResultConstructorArgs
 > = Constructor<R, A>;
 
-export type ErrConstructor<E extends Err, A extends ErrConstructorArgs> = Constructor<
-  E,
-  A
->;
+export type ErrConstructor<
+  E extends Err<any>,
+  A extends ErrConstructorArgs
+> = Constructor<E, A>;
 
 export type QueryUtils<
   QC extends QueryConstructor<any, any>,
