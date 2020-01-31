@@ -59,12 +59,12 @@ export type ExistenceQuery<Q extends Id<any>> = Q & {
 export const existenceQuery = <I extends Id<any>>(id: I): ExistenceQuery<I> =>
   id as ExistenceQuery<I>;
 
-export type TermsQuery<Q extends Json> = Q;
+export type Terms<Q extends Json> = Q;
 export type LiteralQuery<Q extends Json> = Q;
 export type LeafQuery<Q extends Json> = Q;
 export type KeysQuery<SQ extends Query<any>, K extends Key<any>> = Dict<K, SQ>;
 export type IdsQuery<SQ extends Query<any>, I extends Id<any>> = Dict<I, SQ>;
-export type SearchQuery<SQ extends Query<any>, TQ extends TermsQuery<any>> = Dict<TQ, SQ>;
+export type SearchQuery<SQ extends Query<any>, T extends Terms<any>> = Dict<T, SQ>;
 export type PropertiesQuery<Q extends { [I in Property]: Query<any> }> = Partial<Q>;
 
 export type FetchableQuery<Q extends LeafQuery<any> | ExistenceQuery<any>> = Q;
@@ -90,9 +90,10 @@ export type IdsResult<
 > = Dict<I, Either<E, Option<SR>>>;
 export type SearchResult<
   SR extends Result<any>,
-  TQ extends TermsQuery<any>,
+  T extends Terms<any>,
+  I extends Id<any>,
   E extends Err<any>
-> = Dict<TQ, Either<E, Option<SR>>>;
+> = Dict<T, Either<E, Dict<I, SR>>>;
 export type PropertiesResult<R extends { [I in Property]: Result<any> }> = Partial<R>;
 
 export type ReportableResult<R extends LeafResult<any> | ExistenceResult<any>> = R;
