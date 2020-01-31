@@ -15,9 +15,10 @@ export { reduce } from './reduce';
 
 export type Json = string | number | boolean | null | { [p: string]: Json } | Array<Json>;
 
+export type Property = string;
+
 export type Id<I extends string> = I;
 export type Key<K extends string> = K;
-export type Property = string;
 export type Err<E extends Json> = E;
 
 export type Args<T extends any = any> = Array<T>;
