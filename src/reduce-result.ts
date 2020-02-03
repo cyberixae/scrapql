@@ -1,5 +1,5 @@
 import { Either, either } from 'fp-ts/lib/Either';
-import { nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
+import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import { Option, option } from 'fp-ts/lib/Option';
 import * as Either_ from 'fp-ts/lib/Either';
@@ -21,8 +21,8 @@ import {
   KeysResult,
   Id,
   IdsResult,
-  //Terms,
-  //SearchResult,
+  Terms,
+  SearchResult,
   Property,
   PropertiesResult,
   Err,
@@ -107,105 +107,42 @@ export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any
     ),
   );
 
-// Dict<T, Either<E, Dict<I, SR>>>
-// NonEmpty<Arr<T, Either<E, Dict<I, SR>>>>
-// Arr<NonEmpty<>>
-
-/*
-export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
-  reduceSubResults: ResultReducer<SR>,
+export const search = <
+  T extends Terms<any>,
+  I extends Id<any>,
+  E extends Err<any>,
+  SR extends Result<any>
+>(
+  reduceSubResult: ResultReducer<SR>,
   matchChange: Lazy<E>,
 ) => (results: Results<SearchResult<SR, T, I, E>>): SearchResult<SR, T, I, E> =>
   pipe(
     results,
     Dict_.mergeSymmetric(
-      (variants: NonEmptyArray<Either<E, Dict<I, SR>>>): Either<E, Dict<I, SR>> => pipe(
-        variants,
-        nonEmptyArray.sequence(either),
-        (x: Either<E, NonEmptyArray<Dict<I, SR>>>) => x,
-        Either_.chain(
-          (
-            optionalResults: NonEmptyArray<Dict<I, SR>>,
-          ): Either<E, NonEmptyArray<Dict<I, SR>>> => {
-            if (isAllNone(optionalResults)) {
-              return Either_.right(optionalResults);
-            }
-            if (isAllSome(optionalResults)) {
-              return Either_.right(optionalResults);
-            }
-            return Either_.left(existenceChange());
-          },
+      (
+        subResultVariants: NonEmptyArray<Either<E, Dict<I, SR>>>,
+      ): Option<Either<E, Dict<I, SR>>> =>
+        pipe(
+          subResultVariants,
+          nonEmptyArray.sequence(either),
+          Either_.chain(
+            (optionalResults: NonEmptyArray<Dict<I, SR>>): Either<E, Dict<I, SR>> =>
+              pipe(
+                optionalResults,
+                Dict_.mergeSymmetric(reduceSubResult),
+                Either_.fromOption(matchChange),
+              ),
+          ),
+          Option_.some,
         ),
-        (x: Either<E, NonEmptyArray<Dict<I, SR>>>) => x,
-        Either_.map((foo: NonEmptyArray<Dict<I, SR>>) => pipe(
-          foo,
-          Dict_.mergeSymmetric(reduceSubResults),
-          (x: Option<Dict<I, SR>>) => x,
-        )),
-        (x: Either<E, Option<Dict<I, SR>>>) => x,
-        (x: Option<Either<E, Dict<I, SR>>>) => x,
-      ),
     ),
-    (x: Option<Dict<T, Either<E, Dict<I, SR>>>>) => x,
     Option_.getOrElse(
       (): Dict<T, Either<E, Dict<I, SR>>> => {
         // eslint-disable-next-line fp/no-throw
-        throw new Error('reduce error, ids results not symmetric');
+        throw new Error('reduce error, search results are not symmetric');
       },
     ),
   );
-*/
-
-/*
-    nonEmptyArray.sequence(array),
-    Array_.map(
-      (variants: NonEmptyArray<[T, Either<E, Dict<I, SR>>]>): Option<[T, Either<E, Dict<I, SR>>]> =>
-        pipe(
-          {
-            k: pipe(
-              variants,
-              NonEmptyArray_.map(([k, _v]): T => k),
-              reduceDuplicateKeys,
-            ),
-            v: pipe(  // TODO: reduce Ids
-              variants,
-              NonEmptyArray_.map(([_k, v]): Either<E, Dict<I, SR>> => v),
-              reduceSearchValues,
-              nonEmptyArray.sequence(either),
-              (x: Either<E, Results<Dict<I, SR>>>) => x,
-              Either_.chain(
-                (
-                  results: NonEmptyArray<Dict<I, SR>>,
-                ): Either<E, NonEmptyArray<Dict<I, SR>>> => {
-                  if (isAllNone(optionalResults)) {
-                    return Either_.right(optionalResults);
-                  }
-                  if (isAllSome(optionalResults)) {
-                    return Either_.right(optionalResults);
-                  }
-                  return Either_.left(matchChange());
-                },
-              ),
-              (x: Either<E, Results<Dict<I, SR>>>) => x,
-              Either_.map(nonEmptyArray.sequence(option)),
-              Either_.map(
-                Option_.map(
-                  (subResults: Results<SR>): SR => {
-                    return reduceSubResults(subResults);
-                  },
-                ),
-              ),
-              Option_.some,
-            ),
-          },
-          (x: { k: Option<T>, v: Option<Either<E, Dict<I, SR>>> }) => x,
-          sequenceS(option),
-          Option_.map(({ k, v }) => [k, v]),
-        ),
-    ),
-    (x: Array<Option<[T, Either<E, Dict<I, SR>>]>>) => x,
-    array.sequence(option),
-*/
 
 export const properties = <R extends PropertiesResult<any>>(
   processors: ResultReducerMapping<R>,
