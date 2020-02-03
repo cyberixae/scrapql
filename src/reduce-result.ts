@@ -1,7 +1,7 @@
 import { Either, either } from 'fp-ts/lib/Either';
-import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
+import { nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
-import { Option, None, Some, option } from 'fp-ts/lib/Option';
+import { Option, option } from 'fp-ts/lib/Option';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as Array_ from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';
@@ -11,6 +11,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import { Dict } from './dict';
 import * as Dict_ from './dict';
+import { mergeOption } from './option';
 
 import {
   Result,
@@ -20,8 +21,8 @@ import {
   KeysResult,
   Id,
   IdsResult,
-  //  Terms,
-  //  SearchResult,
+  //Terms,
+  //SearchResult,
   Property,
   PropertiesResult,
   Err,
@@ -59,13 +60,13 @@ export const leaf = <R extends LeafResult<any>>(
 };
 
 export const keys = <K extends Key<any>, SR extends Result<any>>(
-  reduceSubResults: ResultReducer<SR>,
+  reduceSubResult: ResultReducer<SR>,
 ) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> =>
   pipe(
     results,
-    Dict_.mergeSymmetric((subResults) =>
+    Dict_.mergeSymmetric((subResultVariants) =>
       pipe(
-        reduceSubResults(subResults),
+        reduceSubResult(subResultVariants),
         Option_.some,
       ),
     ),
@@ -77,58 +78,26 @@ export const keys = <K extends Key<any>, SR extends Result<any>>(
     ),
   );
 
-const isAllNone = <T>(
-  options: NonEmptyArray<Option<T>>,
-): options is NonEmptyArray<None> =>
-  pipe(
-    options,
-    NonEmptyArray_.filter(Option_.isSome),
-    Option_.isNone,
-  );
-
-const isAllSome = <T>(
-  options: NonEmptyArray<Option<T>>,
-): options is NonEmptyArray<None> =>
-  pipe(
-    options,
-    NonEmptyArray_.filter(Option_.isNone),
-    Option_.isNone,
-  );
-
 export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
-  reduceSubResults: ResultReducer<SR>,
+  reduceSubResult: ResultReducer<SR>,
   existenceChange: Lazy<E>,
 ) => (results: Results<IdsResult<SR, I, E>>): IdsResult<SR, I, E> =>
   pipe(
     results,
-    Dict_.mergeSymmetric(
-      (variants: NonEmptyArray<Either<E, Option<SR>>>): Option<Either<E, Option<SR>>> =>
-        pipe(
-          variants,
-          nonEmptyArray.sequence(either),
-          Either_.chain(
-            (
-              optionalResults: NonEmptyArray<Option<SR>>,
-            ): Either<E, NonEmptyArray<None> | NonEmptyArray<Some<SR>>> => {
-              if (isAllNone(optionalResults)) {
-                return Either_.right(optionalResults);
-              }
-              if (isAllSome(optionalResults)) {
-                return Either_.right(optionalResults);
-              }
-              return Either_.left(existenceChange());
-            },
+    Dict_.mergeSymmetric((subResultVariants) =>
+      pipe(
+        subResultVariants,
+        nonEmptyArray.sequence(either),
+        Either_.map(mergeOption),
+        Either_.chain(Either_.fromOption(existenceChange)),
+        Either_.map(nonEmptyArray.sequence(option)),
+        Either_.map(
+          Option_.map(
+            (subResultVariants: Results<SR>): SR => reduceSubResult(subResultVariants),
           ),
-          Either_.map(nonEmptyArray.sequence(option)),
-          Either_.map(
-            Option_.map(
-              (subResults: Results<SR>): SR => {
-                return reduceSubResults(subResults);
-              },
-            ),
-          ),
-          Option_.some,
         ),
+        Option_.some,
+      ),
     ),
     Option_.getOrElse(
       (): Dict<I, Either<E, Option<SR>>> => {
@@ -143,7 +112,6 @@ export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any
 // Arr<NonEmpty<>>
 
 /*
-
 export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   matchChange: Lazy<E>,
