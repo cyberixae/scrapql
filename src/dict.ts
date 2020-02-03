@@ -58,9 +58,9 @@ export function values<V>(dict: Dict<unknown, V>): Array<V> {
   );
 }
 
-export function mergeSymmetric<K, V>(
+export const mergeSymmetric = <V>(
   reduceValues: (vs: NonEmptyArray<V>) => V,
-) => (dicts: NonEmptyArray<Dict<K, V>>): Option<Dict<K, V>> =>
+) => <K>(dicts: NonEmptyArray<Dict<K, V>>): Option<Dict<K, V>> =>
   pipe(
     dicts,
     nonEmptyArray.sequence(array),

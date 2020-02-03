@@ -173,6 +173,7 @@ export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any
 // NonEmpty<Arr<T, Either<E, Dict<I, SR>>>>
 // Arr<NonEmpty<>>
 
+/*
 export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   matchChange: Lazy<E>,
@@ -234,6 +235,7 @@ export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<an
       },
     ),
   );
+*/
 
 export const properties = <R extends PropertiesResult<any>>(
   processors: ResultReducerMapping<R>,
