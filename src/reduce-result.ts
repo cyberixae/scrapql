@@ -23,8 +23,8 @@ import {
   KeysResult,
   Id,
   IdsResult,
-  Terms,
-  SearchResult,
+  //  Terms,
+  //  SearchResult,
   Property,
   PropertiesResult,
   Err,
@@ -135,34 +135,36 @@ export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any
   pipe(
     results,
     Dict_.mergeSymmetric(
-      (variants: NonEmptyArray<Either<E, Option<SR>>>): Either<E, Option<SR>> => pipe(
-        variants,
-        nonEmptyArray.sequence(either),
-        Either_.chain(
-          (
-            optionalResults: NonEmptyArray<Option<SR>>,
-          ): Either<E, NonEmptyArray<None> | NonEmptyArray<Some<SR>>> => {
-            if (isAllNone(optionalResults)) {
-              return Either_.right(optionalResults);
-            }
-            if (isAllSome(optionalResults)) {
-              return Either_.right(optionalResults);
-            }
-            return Either_.left(existenceChange());
-          },
-        ),
-        Either_.map(nonEmptyArray.sequence(option)),
-        Either_.map(
-          Option_.map(
-            (subResults: Results<SR>): SR => {
-              return reduceSubResults(subResults);
+      (variants: NonEmptyArray<Either<E, Option<SR>>>): Option<Either<E, Option<SR>>> =>
+        pipe(
+          variants,
+          nonEmptyArray.sequence(either),
+          Either_.chain(
+            (
+              optionalResults: NonEmptyArray<Option<SR>>,
+            ): Either<E, NonEmptyArray<None> | NonEmptyArray<Some<SR>>> => {
+              if (isAllNone(optionalResults)) {
+                return Either_.right(optionalResults);
+              }
+              if (isAllSome(optionalResults)) {
+                return Either_.right(optionalResults);
+              }
+              return Either_.left(existenceChange());
             },
           ),
+          Either_.map(nonEmptyArray.sequence(option)),
+          Either_.map(
+            Option_.map(
+              (subResults: Results<SR>): SR => {
+                return reduceSubResults(subResults);
+              },
+            ),
+          ),
+          Option_.some,
         ),
-      ),
     ),
     Option_.getOrElse(
-      (): Array<[I, Either<E, Option<SR>>]> => {
+      (): Dict<I, Either<E, Option<SR>>> => {
         // eslint-disable-next-line fp/no-throw
         throw new Error('reduce error, ids results not symmetric');
       },
@@ -174,12 +176,52 @@ export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any
 // Arr<NonEmpty<>>
 
 /*
+
 export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   matchChange: Lazy<E>,
 ) => (results: Results<SearchResult<SR, T, I, E>>): SearchResult<SR, T, I, E> =>
   pipe(
     results,
+    Dict_.mergeSymmetric(
+      (variants: NonEmptyArray<Either<E, Dict<I, SR>>>): Either<E, Dict<I, SR>> => pipe(
+        variants,
+        nonEmptyArray.sequence(either),
+        (x: Either<E, NonEmptyArray<Dict<I, SR>>>) => x,
+        Either_.chain(
+          (
+            optionalResults: NonEmptyArray<Dict<I, SR>>,
+          ): Either<E, NonEmptyArray<Dict<I, SR>>> => {
+            if (isAllNone(optionalResults)) {
+              return Either_.right(optionalResults);
+            }
+            if (isAllSome(optionalResults)) {
+              return Either_.right(optionalResults);
+            }
+            return Either_.left(existenceChange());
+          },
+        ),
+        (x: Either<E, NonEmptyArray<Dict<I, SR>>>) => x,
+        Either_.map((foo: NonEmptyArray<Dict<I, SR>>) => pipe(
+          foo,
+          Dict_.mergeSymmetric(reduceSubResults),
+          (x: Option<Dict<I, SR>>) => x,
+        )),
+        (x: Either<E, Option<Dict<I, SR>>>) => x,
+        (x: Option<Either<E, Dict<I, SR>>>) => x,
+      ),
+    ),
+    (x: Option<Dict<T, Either<E, Dict<I, SR>>>>) => x,
+    Option_.getOrElse(
+      (): Dict<T, Either<E, Dict<I, SR>>> => {
+        // eslint-disable-next-line fp/no-throw
+        throw new Error('reduce error, ids results not symmetric');
+      },
+    ),
+  );
+*/
+
+/*
     nonEmptyArray.sequence(array),
     Array_.map(
       (variants: NonEmptyArray<[T, Either<E, Dict<I, SR>>]>): Option<[T, Either<E, Dict<I, SR>>]> =>
@@ -228,13 +270,6 @@ export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<an
     ),
     (x: Array<Option<[T, Either<E, Dict<I, SR>>]>>) => x,
     array.sequence(option),
-    Option_.getOrElse(
-      (): Array<[T, Either<E, Dict<I, SR>>]> => {
-        // eslint-disable-next-line fp/no-throw
-        throw new Error('reduce error, ids results not symmetric');
-      },
-    ),
-  );
 */
 
 export const properties = <R extends PropertiesResult<any>>(

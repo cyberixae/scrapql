@@ -1,11 +1,15 @@
 import * as t from 'io-ts';
 
+import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Task, task } from 'fp-ts/lib/Task';
-import { Option } from 'fp-ts/lib/Option';
+import { Option, option } from 'fp-ts/lib/Option';
 import { sequenceT } from 'fp-ts/lib/Apply';
 import { array } from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';
 import * as Array_ from 'fp-ts/lib/Array';
+import * as boolean_ from 'fp-ts/lib/boolean';
+import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
+import { sequenceS } from 'fp-ts/lib/Apply';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 export const Dict = <KeyC extends t.Mixed, ValueC extends t.Mixed>(K: KeyC, V: ValueC) =>
@@ -58,9 +62,26 @@ export function values<V>(dict: Dict<unknown, V>): Array<V> {
   );
 }
 
-export const mergeSymmetric = <V>(
-  reduceValues: (vs: NonEmptyArray<V>) => V,
-) => <K>(dicts: NonEmptyArray<Dict<K, V>>): Option<Dict<K, V>> =>
+// returns Some if all values are equal or None if some values differ
+const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
+  pipe(
+    duplicates,
+    Array_.uniq({ equals: (a: T, b: T) => a === b }),
+    NonEmptyArray_.fromArray,
+    Option_.chain(
+      ([k, ...ks]: NonEmptyArray<T>): Option<T> =>
+        pipe(
+          ks.length === 0,
+          boolean_.fold(() => Option_.none, () => Option_.some(k)),
+        ),
+    ),
+  );
+
+export const mergeSymmetric = <V>(reduceValues: (vs: NonEmptyArray<V>) => Option<V>) => <
+  K
+>(
+  dicts: NonEmptyArray<Dict<K, V>>,
+): Option<Dict<K, V>> =>
   pipe(
     dicts,
     nonEmptyArray.sequence(array),
@@ -77,7 +98,6 @@ export const mergeSymmetric = <V>(
               variants,
               NonEmptyArray_.map(([_k, v]) => v),
               reduceValues,
-              Option_.some,
             ),
           },
           sequenceS(option),
