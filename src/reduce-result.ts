@@ -1,5 +1,4 @@
 import { Either, either } from 'fp-ts/lib/Either';
-import { array } from 'fp-ts/lib/Array';
 import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import { Option, None, Some, option } from 'fp-ts/lib/Option';
@@ -7,8 +6,6 @@ import * as Either_ from 'fp-ts/lib/Either';
 import * as Array_ from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';
 import * as Record_ from 'fp-ts/lib/Record';
-import * as boolean_ from 'fp-ts/lib/boolean';
-import { sequenceS } from 'fp-ts/lib/Apply';
 import { Lazy } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
@@ -61,49 +58,19 @@ export const leaf = <R extends LeafResult<any>>(
   );
 };
 
-// returns Some if all values are equal or None if some values differ
-const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
-  pipe(
-    duplicates,
-    Array_.uniq({ equals: (a: T, b: T) => a === b }),
-    NonEmptyArray_.fromArray,
-    Option_.chain(
-      ([k, ...ks]: NonEmptyArray<T>): Option<T> =>
-        pipe(
-          ks.length === 0,
-          boolean_.fold(() => Option_.none, () => Option_.some(k)),
-        ),
-    ),
-  );
-
 export const keys = <K extends Key<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
 ) => (results: Results<KeysResult<SR, K>>): KeysResult<SR, K> =>
   pipe(
     results,
-    nonEmptyArray.sequence(array),
-    Array_.map((variants) =>
+    Dict_.mergeSymmetric((subResults) =>
       pipe(
-        {
-          k: pipe(
-            variants,
-            NonEmptyArray_.map(([k, _v]) => k),
-            reduceDuplicateKeys,
-          ),
-          v: pipe(
-            variants,
-            NonEmptyArray_.map(([_k, v]) => v),
-            reduceSubResults,
-            Option_.some,
-          ),
-        },
-        sequenceS(option),
-        Option_.map(({ k, v }): [K, SR] => [k, v]),
+        reduceSubResults(subResults),
+        Option_.some,
       ),
     ),
-    array.sequence(option),
     Option_.getOrElse(
-      (): Array<[K, SR]> => {
+      (): Dict<K, SR> => {
         // eslint-disable-next-line fp/no-throw
         throw new Error('reduce error, keys results not symmetric');
       },
