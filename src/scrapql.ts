@@ -60,6 +60,13 @@ export const existenceQuery = <I extends Id<any>>(id: I): ExistenceQuery<I> =>
   id as ExistenceQuery<I>;
 
 export type Terms<Q extends Json> = Q;
+export type TermsQuery<Q extends Terms<any>> = Q & {
+  readonly TermsQuery: unique symbol;
+};
+export const termsQuery = <T extends Terms<any>>(terms: T): TermsQuery<T> =>
+  terms as TermsQuery<T>;
+
+
 export type LiteralQuery<Q extends Json> = Q;
 export type LeafQuery<Q extends Json> = Q;
 export type KeysQuery<SQ extends Query<any>, K extends Key<any>> = Dict<K, SQ>;
@@ -80,6 +87,7 @@ export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
 
 export type Existence = boolean;
 export type ExistenceResult<E extends Err<any>> = Either<E, Existence>;
+export type TermsResult<E extends Err<any>, I extends Id> = Either<E, I>;
 export type LiteralResult<Q extends Json> = Q;
 export type LeafResult<Q extends Json> = Q;
 export type KeysResult<SR extends Result<any>, K extends Key<any>> = Dict<K, SR>;
