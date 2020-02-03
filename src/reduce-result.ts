@@ -12,6 +12,9 @@ import { sequenceS } from 'fp-ts/lib/Apply';
 import { Lazy } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
+import { Dict } from './dict';
+import * as Dict_ from './dict';
+
 import {
   Result,
   LiteralResult,
@@ -20,6 +23,8 @@ import {
   KeysResult,
   Id,
   IdsResult,
+  Terms,
+  SearchResult,
   Property,
   PropertiesResult,
   Err,
@@ -123,39 +128,87 @@ const isAllSome = <T>(
     Option_.isNone,
   );
 
-export const ids = <K extends Id<any>, E extends Err<any>, SR extends Result<any>>(
+export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResults: ResultReducer<SR>,
   existenceChange: Lazy<E>,
-) => (results: Results<IdsResult<SR, K, E>>): IdsResult<SR, K, E> =>
+) => (results: Results<IdsResult<SR, I, E>>): IdsResult<SR, I, E> =>
+  pipe(
+    results,
+    Dict_.mergeSymmetric(
+      (variants: NonEmptyArray<Either<E, Option<SR>>>): Either<E, Option<SR>> => pipe(
+        variants,
+        nonEmptyArray.sequence(either),
+        Either_.chain(
+          (
+            optionalResults: NonEmptyArray<Option<SR>>,
+          ): Either<E, NonEmptyArray<None> | NonEmptyArray<Some<SR>>> => {
+            if (isAllNone(optionalResults)) {
+              return Either_.right(optionalResults);
+            }
+            if (isAllSome(optionalResults)) {
+              return Either_.right(optionalResults);
+            }
+            return Either_.left(existenceChange());
+          },
+        ),
+        Either_.map(nonEmptyArray.sequence(option)),
+        Either_.map(
+          Option_.map(
+            (subResults: Results<SR>): SR => {
+              return reduceSubResults(subResults);
+            },
+          ),
+        ),
+      ),
+    ),
+    Option_.getOrElse(
+      (): Array<[I, Either<E, Option<SR>>]> => {
+        // eslint-disable-next-line fp/no-throw
+        throw new Error('reduce error, ids results not symmetric');
+      },
+    ),
+  );
+
+// Dict<T, Either<E, Dict<I, SR>>>
+// NonEmpty<Arr<T, Either<E, Dict<I, SR>>>>
+// Arr<NonEmpty<>>
+
+export const search = <T extends Terms<any>, I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
+  reduceSubResults: ResultReducer<SR>,
+  matchChange: Lazy<E>,
+) => (results: Results<SearchResult<SR, T, I, E>>): SearchResult<SR, T, I, E> =>
   pipe(
     results,
     nonEmptyArray.sequence(array),
     Array_.map(
-      (variants): Option<[K, Either<E, Option<SR>>]> =>
+      (variants: NonEmptyArray<[T, Either<E, Dict<I, SR>>]>): Option<[T, Either<E, Dict<I, SR>>]> =>
         pipe(
           {
             k: pipe(
               variants,
-              NonEmptyArray_.map(([k, _v]) => k),
+              NonEmptyArray_.map(([k, _v]): T => k),
               reduceDuplicateKeys,
             ),
-            v: pipe(
+            v: pipe(  // TODO: reduce Ids
               variants,
-              NonEmptyArray_.map(([_k, v]): Either<E, Option<SR>> => v),
+              NonEmptyArray_.map(([_k, v]): Either<E, Dict<I, SR>> => v),
+              reduceSearchValues,
               nonEmptyArray.sequence(either),
+              (x: Either<E, Results<Dict<I, SR>>>) => x,
               Either_.chain(
                 (
-                  optionalResults: Results<Option<SR>>,
-                ): Either<E, Results<None> | Results<Some<SR>>> => {
+                  results: NonEmptyArray<Dict<I, SR>>,
+                ): Either<E, NonEmptyArray<Dict<I, SR>>> => {
                   if (isAllNone(optionalResults)) {
                     return Either_.right(optionalResults);
                   }
                   if (isAllSome(optionalResults)) {
                     return Either_.right(optionalResults);
                   }
-                  return Either_.left(existenceChange());
+                  return Either_.left(matchChange());
                 },
               ),
+              (x: Either<E, Results<Dict<I, SR>>>) => x,
               Either_.map(nonEmptyArray.sequence(option)),
               Either_.map(
                 Option_.map(
@@ -167,13 +220,15 @@ export const ids = <K extends Id<any>, E extends Err<any>, SR extends Result<any
               Option_.some,
             ),
           },
+          (x: { k: Option<T>, v: Option<Either<E, Dict<I, SR>>> }) => x,
           sequenceS(option),
           Option_.map(({ k, v }) => [k, v]),
         ),
     ),
+    (x: Array<Option<[T, Either<E, Dict<I, SR>>]>>) => x,
     array.sequence(option),
     Option_.getOrElse(
-      (): Array<[K, Either<E, Option<SR>>]> => {
+      (): Array<[T, Either<E, Dict<I, SR>>]> => {
         // eslint-disable-next-line fp/no-throw
         throw new Error('reduce error, ids results not symmetric');
       },

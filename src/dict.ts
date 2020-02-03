@@ -57,3 +57,32 @@ export function values<V>(dict: Dict<unknown, V>): Array<V> {
     Array_.map(([_k, v]) => v),
   );
 }
+
+export function mergeSymmetric<K, V>(
+  reduceValues: (vs: NonEmptyArray<V>) => V,
+) => (dicts: NonEmptyArray<Dict<K, V>>): Option<Dict<K, V>> =>
+  pipe(
+    dicts,
+    nonEmptyArray.sequence(array),
+    Array_.map(
+      (variants): Option<[K, V]> =>
+        pipe(
+          {
+            k: pipe(
+              variants,
+              NonEmptyArray_.map(([k, _v]) => k),
+              reduceDuplicateKeys,
+            ),
+            v: pipe(
+              variants,
+              NonEmptyArray_.map(([_k, v]) => v),
+              reduceValues,
+              Option_.some,
+            ),
+          },
+          sequenceS(option),
+          Option_.map(({ k, v }) => [k, v]),
+        ),
+    ),
+    array.sequence(option),
+  );
