@@ -44,7 +44,9 @@ export function sequenceKVEither<K, V, E>([k, v]: [K, Either<E, V>]): Either<E, 
   return sequenceT(either)(either.of(k), v);
 }
 
-export function sequenceEither<K, V, E>(dict: Dict<K, Either<E, V>>): Either<E, Dict<K, V>> {
+export function sequenceEither<K, V, E>(
+  dict: Dict<K, Either<E, V>>,
+): Either<E, Dict<K, V>> {
   return pipe(
     dict,
     Array_.map(sequenceKVEither),
@@ -90,11 +92,9 @@ const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
     ),
   );
 
-export const mergeSymmetric = <A, B>(reduceValues: (vs: NonEmptyArray<A>) => Option<B>) => <
-  K
->(
-  dicts: NonEmptyArray<Dict<K, A>>,
-): Option<Dict<K, B>> =>
+export const mergeSymmetric = <A, B>(
+  reduceValues: (vs: NonEmptyArray<A>) => Option<B>,
+) => <K>(dicts: NonEmptyArray<Dict<K, A>>): Option<Dict<K, B>> =>
   pipe(
     dicts,
     nonEmptyArray.sequence(array),

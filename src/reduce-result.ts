@@ -34,21 +34,27 @@ import {
   reduceeMismatch,
 } from './scrapql';
 
-export const literal = <L extends LiteralResult<any>>(results: NonEmptyArray<L>): Either<ReduceFailure, L> =>
+export const literal = <L extends LiteralResult<any>>(
+  results: NonEmptyArray<L>,
+): Either<ReduceFailure, L> =>
   pipe(
     NonEmptyArray_.tail(results),
     Array_.reduce(
       Either_.right(NonEmptyArray_.head(results)),
-      (ma: Either<ReduceFailure, L>, mb: Either<ReduceFailure, L>): Either<ReduceFailure, L> => pipe(
-        {a: ma, b: mb},
-        sequenceS(either),
-        Either_.chain(({a, b}) => {
-          if (JSON.stringify(a) !== JSON.stringify(b)) {
-            return Either_.left(reduceeMismatch);
-          }
-          return Either_.right(a);
-        }),
-      ),
+      (
+        ma: Either<ReduceFailure, L>,
+        mb: Either<ReduceFailure, L>,
+      ): Either<ReduceFailure, L> =>
+        pipe(
+          { a: ma, b: mb },
+          sequenceS(either),
+          Either_.chain(({ a, b }) => {
+            if (JSON.stringify(a) !== JSON.stringify(b)) {
+              return Either_.left(reduceeMismatch);
+            }
+            return Either_.right(a);
+          }),
+        ),
     ),
   );
 
@@ -62,19 +68,22 @@ export const leaf = <R extends LeafResult<any>>(
     readResult,
     Array_.reduce(writeResult, combineLeafResult),
   );
-  return foob
+  return foob;
 };
 
 export const keys = <K extends Key<any>, SR extends Result<any>>(
   reduceSubResult: ResultReducer<SR>,
-) => (results: NonEmptyArray<KeysResult<SR, K>>): Either<ReduceFailure, KeysResult<SR, K>> =>
+) => (
+  results: NonEmptyArray<KeysResult<SR, K>>,
+): Either<ReduceFailure, KeysResult<SR, K>> =>
   pipe(
     results,
-    Dict_.mergeSymmetric((subResultVariants: NonEmptyArray<SR>): Option<Either<ReduceFailure, SR>> =>
-      pipe(
-        reduceSubResult(subResultVariants),
-        Option_.some,
-      ),
+    Dict_.mergeSymmetric(
+      (subResultVariants: NonEmptyArray<SR>): Option<Either<ReduceFailure, SR>> =>
+        pipe(
+          reduceSubResult(subResultVariants),
+          Option_.some,
+        ),
     ),
     Either_.fromOption(() => reduceeMismatch),
     Either_.chain(Dict_.sequenceEither),
@@ -83,34 +92,42 @@ export const keys = <K extends Key<any>, SR extends Result<any>>(
 export const ids = <I extends Id<any>, E extends Err<any>, SR extends Result<any>>(
   reduceSubResult: ResultReducer<SR>,
   existenceChange: Lazy<E>,
-) => (results: NonEmptyArray<IdsResult<SR, I, E>>): Either<ReduceFailure, IdsResult<SR, I, E>> =>
+) => (
+  results: NonEmptyArray<IdsResult<SR, I, E>>,
+): Either<ReduceFailure, IdsResult<SR, I, E>> =>
   pipe(
     results,
-    Dict_.mergeSymmetric((subResultVariants: NonEmptyArray<Either<E, Option<SR>>>): Option<Either<ReduceFailure, Either<E, Option<SR>>>> =>
-      pipe(
-        subResultVariants,
-        (x: NonEmptyArray<Either<E, Option<SR>>>) => x,
-        nonEmptyArray.sequence(either),
-        (x: Either<E, NonEmptyArray<Option<SR>>>) => x,
-        Either_.map((foobb) => pipe(
-           foobb,
-           (x: NonEmptyArray<Option<SR>>) => x,
-           mergeOption,
-           (x: Option<NonEmptyArray<None>|NonEmptyArray<Some<SR>>>) => x,
-        )),
-        (x: Either<E, Option<NonEmptyArray<None>|NonEmptyArray<Some<SR>>>>) => x,
-        Either_.chain(Either_.fromOption(existenceChange)),
-        (x: Either<E, NonEmptyArray<None>|NonEmptyArray<Some<SR>>>) => x,
-        Either_.map(nonEmptyArray.sequence(option)),
-        (x: Either<E, Option<NonEmptyArray<SR>>>) => x,
-        Either_.map(
-          Option_.map(
-            (subResultVariants: NonEmptyArray<SR>): Either<ReduceFailure, SR> => reduceSubResult(subResultVariants),
+    Dict_.mergeSymmetric(
+      (
+        subResultVariants: NonEmptyArray<Either<E, Option<SR>>>,
+      ): Option<Either<ReduceFailure, Either<E, Option<SR>>>> =>
+        pipe(
+          subResultVariants,
+          (x: NonEmptyArray<Either<E, Option<SR>>>) => x,
+          nonEmptyArray.sequence(either),
+          (x: Either<E, NonEmptyArray<Option<SR>>>) => x,
+          Either_.map((foobb) =>
+            pipe(
+              foobb,
+              (x: NonEmptyArray<Option<SR>>) => x,
+              mergeOption,
+              (x: Option<NonEmptyArray<None> | NonEmptyArray<Some<SR>>>) => x,
+            ),
           ),
+          (x: Either<E, Option<NonEmptyArray<None> | NonEmptyArray<Some<SR>>>>) => x,
+          Either_.chain(Either_.fromOption(existenceChange)),
+          (x: Either<E, NonEmptyArray<None> | NonEmptyArray<Some<SR>>>) => x,
+          Either_.map(nonEmptyArray.sequence(option)),
+          (x: Either<E, Option<NonEmptyArray<SR>>>) => x,
+          Either_.map(
+            Option_.map(
+              (subResultVariants: NonEmptyArray<SR>): Either<ReduceFailure, SR> =>
+                reduceSubResult(subResultVariants),
+            ),
+          ),
+          Option_.some,
+          (x: Option<Either<ReduceFailure, Either<E, Option<SR>>>>) => x,
         ),
-        Option_.some,
-        (x: Option<Either<ReduceFailure, Either<E, Option<SR>>>>) => x,
-      ),
     ),
     (x: Option<Dict<I, Either<ReduceFailure, Either<E, Option<SR>>>>>) => x,
     Either_.fromOption(() => reduceeMismatch),
@@ -126,7 +143,9 @@ export const search = <
 >(
   reduceSubResult: ResultReducer<SR>,
   matchChange: Lazy<E>,
-) => (results: NonEmptyArray<SearchResult<SR, T, I, E>>): Either<ReduceFailure, SearchResult<SR, T, I, E>> =>
+) => (
+  results: NonEmptyArray<SearchResult<SR, T, I, E>>,
+): Either<ReduceFailure, SearchResult<SR, T, I, E>> =>
   pipe(
     results,
     Dict_.mergeSymmetric(
