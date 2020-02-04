@@ -2,6 +2,7 @@ import * as t from 'io-ts';
 
 import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Task, task } from 'fp-ts/lib/Task';
+import { Either, either } from 'fp-ts/lib/Either';
 import { Option, option } from 'fp-ts/lib/Option';
 import { sequenceT } from 'fp-ts/lib/Apply';
 import { array } from 'fp-ts/lib/Array';
@@ -27,15 +28,27 @@ export function mapWithIndex<K, A, B>(
     );
 }
 
-export function sequenceKV<K, V>([k, v]: [K, Task<V>]): Task<[K, V]> {
+export function sequenceKVTask<K, V>([k, v]: [K, Task<V>]): Task<[K, V]> {
   return sequenceT(task)(task.of(k), v);
 }
 
 export function sequenceTask<K, V>(dict: Dict<K, Task<V>>): Task<Dict<K, V>> {
   return pipe(
     dict,
-    Array_.map(sequenceKV),
+    Array_.map(sequenceKVTask),
     array.sequence(task),
+  );
+}
+
+export function sequenceKVEither<K, V, E>([k, v]: [K, Either<E, V>]): Either<E, [K, V]> {
+  return sequenceT(either)(either.of(k), v);
+}
+
+export function sequenceEither<K, V, E>(dict: Dict<K, Either<E, V>>): Either<E, Dict<K, V>> {
+  return pipe(
+    dict,
+    Array_.map(sequenceKVEither),
+    array.sequence(either),
   );
 }
 
@@ -77,16 +90,16 @@ const reduceDuplicateKeys = <T>(duplicates: NonEmptyArray<T>): Option<T> =>
     ),
   );
 
-export const mergeSymmetric = <V>(reduceValues: (vs: NonEmptyArray<V>) => Option<V>) => <
+export const mergeSymmetric = <A, B>(reduceValues: (vs: NonEmptyArray<A>) => Option<B>) => <
   K
 >(
-  dicts: NonEmptyArray<Dict<K, V>>,
-): Option<Dict<K, V>> =>
+  dicts: NonEmptyArray<Dict<K, A>>,
+): Option<Dict<K, B>> =>
   pipe(
     dicts,
     nonEmptyArray.sequence(array),
     Array_.map(
-      (variants): Option<[K, V]> =>
+      (variants: NonEmptyArray<[K, A]>): Option<[K, B]> =>
         pipe(
           {
             k: pipe(

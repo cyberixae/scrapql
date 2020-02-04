@@ -87,9 +87,9 @@ export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
 
 export type Existence = boolean;
 export type ExistenceResult<E extends Err<any>> = Either<E, Existence>;
-export type TermsResult<E extends Err<any>, I extends Id> = Either<E, I>;
-export type LiteralResult<Q extends Json> = Q;
-export type LeafResult<Q extends Json> = Q;
+export type TermsResult<E extends Err<any>, I extends Id<any>> = Either<E, I>;
+export type LiteralResult<R extends Json> = R;
+export type LeafResult<R extends Json> = R;
 export type KeysResult<SR extends Result<any>, K extends Key<any>> = Dict<K, SR>;
 export type IdsResult<
   SR extends Result<any>,
@@ -189,8 +189,13 @@ export type QueryProcessorMapping<
   [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], A, C>;
 };
 
-export type Results<R extends Result<any>> = NonEmptyArray<R>;
-export type ResultReducer<R extends Result<any>> = (r: Results<R>) => R;
+const MISMATCH = 'Structural mismatch';
+export type ReduceeMismatch = typeof MISMATCH;
+export const reduceeMismatch: ReduceeMismatch = MISMATCH;
+
+export type ReduceFailure = ReduceeMismatch;
+
+export type ResultReducer<R extends Result<any>> = (r: NonEmptyArray<R>) => Either<ReduceFailure, R>;
 export type LeafResultCombiner<R extends Result<any>> = (w: R, r: R) => R;
 
 export type ResultReducerMapping<R extends PropertiesResult<any>> = {
