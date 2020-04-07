@@ -5,11 +5,11 @@ import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
-import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import * as Option_ from 'fp-ts/lib/Option';
 
 import { Zero, zero, Prepend, prepend, Onion } from './onion';
 import { Dict as _Dict, dict as _dict } from './dict';
+import { SIterator, sIterator } from './iterator';
 
 export * as ids from './shapes/ids';
 export * as keys from './shapes/keys';
@@ -245,15 +245,8 @@ export const constructors = <Q extends Query, R extends Result, E extends Err>(
   err: (e) => e,
 });
 
-
-export type Examples<A> = Iterator<A, A, never>
-export function* examples<A>(nea: NonEmptyArray<A>): Examples<A> {
-  // eslint-disable-next-line
-  for (const a of NonEmptyArray_.init(nea)) {
-    yield a;
-  }
-  return NonEmptyArray_.last(nea);
-};
+export type Examples<A> = SIterator<A>;
+export const examples = sIterator;
 
 export type ExampleCatalog<Q extends Query, R extends Result> = {
   queryExamples: Examples<Q>;
@@ -281,7 +274,10 @@ export type Fundamentals<
   C extends Context,
   QA extends Resolvers,
   RA extends Reporters
-> = QueryUtils<Q, R, QA, C> & ResultUtils<R, RA, C> & Codecs<Q, R, E> & ExampleCatalog<Q, R>;
+> = QueryUtils<Q, R, QA, C> &
+  ResultUtils<R, RA, C> &
+  Codecs<Q, R, E> &
+  ExampleCatalog<Q, R>;
 
 export type Conveniences<Q extends Query, R extends Result, E extends Err> = Constructors<
   Q,
