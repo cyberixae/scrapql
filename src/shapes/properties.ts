@@ -12,14 +12,19 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import {
   Context,
+  //  Examples,
   PropertiesQuery,
   PropertiesResult,
   Property,
+  //  Query,
+  //  QueryExamplesMapping,
   QueryProcessor,
   QueryProcessorMapping,
   ReduceFailure,
   Reporters,
   Resolvers,
+  //  Result,
+  //  ResultExamplesMapping,
   ResultProcessor,
   ResultProcessorMapping,
   ResultReducer,
@@ -103,3 +108,40 @@ export const reduceResult = <R extends PropertiesResult>(
   const result: Either<ReduceFailure, Record<P, R[P]>> = Record_.sequence(either)(omg);
   return result as Either<ReduceFailure, R>;
 };
+
+/*
+export function* sequenceS<O extends Record<string, any>>(
+  iterators: {
+  [I in keyof O]: Examples<Required<O>[I]>;
+}
+
+): Examples<{ [I in keyof O]: O[I] extends Examples<infer A> ? A : never }> {
+  // eslint-disable-next-line
+  while (true) {
+    Object.entries(iterators).map(([k, v]) => {
+      
+    })
+    /*
+    const results: Array<SIteratorResult<unknown>> = iterators.map((i) => i.next());
+    const done = results.some((r) => r.done);
+    if (done) {
+      return results as any;
+    }
+    yield results as any;
+    * /
+    return null;
+  }
+}
+
+export function queryExamples<Q extends PropertiesQuery>(
+  subQueries: QueryExamplesMapping<Q>,
+): Examples<Q> {
+  return sequenceS(subQueries) as Examples<Q>;
+}
+
+export function resultExamples<R extends PropertiesResult>(
+  subResults: ResultExamplesMapping<R>,
+): Examples<R> {
+  return sequenceS(subResults) as Examples<R>;
+}
+*/

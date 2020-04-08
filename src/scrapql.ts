@@ -248,6 +248,13 @@ export const constructors = <Q extends Query, R extends Result, E extends Err>(
 export type Examples<A> = SIterator<A>;
 export const examples = sIterator;
 
+export type QueryExamplesMapping<Q extends PropertiesQuery<any>> = {
+  [I in keyof Q]: Examples<Required<Q>[I]>;
+};
+export type ResultExamplesMapping<R extends PropertiesResult<any>> = {
+  [I in keyof R]: Examples<Required<R>[I]>;
+};
+
 export type ExampleCatalog<Q extends Query, R extends Result> = {
   queryExamples: Examples<Q>;
   resultExamples: Examples<R>;
