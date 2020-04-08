@@ -80,22 +80,22 @@ export function sequenceT<I extends NonEmptyArray<SIterator<any>>>(
     // eslint-disable-next-line
     while(true) {
       // eslint-disable-next-line
-      let { done: doneH, value: head } = handle.next();
+      let { done: doneHeads, value: head } = handle.next();
       // eslint-disable-next-line
-      let grog = pipe(
+      let combos = pipe(
         tails,
         map((tail) => [head, ...(tail as any)]),
       ) as any;
-      const woot = grog();
+      const comboHandle = combos();
       // eslint-disable-next-line
       while (true) {
-        const { done: doneT, value } = woot.next();
-        yield value as any;
-        if (doneT) {
+        const { done: doneCombos, value: combo } = comboHandle.next();
+        yield combo as any;
+        if (doneCombos) {
           break;
         }
       }
-      if (doneH) {
+      if (doneHeads) {
         break;
       }
     }
