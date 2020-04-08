@@ -32,7 +32,7 @@ export function fromGF<A>(gf: () => Generator<A, void, undefined>): SIterator<A>
       if (current.done) {
         return previous.value;
       }
-      yield previous.value,
+      yield previous.value;
         // eslint-disable-next-line
       previous = current;
     }
@@ -66,22 +66,45 @@ export function sequenceT<I extends NonEmptyArray<SIterator<any>>>(
     console.log(first);
     console.log(more);
     if (more.length === 0) {
+      console.log('muumi1.5');
+
+      const handle = first();
       // eslint-disable-next-line
-      for (const v of first()) {
-        yield v;
+      while(true) {
+        // eslint-disable-next-line
+        let { done, value: head } = handle.next();
+        yield [head] as any;
+        if (done) {
+          return;
+        }
       }
-      return;
+      console.log('/muumi1.5');
     }
-    console.log('muumi2');
-    console.log(first);
-    console.log(more);
     const tails = sequenceT(...(more as any));
+
+    const handle = first();
     // eslint-disable-next-line
-    for (const head of first()) {
-      yield* pipe(
+    while(true) {
+      // eslint-disable-next-line
+      let { done: doneH, value: head } = handle.next();
+      // eslint-disable-next-line
+      let grog = pipe(
         tails,
         map((tail) => [head, ...(tail as any)]),
       ) as any;
+      console.log('buumi')
+      let woot = grog();
+      while(true) {
+        let { done: doneT, value } = woot.next();
+        yield value as any;
+        if (doneT) {
+          break;
+        }
+      }
+      if (doneH) {
+        break;
+      }
     }
+    console.log('muumi3');
   });
 }

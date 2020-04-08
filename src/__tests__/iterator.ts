@@ -15,6 +15,7 @@ describe('SIterator', () => {
     expect(handle.next()).toStrictEqual({ value: 'b', done: false });
     expect(handle.next()).toStrictEqual({ value: 'c', done: true });
   });
+
   it('map', () => {
     const numbers: SIterator<number> = SIterator_.fromGF(function* () {
       yield 1;
@@ -30,8 +31,32 @@ describe('SIterator', () => {
     expect(handle.next()).toStrictEqual({ value: 4, done: false });
     expect(handle.next()).toStrictEqual({ value: 6, done: true });
   });
-  /*
-  it('sequenceT', () => {
+
+  it('sequenceT1', () => {
+    type AB = 'a' | 'b';
+    const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
+    type One = [SIterator<AB>];
+    const separate: One = [ab];
+    const combined: SIterator<[AB]> = pipe(SIterator_.sequenceT(...separate));
+    const handle = combined();
+    expect(handle.next()).toStrictEqual({ value: ['a'], done: false });
+    expect(handle.next()).toStrictEqual({ value: ['b'], done: true });
+  });
+  it('sequenceT2', () => {
+    type AB = 'a' | 'b';
+    const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
+    type CD = 'c' | 'd';
+    const cd: SIterator<CD> = SIterator_.sIterator(['c', 'd']);
+    type Two = [SIterator<AB>, SIterator<CD>];
+    const separate: Two = [ab, cd];
+    const combined: SIterator<[AB, CD]> = pipe(SIterator_.sequenceT(...separate));
+    const handle = combined();
+    expect(handle.next()).toStrictEqual({ value: ['a', 'c'], done: false });
+    expect(handle.next()).toStrictEqual({ value: ['a', 'd'], done: false });
+    expect(handle.next()).toStrictEqual({ value: ['b', 'c'], done: false });
+    expect(handle.next()).toStrictEqual({ value: ['b', 'd'], done: true });
+  });
+  it('sequenceT3', () => {
     type AB = 'a' | 'b';
     const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
     type CD = 'c' | 'd';
@@ -51,5 +76,4 @@ describe('SIterator', () => {
     expect(handle.next()).toStrictEqual({ value: ['b', 'd', 'e'], done: false });
     expect(handle.next()).toStrictEqual({ value: ['b', 'd', 'f'], done: true });
   });
- */
 });
