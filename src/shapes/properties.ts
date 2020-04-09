@@ -10,21 +10,21 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
+import * as NEGenF_ from '../negf';
+
 import {
   Context,
-  //  Examples,
+  Examples,
   PropertiesQuery,
   PropertiesResult,
   Property,
-  //  Query,
-  //  QueryExamplesMapping,
+  QueryExamplesMapping,
   QueryProcessor,
   QueryProcessorMapping,
   ReduceFailure,
   Reporters,
   Resolvers,
-  //  Result,
-  //  ResultExamplesMapping,
+  ResultExamplesMapping,
   ResultProcessor,
   ResultProcessorMapping,
   ResultReducer,
@@ -109,39 +109,14 @@ export const reduceResult = <R extends PropertiesResult>(
   return result as Either<ReduceFailure, R>;
 };
 
-/*
-export function* sequenceS<O extends Record<string, any>>(
-  iterators: {
-  [I in keyof O]: Examples<Required<O>[I]>;
-}
-
-): Examples<{ [I in keyof O]: O[I] extends Examples<infer A> ? A : never }> {
-  // eslint-disable-next-line
-  while (true) {
-    Object.entries(iterators).map(([k, v]) => {
-      
-    })
-    /*
-    const results: Array<SIteratorResult<unknown>> = iterators.map((i) => i.next());
-    const done = results.some((r) => r.done);
-    if (done) {
-      return results as any;
-    }
-    yield results as any;
-    * /
-    return null;
-  }
-}
-
 export function queryExamples<Q extends PropertiesQuery>(
   subQueries: QueryExamplesMapping<Q>,
 ): Examples<Q> {
-  return sequenceS(subQueries) as Examples<Q>;
+  return NEGenF_.sequenceS(subQueries) as Examples<Q>;
 }
 
 export function resultExamples<R extends PropertiesResult>(
   subResults: ResultExamplesMapping<R>,
 ): Examples<R> {
-  return sequenceS(subResults) as Examples<R>;
+  return NEGenF_.sequenceS(subResults) as Examples<R>;
 }
-*/

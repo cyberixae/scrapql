@@ -2,10 +2,10 @@ import { pipe } from 'fp-ts/lib/pipeable';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 
-export type SIteratorResult<A> = IteratorResult<A, A>;
+export type NEGenFResult<A> = IteratorResult<A, A>;
 
-export type SIterator<A> = () => Generator<A, A, undefined>;
-export function sIterator<A>(nea: NonEmptyArray<A>): SIterator<A> {
+export type NEGenF<A> = () => Generator<A, A, undefined>;
+export function neGenF<A>(nea: NonEmptyArray<A>): NEGenF<A> {
   return function* () {
     // eslint-disable-next-line
     for (const a of NonEmptyArray_.init(nea)) {
@@ -15,7 +15,27 @@ export function sIterator<A>(nea: NonEmptyArray<A>): SIterator<A> {
   };
 }
 
-export function fromGF<A>(gf: () => Generator<A, void, undefined>): SIterator<A> {
+export function toNEArray<A>(gen: NEGenF<A>): NonEmptyArray<A> {
+  const handle = gen();
+  const init = [];
+  // eslint-disable-next-line
+  let last;
+  // eslint-disable-next-line
+  while(true) {
+    // eslint-disable-next-line
+    let { done, value } = handle.next();
+    if (done) {
+      // eslint-disable-next-line
+      last = value;
+      break;
+    } else {
+      init.push(value);
+    }
+  }
+  return NonEmptyArray_.snoc(init, last);
+}
+
+export function fromGF<A>(gf: () => Generator<A, void, undefined>): NEGenF<A> {
   return function* (): Generator<A, A, undefined> {
     const handle = gf();
     const first = handle.next();
@@ -39,8 +59,30 @@ export function fromGF<A>(gf: () => Generator<A, void, undefined>): SIterator<A>
   };
 }
 
+export function take(limit: number) {
+  return function <A>(gen: NEGenF<A>): NEGenF<A> {
+    return fromGF(function* () {
+      // eslint-disable-next-line
+      const handle = gen();
+      // eslint-disable-next-line
+      let i = 0;
+      // eslint-disable-next-line
+      while(i < limit) {
+        // eslint-disable-next-line
+        let { done, value } = handle.next();
+        yield value;
+        if (done) {
+          break;
+        }
+        // eslint-disable-next-line
+        i += 1;
+      }
+    });
+  };
+}
+
 export function map<A, B>(f: (a: A) => B) {
-  return function (gen: SIterator<A>): SIterator<B> {
+  return function (gen: NEGenF<A>): NEGenF<B> {
     return fromGF(function* () {
       // eslint-disable-next-line
       const handle = gen();
@@ -57,9 +99,9 @@ export function map<A, B>(f: (a: A) => B) {
   };
 }
 
-export function sequenceT<I extends NonEmptyArray<SIterator<any>>>(
+export function sequenceT<I extends NonEmptyArray<NEGenF<any>>>(
   ...generators: I
-): SIterator<{ [K in keyof I]: I[K] extends SIterator<infer A> ? A : never }> {
+): NEGenF<{ [K in keyof I]: I[K] extends NEGenF<infer A> ? A : never }> {
   return fromGF(function* () {
     const [first, ...more] = generators;
     if (more.length === 0) {
@@ -102,11 +144,11 @@ export function sequenceT<I extends NonEmptyArray<SIterator<any>>>(
   });
 }
 
-export function sequenceS<O extends Record<string, SIterator<any>>>(
+export function sequenceS<O extends Record<string, NEGenF<any>>>(
   generators: {
     [I in keyof O]: O[I];
   },
-): SIterator<{ [I in keyof O]: O[I] extends SIterator<infer A> ? A : never }> {
+): NEGenF<{ [I in keyof O]: O[I] extends NEGenF<infer A> ? A : never }> {
   return fromGF(function* () {
     const [[firstKey, firstGen], ...more] = Object.entries(generators);
     if (more.length === 0) {

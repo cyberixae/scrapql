@@ -16,7 +16,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import * as Context_ from '../onion';
 import * as Dict_ from '../dict';
-import * as Iterator_ from '../iterator';
+import * as NEGenF_ from '../negf';
 import * as Onion_ from '../onion';
 import { Dict } from '../dict';
 import { Prepend } from '../onion';
@@ -186,8 +186,8 @@ export function queryExamples<T extends Terms, SQ extends Result>(
   subQueries: Examples<SQ>,
 ): Examples<SearchQuery<SQ, T>> {
   return pipe(
-    Iterator_.sequenceT(searches, subQueries),
-    Iterator_.map(([search, subQuery]) => Dict_.dict([search, subQuery])),
+    NEGenF_.sequenceT(searches, subQueries),
+    NEGenF_.map(([search, subQuery]) => Dict_.dict([search, subQuery])),
   );
 }
 
@@ -202,8 +202,8 @@ export function resultExamples<
   subResults: Examples<SR>,
 ): Examples<SearchResult<SR, T, I, E>> {
   return pipe(
-    Iterator_.sequenceT(termss, ids, subResults),
-    Iterator_.map(
+    NEGenF_.sequenceT(termss, ids, subResults),
+    NEGenF_.map(
       ([terms, id, subResult]): SearchResult<SR, T, I, E> =>
         Dict_.dict([terms, Either_.right(Dict_.dict([id, subResult]))]),
     ),

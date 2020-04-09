@@ -9,7 +9,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 
 import { Zero, zero, Prepend, prepend, Onion } from './onion';
 import { Dict as _Dict, dict as _dict } from './dict';
-import { SIterator, sIterator } from './iterator';
+import { NEGenF, neGenF } from './negf';
 
 export * as ids from './shapes/ids';
 export * as keys from './shapes/keys';
@@ -245,8 +245,8 @@ export const constructors = <Q extends Query, R extends Result, E extends Err>(
   err: (e) => e,
 });
 
-export type Examples<A> = SIterator<A>;
-export const examples = sIterator;
+export type Examples<A> = NEGenF<A>;
+export const examples = neGenF;
 
 export type QueryExamplesMapping<Q extends PropertiesQuery<any>> = {
   [I in keyof Q]: Examples<Required<Q>[I]>;
