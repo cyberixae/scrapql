@@ -76,4 +76,102 @@ describe('SIterator', () => {
     expect(handle.next()).toStrictEqual({ value: ['b', 'd', 'e'], done: false });
     expect(handle.next()).toStrictEqual({ value: ['b', 'd', 'f'], done: true });
   });
+
+  it('sequenceS1', () => {
+    type AB = 'a' | 'b';
+    const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
+    type One = {
+      ab: SIterator<AB>;
+    };
+    const separate: One = { ab };
+    const combined: SIterator<{ ab: AB }> = SIterator_.sequenceS(separate);
+    const handle = combined();
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b' },
+      done: true,
+    });
+  });
+  it('sequenceS2', () => {
+    type AB = 'a' | 'b';
+    const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
+    type CD = 'c' | 'd';
+    const cd: SIterator<CD> = SIterator_.sIterator(['c', 'd']);
+    type Two = {
+      ab: SIterator<AB>;
+      cd: SIterator<CD>;
+    };
+    const separate: Two = { ab, cd };
+    const combined: SIterator<{ ab: AB; cd: CD }> = SIterator_.sequenceS(separate);
+    const handle = combined();
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'c' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'd' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'c' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'd' },
+      done: true,
+    });
+  });
+  it('sequenceS3', () => {
+    type AB = 'a' | 'b';
+    const ab: SIterator<AB> = SIterator_.sIterator(['a', 'b']);
+    type CD = 'c' | 'd';
+    const cd: SIterator<CD> = SIterator_.sIterator(['c', 'd']);
+    type EF = 'e' | 'f';
+    const ef: SIterator<EF> = SIterator_.sIterator(['e', 'f']);
+    type Three = {
+      ab: SIterator<AB>;
+      cd: SIterator<CD>;
+      ef: SIterator<EF>;
+    };
+    const separate: Three = { ab, cd, ef };
+    const combined: SIterator<{ ab: AB; cd: CD; ef: EF }> = SIterator_.sequenceS(
+      separate,
+    );
+    const handle = combined();
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'c', ef: 'e' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'c', ef: 'f' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'd', ef: 'e' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'a', cd: 'd', ef: 'f' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'c', ef: 'e' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'c', ef: 'f' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'd', ef: 'e' },
+      done: false,
+    });
+    expect(handle.next()).toStrictEqual({
+      value: { ab: 'b', cd: 'd', ef: 'f' },
+      done: true,
+    });
+  });
 });

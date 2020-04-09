@@ -101,3 +101,52 @@ export function sequenceT<I extends NonEmptyArray<SIterator<any>>>(
     }
   });
 }
+
+export function sequenceS<O extends Record<string, SIterator<any>>>(
+  generators: {
+    [I in keyof O]: O[I];
+  },
+): SIterator<{ [I in keyof O]: O[I] extends SIterator<infer A> ? A : never }> {
+  return fromGF(function* () {
+    const [[firstKey, firstGen], ...more] = Object.entries(generators);
+    if (more.length === 0) {
+      const handle = firstGen();
+      // eslint-disable-next-line
+      while(true) {
+        // eslint-disable-next-line
+        let { done, value: head } = handle.next();
+        yield Object.fromEntries([[firstKey, head]]) as any;
+        if (done) {
+          return;
+        }
+      }
+    }
+    const tails: any = sequenceS(Object.fromEntries(more) as any);
+
+    const handle = firstGen();
+    // eslint-disable-next-line
+    while(true) {
+      // eslint-disable-next-line
+      let { done: doneHeads, value: head } = handle.next();
+      // eslint-disable-next-line
+      let combos = pipe(
+        tails,
+        map((tail) =>
+          Object.fromEntries([[firstKey, head], ...Object.entries(tail as any)]),
+        ),
+      ) as any;
+      const comboHandle = combos();
+      // eslint-disable-next-line
+      while (true) {
+        const { done: doneCombos, value: combo } = comboHandle.next();
+        yield combo as any;
+        if (doneCombos) {
+          break;
+        }
+      }
+      if (doneHeads) {
+        break;
+      }
+    }
+  }) as any;
+}
