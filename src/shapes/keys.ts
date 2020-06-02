@@ -102,11 +102,10 @@ export const reduceResult = <K extends Key, SR extends Result>(
   pipe(
     results,
     Dict_.mergeSymmetric(
-      (subResultVariants: NonEmptyArray<SR>): Option<Either<ReduceFailure, SR>> =>
-        pipe(reduceSubResult(subResultVariants), Option_.some),
+      () => reduceeMismatch,
+      (subResultVariants: NonEmptyArray<SR>): Either<ReduceFailure, SR> =>
+        reduceSubResult(subResultVariants),
     ),
-    Either_.fromOption(() => reduceeMismatch),
-    Either_.chain(Dict_.sequenceEither),
   );
 
 export function queryExamples<K extends Key, SQ extends Query>(

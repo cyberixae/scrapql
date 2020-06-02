@@ -9,7 +9,7 @@ import { Either, either } from 'fp-ts/lib/Either';
 import { either as tEither } from 'io-ts-types/lib/either';
 import { Lazy, flow } from 'fp-ts/lib/function';
 import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
-import { Option, option } from 'fp-ts/lib/Option';
+import { Option, None, Some, option } from 'fp-ts/lib/Option';
 import { option as tOption } from 'io-ts-types/lib/option';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
@@ -143,35 +143,27 @@ export function processResult<
 }
 
 export const reduceResult = <I extends Id, E extends Err, SR extends Result>(
-  reduceSubResult: ResultReducer<SR, E>,
-  existenceChange: Lazy<E>,
+  reduceSubResult: ResultReducer<SR>,
 ) => (
-  results: NonEmptyArray<Either<E, IdsResult<SR, I>>>,
-): Either<ReduceFailure, Either<E, IdsResult<SR, I>>> =>
+  results: NonEmptyArray<IdsResult<SR, I>>,
+): Either<ReduceFailure, IdsResult<SR, I>> =>
   pipe(
     results,
     Dict_.mergeSymmetric(
+      () => reduceeMismatch,
       (
-        subResultVariants: NonEmptyArray<Either<E, Option<SR>>>,
-      ): Option<Either<ReduceFailure, Either<E, Option<SR>>>> =>
+        subResultVariants: NonEmptyArray<Option<SR>>,
+      ): Either<ReduceFailure, Option<SR>> =>
         pipe(
-          subResultVariants,
-          nonEmptyArray.sequence(either),
-          Either_.map(mergeOption),
-          Either_.chain(Either_.fromOption(existenceChange)),
-          Either_.map(
-            flow(
-              nonEmptyArray.sequence(option),
-              Option_.map((subResultVariants) => reduceSubResult(subResultVariants)),
-              option.sequence(either),
-            ),
-          ),
-          either.sequence(either),
-          Option_.some,
-        ),
+          mergeOption(subResultVariants),
+          Either_.fromOption(() => reduceeMismatch),
+          Either_.chain(flow(
+            nonEmptyArray.sequence(option),
+            Option_.map((subResultVariants) => reduceSubResult(subResultVariants)),
+            option.sequence(either),
+          )),
+       ),
     ),
-    Either_.fromOption(() => reduceeMismatch),
-    Either_.chain(Dict_.sequenceEither),
   );
 
 export function queryExamples<I extends Id, SQ extends Query>(
@@ -218,7 +210,7 @@ export const bundle = <
     Err: item.Err,
     processQuery: processQuery(queryConnector, item.processQuery),
     processResult: processResult(resultConnector, item.processResult),
-    reduceResult: reduceResult(item.reduceResult, existenceChange),
+    reduceResult: reduceResult(item.reduceResult),
     queryExamples: queryExamples(examples(id.idExamples), item.queryExamples),
     resultExamples: resultExamples(examples(id.idExamples), item.resultExamples),
   });

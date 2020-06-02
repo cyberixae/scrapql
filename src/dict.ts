@@ -8,6 +8,7 @@ import { Option, option } from 'fp-ts/lib/Option';
 import { sequenceT } from 'fp-ts/lib/Apply';
 import { array } from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';
+import * as Either_ from 'fp-ts/lib/Either';
 import * as Array_ from 'fp-ts/lib/Array';
 import * as boolean_ from 'fp-ts/lib/boolean';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
@@ -111,20 +112,22 @@ const transpose = <A>(outer: NonEmptyArray<Array<A>>): Array<NonEmptyArray<A>> =
     ),
   );
 
-export const mergeSymmetric = <A, B>(
-  reduceValues: (vs: NonEmptyArray<A>) => Option<B>,
-) => <K>(dicts: NonEmptyArray<Dict<K, A>>): Option<Dict<K, B>> =>
+export const mergeSymmetric = <A, B, E>(
+  keyMismatch: () => E,
+  reduceValues: (vs: NonEmptyArray<A>) => Either<E, B>,
+) => <K>(dicts: NonEmptyArray<Dict<K, A>>): Either<E, Dict<K, B>> =>
   pipe(
     dicts,
     transpose,
     Array_.map(
-      (variants: NonEmptyArray<[K, A]>): Option<[K, B]> =>
+      (variants: NonEmptyArray<[K, A]>): Either<E, [K, B]> =>
         pipe(
           {
             k: pipe(
               variants,
               NonEmptyArray_.map(([k, _v]) => k),
               reduceDuplicateKeys,
+              Either_.fromOption(keyMismatch),
             ),
             v: pipe(
               variants,
@@ -132,11 +135,11 @@ export const mergeSymmetric = <A, B>(
               reduceValues,
             ),
           },
-          sequenceS(option),
-          Option_.map(({ k, v }) => [k, v]),
+          sequenceS(either),
+          Either_.map(({ k, v }) => [k, v]),
         ),
     ),
-    array.sequence(option),
+    array.sequence(either),
   );
 
 export const rewireDict = {
