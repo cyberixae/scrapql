@@ -2,6 +2,7 @@ import * as Array_ from 'fp-ts/lib/Array';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import { Either } from 'fp-ts/lib/Either';
+import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { pipe } from 'fp-ts/lib/pipeable';
@@ -52,7 +53,7 @@ export function processResult<
   R extends LeafResult,
   C extends Context
 >(connect: ReporterConnector<A, R, C>): ResultProcessor<R, A, C> {
-  return (result: R) => (context: C): ReaderTaskEither<A, never, void> => {
+  return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
       return reporter(result, context);

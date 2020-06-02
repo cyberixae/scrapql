@@ -3,7 +3,6 @@ import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
-import { TaskEither } from 'fp-ts/lib/TaskEither';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 import * as Option_ from 'fp-ts/lib/Option';
@@ -140,23 +139,22 @@ export type StructuralResult =
 
 export type Result = StructuralResult | ReportableResult;
 
-export type ProcessorInstance<I, O, E> = (i: I) => TaskEither<E,O>;
-export const processorInstance = <I, O, E extends Err, A extends API<any>, C extends Context>(
-  processor: Processor<I, O, E, A, C>,
+export type ProcessorInstance<I, O> = (i: I) => Task<O>;
+export const processorInstance = <I, O, A extends API<any>, C extends Context>(
+  processor: Processor<I, O, A, C>,
   api: A,
   context: C,
-): ProcessorInstance<I, O, E> => (input: I) => processor(input)(context)(api);
+): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
 export type QueryProcessorInstance<Q extends Query, R extends Result, E extends Err> = ProcessorInstance<
   Q,
-  R,
-  E
+  Either<E, R>
 >;
-export type ResultProcessorInstance<R extends Result, E extends Err> = ProcessorInstance<R, void, E>;
+export type ResultProcessorInstance<R extends Result, E extends Err> = ProcessorInstance<R, void>;
 
-export type Processor<I, O, E, A extends API<any>, C extends Context> = (
+export type Processor<I, O, A extends API<any>, C extends Context> = (
   i: I,
-) => (c: C) => ReaderTask<A, Either<E, O>>;
+) => (c: C) => ReaderTask<A, O>;
 
 export type QueryProcessor<
   Q extends Query,
@@ -164,21 +162,21 @@ export type QueryProcessor<
   E extends Err,
   A extends Resolvers,
   C extends Context
-> = Processor<Q, R, E, A, C>;
+> = Processor<Q, Either<E, R>, A, C>;
 
 export type ResultProcessor<
   R extends Result,
   A extends Reporters,
   C extends Context
-> = Processor<R, void, never, A, C>;
+> = Processor<R, void, A, C>;
 
-export type Handler<E extends Err, I, O, C extends Context> = (i: I, c: C) => TaskEither<E, O>;
+export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = Handler<never, R, void, C>;
+export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   A extends Reporters,
@@ -194,10 +192,9 @@ export type ResultProcessorMapping<
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], A, C>;
 };
 
-export type Resolver<E extends Err, Q extends Query, R extends Result, C extends Context> = Handler<
-  E,
+export type Resolver<Q extends Query, R extends Result, E extends Err, C extends Context> = Handler<
   Q,
-  R,
+  Either<E, R>,
   C
 >;
 
@@ -207,7 +204,7 @@ export type ResolverConnector<
   R extends Result,
   E extends Err,
   C extends Context
-> = (a: A) => Resolver<E, Q, R, C>;
+> = (a: A) => Resolver<Q, R, E, C>;
 
 export type QueryProcessorMapping<
   A extends Resolvers,
@@ -341,7 +338,7 @@ export const protocol = <
 export type LiteralProtocolSeed<
   Q extends LiteralQuery,
   R extends LiteralResult,
-  E extends Err
+  E extends Err,
 > = {
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;
@@ -357,7 +354,7 @@ export type LeafProtocolSeed<
   E extends Err,
   C extends Context,
   QA extends Resolvers,
-  RA extends Reporters
+  RA extends Reporters,
 > = {
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;

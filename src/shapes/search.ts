@@ -1,17 +1,12 @@
 import * as Array_ from 'fp-ts/lib/Array';
-import * as Either_ from 'fp-ts/lib/Either';
 import * as Foldable_ from 'fp-ts/lib/Foldable';
-import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
-import * as Option_ from 'fp-ts/lib/Option';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
-import { Either, either } from 'fp-ts/lib/Either';
-import { either as tEither } from 'io-ts-types/lib/either';
-import { flow } from 'fp-ts/lib/function';
-import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
+import { Either } from 'fp-ts/lib/Either';
+import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { Task, taskSeq } from 'fp-ts/lib/Task';
-import { TaskEither, taskEitherSeq } from 'fp-ts/lib/TaskEither';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
 import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
@@ -112,19 +107,19 @@ export function processResult<
   connect: ReporterConnector<A, TermsResult<I>, Prepend<T, C>>,
   subProcessor: ResultProcessor<SR, A, Prepend<I, C>>,
 ): ResultProcessor<R, A, C> {
-  return (result: R) => (context: C): ReaderTaskEither<A, never, void> => {
-    return (reporters): TaskEither<never, void> => {
-      const tasks: Array<TaskEither<never, void>> = pipe(
+  return (result: R) => (context: C): ReaderTask<A, void> => {
+    return (reporters): Task<void> => {
+      const tasks: Array<Task<void>> = pipe(
         result,
         Dict_.mapWithIndex(
-          (terms: T, subResults: Dict<I, SR>): Array<TaskEither<never, void>> => {
+          (terms: T, subResults: Dict<I, SR>): Array<Task<void>> => {
             const termsContext = pipe(context, Onion_.prepend(terms));
-            const reportIds: TaskEither<never, void> = pipe(
+            const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
-              (ids: Array<I>): TaskEither<never, void> =>
+              (ids: Array<I>): Task<void> =>
                 connect(reporters)(termsResult<I>(ids), termsContext),
             );
-            const reportResults: Array<TaskEither<never, void>> = pipe(
+            const reportResults: Array<Task<void>> = pipe(
               subResults,
               Array_.map(([id, subResult]: [I, SR]) => {
                 const idContext = pipe(context, Onion_.prepend(id));
@@ -134,11 +129,11 @@ export function processResult<
             return pipe([[reportIds], reportResults], Array_.flatten);
           },
         ),
-        (x: Dict<T, Array<TaskEither<never, void>>>) => x,
+        (x: Dict<T, Array<Task<void>>>) => x,
         Array_.map(([_k, v]) => v),
         Array_.flatten,
       );
-      return Foldable_.traverse_(taskEitherSeq, array)(tasks, identity);
+      return Foldable_.traverse_(taskSeq, array)(tasks, identity);
     };
   };
 }

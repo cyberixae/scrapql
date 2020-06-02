@@ -1,11 +1,8 @@
 import * as Array_ from 'fp-ts/lib/Array';
-import * as Either_ from 'fp-ts/lib/Either';
 import * as Foldable_ from 'fp-ts/lib/Foldable';
-import * as Option_ from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
-import { TaskEither, taskEitherSeq } from 'fp-ts/lib/TaskEither';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
-import { Option } from 'fp-ts/lib/Option';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { Task, taskSeq } from 'fp-ts/lib/Task';
@@ -79,9 +76,9 @@ export function processResult<
   SR extends Result,
   C extends Context
 >(subProcessor: ResultProcessor<SR, A, Prepend<K, C>>): ResultProcessor<R, A, C> {
-  return (result: R) => (context: C): ReaderTaskEither<A, never, void> => {
-    return (reporters) => {
-      const tasks: Array<TaskEither<never, void>> = pipe(
+  return (result: R) => (context: C): ReaderTask<A, void> => {
+    return (reporters): Task<void> => {
+      const tasks: Array<Task<void>> = pipe(
         result,
         Dict_.mapWithIndex((key: K, subResult: SR) => {
           const subContext = pipe(context, Onion_.prepend(key));
@@ -89,7 +86,7 @@ export function processResult<
         }),
         Array_.map(([_k, v]) => v),
       );
-      return Foldable_.traverse_(taskEitherSeq, array)(tasks, identity);
+      return Foldable_.traverse_(taskSeq, array)(tasks, identity);
     };
   };
 }

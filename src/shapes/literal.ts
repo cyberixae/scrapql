@@ -2,7 +2,9 @@ import * as Array_ from 'fp-ts/lib/Array';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
+import * as Task_ from 'fp-ts/lib/Task';
 import { Either } from 'fp-ts/lib/Either';
+import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { pipe } from 'fp-ts/lib/pipeable';
@@ -46,8 +48,8 @@ export function processResult<
   R extends LiteralResult,
   C extends Context
 >(): ResultProcessor<R, A, C> {
-  return (_result: R) => (_context: C): ReaderTaskEither<A, never, void> => {
-    return (_reporters) => TaskEither_.right(undefined);
+  return (_result: R) => (_context: C): ReaderTask<A, void> => {
+    return (_reporters) => Task_.of(undefined);
   };
 }
 
