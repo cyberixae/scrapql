@@ -1,10 +1,10 @@
 import * as Array_ from 'fp-ts/lib/Array';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as NonEmptyArray_ from 'fp-ts/lib/NonEmptyArray';
-import * as Task_ from 'fp-ts/lib/Task';
+import * as TaskEither_ from 'fp-ts/lib/TaskEither';
 import { Either } from 'fp-ts/lib/Either';
+import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
-import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 import {
@@ -31,10 +31,11 @@ export function processQuery<
   A extends Resolvers,
   Q extends LiteralQuery,
   R extends LiteralResult,
+  E extends Err,
   C extends Context
->(constant: R): QueryProcessor<Q, R, A, C> {
-  return (_query: Q) => (_context: C): ReaderTask<A, R> => {
-    return (_resolvers) => Task_.of(constant);
+>(constant: R): QueryProcessor<Q, R, E, A, C> {
+  return (_query: Q) => (_context: C): ReaderTaskEither<A, E, R> => {
+    return (_resolvers) => TaskEither_.right(constant);
   };
 }
 
@@ -45,8 +46,8 @@ export function processResult<
   R extends LiteralResult,
   C extends Context
 >(): ResultProcessor<R, A, C> {
-  return (_result: R) => (_context: C): ReaderTask<A, void> => {
-    return (_reporters) => Task_.of(undefined);
+  return (_result: R) => (_context: C): ReaderTaskEither<A, never, void> => {
+    return (_reporters) => TaskEither_.right(undefined);
   };
 }
 

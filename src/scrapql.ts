@@ -3,6 +3,7 @@ import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
 import { Task } from 'fp-ts/lib/Task';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 import * as Option_ from 'fp-ts/lib/Option';
@@ -97,7 +98,15 @@ export type StructuralQuery =
 export type Query = StructuralQuery | FetchableQuery;
 
 export type Existence = boolean;
-export type ExistenceResult<E extends Err = Err> = Either<E, Existence>;
+
+export type ExistenceResult<R extends Existence = Existence> = R & {
+  readonly ExistenceResult: unique symbol;
+};
+export const existenceResult = <R extends Existence>(existence: R): ExistenceResult<R> =>
+  existence as ExistenceResult<R>;
+
+
+
 export type TermsResult<I extends Id, E extends Err> = Either<E, Array<I>>;
 
 export type LiteralResult = Json;
@@ -106,14 +115,12 @@ export type KeysResult<SR extends Result = Json, K extends Key = Key> = Dict<K, 
 export type IdsResult<
   SR extends Result = Json,
   I extends Id = Id,
-  E extends Err = Err
-> = Dict<I, Either<E, Option<SR>>>;
+> = Dict<I, Option<SR>>;
 export type SearchResult<
   SR extends Result = Json,
   T extends Terms = Terms,
   I extends Id = Id,
-  E extends Err = Err
-> = Dict<T, Either<E, Dict<I, SR>>>;
+> = Dict<T, Dict<I, SR>>;
 export type PropertiesResult<
   R extends {
     [I in Property]: Result;
@@ -132,43 +139,45 @@ export type StructuralResult =
 
 export type Result = StructuralResult | ReportableResult;
 
-export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, A extends API<any>, C extends Context>(
-  processor: Processor<I, O, A, C>,
+export type ProcessorInstance<I, O, E> = (i: I) => TaskEither<E,O>;
+export const processorInstance = <I, O, E extends Err, A extends API<any>, C extends Context>(
+  processor: Processor<I, O, E, A, C>,
   api: A,
   context: C,
-): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
+): ProcessorInstance<I, O, E> => (input: I) => processor(input)(context)(api);
 
-export type QueryProcessorInstance<Q extends Query, R extends Result> = ProcessorInstance<
+export type QueryProcessorInstance<Q extends Query, R extends Result, E extends Err> = ProcessorInstance<
   Q,
-  R
+  R,
+  E
 >;
-export type ResultProcessorInstance<R extends Result> = ProcessorInstance<R, void>;
+export type ResultProcessorInstance<R extends Result, E extends Err> = ProcessorInstance<R, void, E>;
 
-export type Processor<I, O, A extends API<any>, C extends Context> = (
+export type Processor<I, O, E, A extends API<any>, C extends Context> = (
   i: I,
-) => (c: C) => ReaderTask<A, O>;
+) => (c: C) => ReaderTask<A, Either<E, O>>;
 
 export type QueryProcessor<
   Q extends Query,
   R extends Result,
+  E extends Err,
   A extends Resolvers,
   C extends Context
-> = Processor<Q, R, A, C>;
+> = Processor<Q, R, E, A, C>;
 
 export type ResultProcessor<
   R extends Result,
   A extends Reporters,
   C extends Context
-> = Processor<R, void, A, C>;
+> = Processor<R, void, never, A, C>;
 
-export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
+export type Handler<E extends Err, I, O, C extends Context> = (i: I, c: C) => TaskEither<E, O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
+export type Reporter<R extends Result, C extends Context> = Handler<never, R, void, C>;
 
 export type ReporterConnector<
   A extends Reporters,
@@ -184,7 +193,8 @@ export type ResultProcessorMapping<
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], A, C>;
 };
 
-export type Resolver<Q extends Query, R extends Result, C extends Context> = Handler<
+export type Resolver<E extends Err, Q extends Query, R extends Result, C extends Context> = Handler<
+  E,
   Q,
   R,
   C
@@ -194,16 +204,18 @@ export type ResolverConnector<
   A extends Resolvers,
   Q extends Query,
   R extends Result,
+  E extends Err,
   C extends Context
-> = (a: A) => Resolver<Q, R, C>;
+> = (a: A) => Resolver<E, Q, R, C>;
 
 export type QueryProcessorMapping<
   A extends Resolvers,
   Q extends PropertiesQuery,
   R extends PropertiesResult,
+  E extends Err,
   C extends Context
 > = {
-  [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], A, C>;
+  [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, A, C>;
 };
 
 const MISMATCH = 'Structural mismatch';
@@ -272,10 +284,11 @@ export type ExampleCatalog<Q extends Query, R extends Result> = {
 export type QueryUtils<
   Q extends Query,
   R extends Result,
+  E extends Err,
   QA extends Resolvers,
   C extends Context
 > = {
-  processQuery: QueryProcessor<Q, R, QA, C>;
+  processQuery: QueryProcessor<Q, R, E, QA, C>;
 };
 
 export type ResultUtils<R extends Result, RA extends Reporters, C extends Context> = {
@@ -290,7 +303,7 @@ export type Fundamentals<
   C extends Context,
   QA extends Resolvers,
   RA extends Reporters
-> = QueryUtils<Q, R, QA, C> &
+> = QueryUtils<Q, R, E, QA, C> &
   ResultUtils<R, RA, C> &
   Codecs<Q, R, E> &
   ExampleCatalog<Q, R>;
@@ -348,7 +361,7 @@ export type LeafProtocolSeed<
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;
   Result: ResultCodec<R>;
-  queryConnector: ResolverConnector<QA, Q, R, C>;
+  queryConnector: ResolverConnector<QA, Q, R, E, C>;
   resultConnector: ReporterConnector<RA, R, C>;
   resultCombiner: LeafResultCombiner<R>;
   queryExamplesArray: NonEmptyArray<Q>;

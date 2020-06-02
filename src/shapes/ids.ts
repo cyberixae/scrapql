@@ -12,8 +12,9 @@ import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option, option } from 'fp-ts/lib/Option';
 import { option as tOption } from 'io-ts-types/lib/option';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
+import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { Task, taskSeq } from 'fp-ts/lib/Task';
-import { TaskEither } from 'fp-ts/lib/TaskEither';
+import { TaskEither, taskEitherSeq } from 'fp-ts/lib/TaskEither';
 import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
@@ -50,6 +51,7 @@ import {
   ResultReducer,
   examples,
   existenceQuery,
+  existenceResult,
   protocol,
   reduceeMismatch,
 } from '../scrapql';
@@ -65,10 +67,10 @@ export function processQuery<
   C extends Context,
   E extends Err
 >(
-  connect: ResolverConnector<A, ExistenceQuery<I>, ExistenceResult<E>, C>,
-  subProcessor: QueryProcessor<SQ, SR, A, Prepend<I, C>>,
-): QueryProcessor<Q, IdsResult<SR, I, E>, A, C> {
-  return (query: Q) => (context: C): ReaderTask<A, IdsResult<SR, I, E>> => {
+  connect: ResolverConnector<A, ExistenceQuery<I>, ExistenceResult, E, C>,
+  subProcessor: QueryProcessor<SQ, SR, E, A, Prepend<I, C>>,
+): QueryProcessor<Q, IdsResult<SR, I>, E, A, C> {
+  return (query: Q) => (context: C): ReaderTaskEither<A, E, IdsResult<SR, I>> => {
     return (resolvers) => {
       const tasks: Dict<I, TaskEither<E, Option<SR>>> = pipe(
         query,
@@ -78,16 +80,15 @@ export function processQuery<
             const existenceCheck = connect(resolvers);
             return pipe(
               existenceCheck(existenceQuery(id), context),
-              TaskEither_.chain((exists: Existence) =>
+              TaskEither_.chain((exists: Existence): TaskEither<E, Option<SR>> =>
                 pipe(
                   exists,
                   boolean_.fold(
-                    (): TaskEither<E, Option<SR>> => TaskEither_.right(Option_.none),
-                    (): TaskEither<E, Option<SR>> =>
+                    () => TaskEither_.right(Option_.none),
+                    () =>
                       pipe(
                         subProcessor(subQuery)(subContext)(resolvers),
-                        Task_.map(Option_.some),
-                        TaskEither_.rightTask,
+                        TaskEither_.map(Option_.some),
                       ),
                   ),
                 ),
@@ -96,7 +97,7 @@ export function processQuery<
           },
         ),
       );
-      return Dict_.sequenceTask(tasks);
+      return Dict_.sequenceTaskEither(tasks);
     };
   };
 }
@@ -105,55 +106,48 @@ export function processQuery<
 
 export function processResult<
   A extends Reporters,
-  R extends IdsResult<SR, I, E>,
+  R extends IdsResult<SR, I>,
   I extends Id,
   SR extends Result,
   C extends Context,
   E extends Err
 >(
-  connect: ReporterConnector<A, ExistenceResult<E>, Prepend<I, C>>,
+  connect: ReporterConnector<A, ExistenceResult, Prepend<I, C>>,
   subProcessor: ResultProcessor<SR, A, Prepend<I, C>>,
 ): ResultProcessor<R, A, C> {
-  return (result: R) => (context: C): ReaderTask<A, void> => {
+  return (result: R) => (context: C): ReaderTaskEither<A, never, void> => {
     return (reporters) => {
-      const tasks: Array<Task<void>> = pipe(
+      const tasks: Array<TaskEither<never, void>> = pipe(
         result,
-        Dict_.mapWithIndex((id: I, maybeSubResult: Either<E, Option<SR>>) => {
+        Dict_.mapWithIndex((id: I, maybeSubResult: Option<SR>) => {
           const subContext = pipe(context, Onion_.prepend(id));
           return pipe(
             maybeSubResult,
-            Either_.fold(
-              (err) => [connect(reporters)(Either_.left<E, Existence>(err), subContext)],
-              (opt) =>
-                pipe(
-                  opt,
-                  Option_.fold(
-                    () => [
-                      connect(reporters)(Either_.right<E, Existence>(false), subContext),
-                    ],
-                    (subResult) => [
-                      connect(reporters)(Either_.right<E, Existence>(true), subContext),
-                      subProcessor(subResult)(subContext)(reporters),
-                    ],
-                  ),
-                ),
+            Option_.fold(
+              () => [
+                connect(reporters)(existenceResult(false), subContext),
+              ],
+              (subResult) => [
+                connect(reporters)(existenceResult(true), subContext),
+                subProcessor(subResult)(subContext)(reporters),
+              ],
             ),
           );
         }),
         Array_.map(([_k, v]) => v),
         Array_.flatten,
       );
-      return Foldable_.traverse_(taskSeq, array)(tasks, identity);
+      return Foldable_.traverse_(taskEitherSeq, array)(tasks, identity);
     };
   };
 }
 
 export const reduceResult = <I extends Id, E extends Err, SR extends Result>(
-  reduceSubResult: ResultReducer<SR>,
+  reduceSubResult: ResultReducer<SR, E>,
   existenceChange: Lazy<E>,
 ) => (
-  results: NonEmptyArray<IdsResult<SR, I, E>>,
-): Either<ReduceFailure, IdsResult<SR, I, E>> =>
+  results: NonEmptyArray<Either<E, IdsResult<SR, I>>>,
+): Either<ReduceFailure, Either<E, IdsResult<SR, I>>> =>
   pipe(
     results,
     Dict_.mergeSymmetric(
@@ -193,12 +187,12 @@ export function queryExamples<I extends Id, SQ extends Query>(
 export function resultExamples<I extends Id, SR extends Result, E extends Err>(
   ids: Examples<I>,
   subResults: Examples<SR>,
-): Examples<IdsResult<SR, I, E>> {
+): Examples<IdsResult<SR, I>> {
   return pipe(
     NEGenF_.sequenceT(ids, subResults),
     NEGenF_.map(
-      ([id, subResult]): IdsResult<SR, I, E> =>
-        Dict_.dict([id, Either_.right(Option_.some(subResult))]),
+      ([id, subResult]): IdsResult<SR, I> =>
+        Dict_.dict([id, Option_.some(subResult)]),
     ),
   );
 }
@@ -214,13 +208,13 @@ export const bundle = <
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
-  queryConnector: ResolverConnector<QA, ExistenceQuery<I>, ExistenceResult<E>, C>,
-  resultConnector: ReporterConnector<RA, ExistenceResult<E>, Prepend<I, C>>,
+  queryConnector: ResolverConnector<QA, ExistenceQuery<I>, ExistenceResult, E, C>,
+  resultConnector: ReporterConnector<RA, ExistenceResult, Prepend<I, C>>,
   existenceChange: Lazy<E>,
-): Protocol<IdsQuery<Q, I>, IdsResult<R, I, E>, E, C, QA, RA> =>
+): Protocol<IdsQuery<Q, I>, IdsResult<R, I>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),
-    Result: Dict(id.Id, tEither(item.Err, tOption(item.Result))),
+    Result: Dict(id.Id, tOption(item.Result)),
     Err: item.Err,
     processQuery: processQuery(queryConnector, item.processQuery),
     processResult: processResult(resultConnector, item.processResult),

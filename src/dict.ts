@@ -2,6 +2,7 @@ import * as t from 'io-ts';
 
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Task, task } from 'fp-ts/lib/Task';
+import { TaskEither, taskEither } from 'fp-ts/lib/TaskEither';
 import { Either, either } from 'fp-ts/lib/Either';
 import { Option, option } from 'fp-ts/lib/Option';
 import { sequenceT } from 'fp-ts/lib/Apply';
@@ -44,6 +45,13 @@ export function sequenceEither<K, V, E>(
   dict: Dict<K, Either<E, V>>,
 ): Either<E, Dict<K, V>> {
   return pipe(dict, Array_.map(sequenceKVEither), array.sequence(either));
+}
+
+export function sequenceKVTaskEither<K, E, V>([k, v]: [K, TaskEither<E, V>]): TaskEither<E, [K, V]> {
+  return sequenceT(taskEither)(taskEither.of(k), v);
+}
+export function sequenceTaskEither<K, E, V>(dict: Dict<K, TaskEither<E, V>>): TaskEither<E, Dict<K, V>> {
+  return pipe(dict, Array_.map(sequenceKVTaskEither), array.sequence(taskEither));
 }
 
 export function lookup<K>(k: K) {
