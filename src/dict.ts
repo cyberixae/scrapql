@@ -4,7 +4,7 @@ import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Task, task } from 'fp-ts/lib/Task';
 import { TaskEither, taskEither } from 'fp-ts/lib/TaskEither';
 import { Either, either } from 'fp-ts/lib/Either';
-import { Option, option } from 'fp-ts/lib/Option';
+import { Option } from 'fp-ts/lib/Option';
 import { sequenceT } from 'fp-ts/lib/Apply';
 import { array } from 'fp-ts/lib/Array';
 import * as Option_ from 'fp-ts/lib/Option';

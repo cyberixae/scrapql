@@ -31,7 +31,6 @@ import {
   Examples,
   Existence,
   ExistenceQuery,
-  ExistenceResult,
   Id,
   IdCodec,
   IdsQuery,
@@ -49,7 +48,6 @@ import {
   ResultReducer,
   examples,
   existenceQuery,
-  existenceResult,
   protocol,
   reduceeMismatch,
 } from '../scrapql';
@@ -65,7 +63,7 @@ export function processQuery<
   C extends Context,
   E extends Err
 >(
-  connect: ResolverConnector<A, ExistenceQuery<I>, ExistenceResult, E, C>,
+  connect: ResolverConnector<A, ExistenceQuery<I>, Existence, E, C>,
   subProcessor: QueryProcessor<SQ, SR, E, A, Prepend<I, C>>,
 ): QueryProcessor<Q, IdsResult<SR, I>, E, A, C> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, IdsResult<SR, I>> => {
@@ -110,7 +108,7 @@ export function processResult<
   C extends Context,
   E extends Err
 >(
-  connect: ReporterConnector<A, ExistenceResult, Prepend<I, C>>,
+  connect: ReporterConnector<A, Existence, Prepend<I, C>>,
   subProcessor: ResultProcessor<SR, A, Prepend<I, C>>,
 ): ResultProcessor<R, A, C> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -123,10 +121,10 @@ export function processResult<
             maybeSubResult,
             Option_.fold(
               () => [
-                connect(reporters)(existenceResult(false), subContext),
+                connect(reporters)(false, subContext),
               ],
               (subResult) => [
-                connect(reporters)(existenceResult(true), subContext),
+                connect(reporters)(true, subContext),
                 subProcessor(subResult)(subContext)(reporters),
               ],
             ),
@@ -198,8 +196,8 @@ export const bundle = <
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
-  queryConnector: ResolverConnector<QA, ExistenceQuery<I>, ExistenceResult, E, C>,
-  resultConnector: ReporterConnector<RA, ExistenceResult, Prepend<I, C>>,
+  queryConnector: ResolverConnector<QA, ExistenceQuery<I>, Existence, E, C>,
+  resultConnector: ReporterConnector<RA, Existence, Prepend<I, C>>,
   existenceChange: Lazy<E>,
 ): Protocol<IdsQuery<Q, I>, IdsResult<R, I>, E, C, QA, RA> =>
   protocol({
