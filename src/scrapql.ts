@@ -106,8 +106,9 @@ export const existenceResult = <R extends Existence>(existence: R): ExistenceRes
   existence as ExistenceResult<R>;
 
 
-
-export type TermsResult<I extends Id, E extends Err> = Either<E, Array<I>>;
+export type TermsResult<I extends Id> = Array<I>;
+export const termsResult = <I extends Id>(ids: Array<I>): TermsResult<I> =>
+  ids;
 
 export type LiteralResult = Json;
 export type LeafResult = Json;
