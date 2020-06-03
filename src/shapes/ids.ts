@@ -61,7 +61,7 @@ export function processQuery<
   A extends Resolvers,
   I extends Id,
   SQ extends Query,
-  SR extends Result,
+  SR extends Result
 >(
   connect: ResolverConnector<ExistenceQuery<I>, Existence, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
@@ -107,7 +107,7 @@ export function processResult<
   C extends Context,
   A extends Reporters,
   I extends Id,
-  SR extends Result,
+  SR extends Result
 >(
   connect: ReporterConnector<Existence, Prepend<I, C>, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,

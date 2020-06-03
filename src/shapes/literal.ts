@@ -34,7 +34,7 @@ export function processQuery<
   E extends Err,
   C extends Context,
   A extends Resolvers,
-  R extends LiteralResult,
+  R extends LiteralResult
 >(constant: R): QueryProcessor<Q, R, E, C, A> {
   return (_query: Q) => (_context: C): ReaderTaskEither<A, E, R> => {
     return (_resolvers) => TaskEither_.right(constant);
@@ -46,7 +46,7 @@ export function processQuery<
 export function processResult<
   R extends LiteralResult,
   C extends Context,
-  A extends Reporters,
+  A extends Reporters
 >(): ResultProcessor<R, C, A> {
   return (_result: R) => (_context: C): ReaderTask<A, void> => {
     return (_reporters) => Task_.of(undefined);

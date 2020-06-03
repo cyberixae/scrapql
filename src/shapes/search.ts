@@ -58,7 +58,7 @@ export function processQuery<
   T extends Terms,
   I extends Id,
   SQ extends Query,
-  SR extends Result,
+  SR extends Result
 >(
   connect: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
@@ -102,7 +102,7 @@ export function processResult<
   A extends Reporters,
   T extends Terms,
   I extends Id,
-  SR extends Result,
+  SR extends Result
 >(
   connect: ReporterConnector<TermsResult<I>, Prepend<T, C>, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,

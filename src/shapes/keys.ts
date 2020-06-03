@@ -48,7 +48,7 @@ export function processQuery<
   A extends Resolvers,
   K extends Key,
   SQ extends Query,
-  SR extends Result,
+  SR extends Result
 >(
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<K, C>, A>,
 ): QueryProcessor<Q, KeysResult<SR, K>, E, C, A> {
@@ -74,7 +74,7 @@ export function processResult<
   C extends Context,
   A extends Reporters,
   K extends Key,
-  SR extends Result,
+  SR extends Result
 >(subProcessor: ResultProcessor<SR, Prepend<K, C>, A>): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters): Task<void> => {

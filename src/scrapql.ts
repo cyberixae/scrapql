@@ -159,14 +159,14 @@ export type QueryProcessor<
   Q extends Query,
   R extends Result,
   E extends Err,
-  C extends Context
-  A extends Resolvers,
+  C extends Context,
+  A extends Resolvers
 > = Processor<Q, Either<E, R>, C, A>;
 
 export type ResultProcessor<
   R extends Result,
-  C extends Context
-  A extends Reporters,
+  C extends Context,
+  A extends Reporters
 > = Processor<R, void, C, A>;
 
 export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
@@ -179,14 +179,14 @@ export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   R extends Result,
-  C extends Context
-  A extends Reporters,
+  C extends Context,
+  A extends Reporters
 > = (a: A) => Reporter<R, C>;
 
 export type ResultProcessorMapping<
   R extends PropertiesResult,
-  C extends Context
-  A extends Reporters,
+  C extends Context,
+  A extends Reporters
 > = {
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], C, A>;
 };
@@ -202,16 +202,16 @@ export type ResolverConnector<
   Q extends Query,
   R extends Result,
   E extends Err,
-  C extends Context
-  A extends Resolvers,
+  C extends Context,
+  A extends Resolvers
 > = (a: A) => Resolver<Q, R, E, C>;
 
 export type QueryProcessorMapping<
   Q extends PropertiesQuery,
   R extends PropertiesResult,
   E extends Err,
-  C extends Context
-  A extends Resolvers,
+  C extends Context,
+  A extends Resolvers
 > = {
   [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, C, A>;
 };
@@ -283,14 +283,14 @@ export type QueryUtils<
   Q extends Query,
   R extends Result,
   E extends Err,
-  C extends Context
-  QA extends Resolvers,
+  C extends Context,
+  QA extends Resolvers
 > = {
-  processQuery: QueryProcessor<Q, R, E, QA, C>;
+  processQuery: QueryProcessor<Q, R, E, C, QA>;
 };
 
 export type ResultUtils<R extends Result, C extends Context, RA extends Reporters> = {
-  processResult: ResultProcessor<R, RA, C>;
+  processResult: ResultProcessor<R, C, RA>;
   reduceResult: ResultReducer<R>;
 };
 
@@ -301,8 +301,8 @@ export type Fundamentals<
   C extends Context,
   QA extends Resolvers,
   RA extends Reporters
-> = QueryUtils<Q, R, E, QA, C> &
-  ResultUtils<R, RA, C> &
+> = QueryUtils<Q, R, E, C, QA> &
+  ResultUtils<R, C, RA> &
   Codecs<Q, R, E> &
   ExampleCatalog<Q, R>;
 

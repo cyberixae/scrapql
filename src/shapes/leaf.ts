@@ -36,7 +36,7 @@ export function processQuery<
   E extends Err,
   C extends Context,
   A extends Resolvers,
-  R extends LeafResult,
+  R extends LeafResult
 >(connect: ResolverConnector<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, R> => {
     return (resolvers) => {
@@ -51,7 +51,7 @@ export function processQuery<
 export function processResult<
   R extends LeafResult,
   C extends Context,
-  A extends Reporters,
+  A extends Reporters
 >(connect: ReporterConnector<R, C, A>): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
