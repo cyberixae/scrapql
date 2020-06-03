@@ -43,6 +43,6 @@ describe('Dict', () => {
           ),
       ),
     );
-    expect(result).toMatchObject(Option_.some(Dict_.dict(['foo', 4], ['bar', 6])));
+    expect(result).toMatchObject(Either_.right(Dict_.dict(['foo', 4], ['bar', 6])));
   });
 });

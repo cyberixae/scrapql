@@ -104,22 +104,17 @@ export type ExistenceResult<R extends Existence = Existence> = R & {
 export const existenceResult = <R extends Existence>(existence: R): ExistenceResult<R> =>
   existence as ExistenceResult<R>;
 
-
 export type TermsResult<I extends Id> = Array<I>;
-export const termsResult = <I extends Id>(ids: Array<I>): TermsResult<I> =>
-  ids;
+export const termsResult = <I extends Id>(ids: Array<I>): TermsResult<I> => ids;
 
 export type LiteralResult = Json;
 export type LeafResult = Json;
 export type KeysResult<SR extends Result = Json, K extends Key = Key> = Dict<K, SR>;
-export type IdsResult<
-  SR extends Result = Json,
-  I extends Id = Id,
-> = Dict<I, Option<SR>>;
+export type IdsResult<SR extends Result = Json, I extends Id = Id> = Dict<I, Option<SR>>;
 export type SearchResult<
   SR extends Result = Json,
   T extends Terms = Terms,
-  I extends Id = Id,
+  I extends Id = Id
 > = Dict<T, Dict<I, SR>>;
 export type PropertiesResult<
   R extends {
@@ -146,11 +141,15 @@ export const processorInstance = <I, O, A extends API<any>, C extends Context>(
   context: C,
 ): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
-export type QueryProcessorInstance<Q extends Query, R extends Result, E extends Err> = ProcessorInstance<
-  Q,
-  Either<E, R>
+export type QueryProcessorInstance<
+  Q extends Query,
+  R extends Result,
+  E extends Err
+> = ProcessorInstance<Q, Either<E, R>>;
+export type ResultProcessorInstance<R extends Result, E extends Err> = ProcessorInstance<
+  R,
+  void
 >;
-export type ResultProcessorInstance<R extends Result, E extends Err> = ProcessorInstance<R, void>;
 
 export type Processor<I, O, A extends API<any>, C extends Context> = (
   i: I,
@@ -192,11 +191,12 @@ export type ResultProcessorMapping<
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], A, C>;
 };
 
-export type Resolver<Q extends Query, R extends Result, E extends Err, C extends Context> = Handler<
-  Q,
-  Either<E, R>,
-  C
->;
+export type Resolver<
+  Q extends Query,
+  R extends Result,
+  E extends Err,
+  C extends Context
+> = Handler<Q, Either<E, R>, C>;
 
 export type ResolverConnector<
   A extends Resolvers,
@@ -338,7 +338,7 @@ export const protocol = <
 export type LiteralProtocolSeed<
   Q extends LiteralQuery,
   R extends LiteralResult,
-  E extends Err,
+  E extends Err
 > = {
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;
@@ -354,7 +354,7 @@ export type LeafProtocolSeed<
   E extends Err,
   C extends Context,
   QA extends Resolvers,
-  RA extends Reporters,
+  RA extends Reporters
 > = {
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;

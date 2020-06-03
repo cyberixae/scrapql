@@ -5,7 +5,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
 import * as boolean_ from 'fp-ts/lib/boolean';
 import { Either, either } from 'fp-ts/lib/Either';
-import { Lazy, flow } from 'fp-ts/lib/function';
+import { flow } from 'fp-ts/lib/function';
 import { NonEmptyArray, nonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option, option } from 'fp-ts/lib/Option';
 import { option as tOption } from 'io-ts-types/lib/option';
@@ -76,18 +76,19 @@ export function processQuery<
             const existenceCheck = connect(resolvers);
             return pipe(
               existenceCheck(existenceQuery(id), context),
-              TaskEither_.chain((exists: Existence): TaskEither<E, Option<SR>> =>
-                pipe(
-                  exists,
-                  boolean_.fold(
-                    () => TaskEither_.right(Option_.none),
-                    () =>
-                      pipe(
-                        subProcessor(subQuery)(subContext)(resolvers),
-                        TaskEither_.map(Option_.some),
-                      ),
+              TaskEither_.chain(
+                (exists: Existence): TaskEither<E, Option<SR>> =>
+                  pipe(
+                    exists,
+                    boolean_.fold(
+                      () => TaskEither_.right(Option_.none),
+                      () =>
+                        pipe(
+                          subProcessor(subQuery)(subContext)(resolvers),
+                          TaskEither_.map(Option_.some),
+                        ),
+                    ),
                   ),
-                ),
               ),
             );
           },
@@ -120,9 +121,7 @@ export function processResult<
           return pipe(
             maybeSubResult,
             Option_.fold(
-              () => [
-                connect(reporters)(false, subContext),
-              ],
+              () => [connect(reporters)(false, subContext)],
               (subResult) => [
                 connect(reporters)(true, subContext),
                 subProcessor(subResult)(subContext)(reporters),
@@ -147,18 +146,18 @@ export const reduceResult = <I extends Id, E extends Err, SR extends Result>(
     results,
     Dict_.mergeSymmetric(
       () => reduceeMismatch,
-      (
-        subResultVariants: NonEmptyArray<Option<SR>>,
-      ): Either<ReduceFailure, Option<SR>> =>
+      (subResultVariants: NonEmptyArray<Option<SR>>): Either<ReduceFailure, Option<SR>> =>
         pipe(
           mergeOption(subResultVariants),
           Either_.fromOption(() => reduceeMismatch),
-          Either_.chain(flow(
-            nonEmptyArray.sequence(option),
-            Option_.map((subResultVariants) => reduceSubResult(subResultVariants)),
-            option.sequence(either),
-          )),
-       ),
+          Either_.chain(
+            flow(
+              nonEmptyArray.sequence(option),
+              Option_.map((subResultVariants) => reduceSubResult(subResultVariants)),
+              option.sequence(either),
+            ),
+          ),
+        ),
     ),
   );
 
@@ -179,8 +178,7 @@ export function resultExamples<I extends Id, SR extends Result, E extends Err>(
   return pipe(
     NEGenF_.sequenceT(ids, subResults),
     NEGenF_.map(
-      ([id, subResult]): IdsResult<SR, I> =>
-        Dict_.dict([id, Option_.some(subResult)]),
+      ([id, subResult]): IdsResult<SR, I> => Dict_.dict([id, Option_.some(subResult)]),
     ),
   );
 }
@@ -198,7 +196,6 @@ export const bundle = <
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
   queryConnector: ResolverConnector<QA, ExistenceQuery<I>, Existence, E, C>,
   resultConnector: ReporterConnector<RA, Existence, Prepend<I, C>>,
-  existenceChange: Lazy<E>,
 ): Protocol<IdsQuery<Q, I>, IdsResult<R, I>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),

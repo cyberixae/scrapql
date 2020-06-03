@@ -48,10 +48,15 @@ export function sequenceEither<K, V, E>(
   return pipe(dict, Array_.map(sequenceKVEither), array.sequence(either));
 }
 
-export function sequenceKVTaskEither<K, E, V>([k, v]: [K, TaskEither<E, V>]): TaskEither<E, [K, V]> {
+export function sequenceKVTaskEither<K, E, V>([k, v]: [K, TaskEither<E, V>]): TaskEither<
+  E,
+  [K, V]
+> {
   return sequenceT(taskEither)(taskEither.of(k), v);
 }
-export function sequenceTaskEither<K, E, V>(dict: Dict<K, TaskEither<E, V>>): TaskEither<E, Dict<K, V>> {
+export function sequenceTaskEither<K, E, V>(
+  dict: Dict<K, TaskEither<E, V>>,
+): TaskEither<E, Dict<K, V>> {
   return pipe(dict, Array_.map(sequenceKVTaskEither), array.sequence(taskEither));
 }
 

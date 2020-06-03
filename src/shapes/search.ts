@@ -152,10 +152,7 @@ export const reduceResult = <
     results,
     Dict_.mergeSymmetric(
       () => reduceeMismatch,
-      Dict_.mergeSymmetric(
-        () => reduceeMismatch,
-        reduceSubResult,
-      ),
+      Dict_.mergeSymmetric(() => reduceeMismatch, reduceSubResult),
     ),
   );
 
@@ -203,7 +200,6 @@ export const bundle = <
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
   queryConnector: ResolverConnector<QA, TermsQuery<T>, TermsResult<I>, E, C>,
   resultConnector: ReporterConnector<RA, TermsResult<I>, Prepend<T, C>>,
-  matchChange: (e: NonEmptyArray<Array<I>>) => E,
 ): Protocol<SearchQuery<Q, T>, SearchResult<R, T, I>, E, C, QA, RA> =>
   protocol({
     Query: Dict(terms.Terms, item.Query),
