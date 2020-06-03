@@ -135,10 +135,10 @@ export type StructuralResult =
 export type Result = StructuralResult | ReportableResult;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, A extends API<any>, C extends Context>(
-  processor: Processor<I, O, A, C>,
-  api: A,
+export const processorInstance = <I, O, C extends Context, A extends API<any>>(
+  processor: Processor<I, O, C, A>,
   context: C,
+  api: A,
 ): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
 export type QueryProcessorInstance<
@@ -151,7 +151,7 @@ export type ResultProcessorInstance<R extends Result, E extends Err> = Processor
   void
 >;
 
-export type Processor<I, O, A extends API<any>, C extends Context> = (
+export type Processor<I, O, C extends Context, A extends API<any>> = (
   i: I,
 ) => (c: C) => ReaderTask<A, O>;
 
@@ -159,15 +159,15 @@ export type QueryProcessor<
   Q extends Query,
   R extends Result,
   E extends Err,
-  A extends Resolvers,
   C extends Context
-> = Processor<Q, Either<E, R>, A, C>;
+  A extends Resolvers,
+> = Processor<Q, Either<E, R>, C, A>;
 
 export type ResultProcessor<
   R extends Result,
-  A extends Reporters,
   C extends Context
-> = Processor<R, void, A, C>;
+  A extends Reporters,
+> = Processor<R, void, C, A>;
 
 export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
@@ -178,17 +178,17 @@ export type Reporters = API<any>; // should be API<Reporter>
 export type Reporter<R extends Result, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
-  A extends Reporters,
   R extends Result,
   C extends Context
+  A extends Reporters,
 > = (a: A) => Reporter<R, C>;
 
 export type ResultProcessorMapping<
-  A extends Reporters,
   R extends PropertiesResult,
   C extends Context
+  A extends Reporters,
 > = {
-  [I in keyof Required<R>]: ResultProcessor<Required<R>[I], A, C>;
+  [I in keyof Required<R>]: ResultProcessor<Required<R>[I], C, A>;
 };
 
 export type Resolver<
@@ -199,21 +199,21 @@ export type Resolver<
 > = Handler<Q, Either<E, R>, C>;
 
 export type ResolverConnector<
-  A extends Resolvers,
   Q extends Query,
   R extends Result,
   E extends Err,
   C extends Context
+  A extends Resolvers,
 > = (a: A) => Resolver<Q, R, E, C>;
 
 export type QueryProcessorMapping<
-  A extends Resolvers,
   Q extends PropertiesQuery,
   R extends PropertiesResult,
   E extends Err,
   C extends Context
+  A extends Resolvers,
 > = {
-  [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, A, C>;
+  [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, C, A>;
 };
 
 const MISMATCH = 'Structural mismatch';
@@ -283,13 +283,13 @@ export type QueryUtils<
   Q extends Query,
   R extends Result,
   E extends Err,
-  QA extends Resolvers,
   C extends Context
+  QA extends Resolvers,
 > = {
   processQuery: QueryProcessor<Q, R, E, QA, C>;
 };
 
-export type ResultUtils<R extends Result, RA extends Reporters, C extends Context> = {
+export type ResultUtils<R extends Result, C extends Context, RA extends Reporters> = {
   processResult: ResultProcessor<R, RA, C>;
   reduceResult: ResultReducer<R>;
 };
@@ -359,8 +359,8 @@ export type LeafProtocolSeed<
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;
   Result: ResultCodec<R>;
-  queryConnector: ResolverConnector<QA, Q, R, E, C>;
-  resultConnector: ReporterConnector<RA, R, C>;
+  queryConnector: ResolverConnector<Q, R, E, C, QA>;
+  resultConnector: ReporterConnector<R, C, RA>;
   resultCombiner: LeafResultCombiner<R>;
   queryExamplesArray: NonEmptyArray<Q>;
   resultExamplesArray: NonEmptyArray<R>;

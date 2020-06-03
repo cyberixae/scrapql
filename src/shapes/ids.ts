@@ -55,17 +55,17 @@ import {
 // ids query requests some information that may not be present in database
 
 export function processQuery<
-  A extends Resolvers,
   Q extends IdsQuery<SQ, I>,
+  E extends Err,
+  C extends Context,
+  A extends Resolvers,
   I extends Id,
   SQ extends Query,
   SR extends Result,
-  C extends Context,
-  E extends Err
 >(
-  connect: ResolverConnector<A, ExistenceQuery<I>, Existence, E, C>,
-  subProcessor: QueryProcessor<SQ, SR, E, A, Prepend<I, C>>,
-): QueryProcessor<Q, IdsResult<SR, I>, E, A, C> {
+  connect: ResolverConnector<ExistenceQuery<I>, Existence, E, C, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
+): QueryProcessor<Q, IdsResult<SR, I>, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, IdsResult<SR, I>> => {
     return (resolvers) => {
       const tasks: Dict<I, TaskEither<E, Option<SR>>> = pipe(
@@ -102,16 +102,16 @@ export function processQuery<
 // ids result contains data that may not exist in database
 
 export function processResult<
-  A extends Reporters,
   R extends IdsResult<SR, I>,
+  E extends Err,
+  C extends Context,
+  A extends Reporters,
   I extends Id,
   SR extends Result,
-  C extends Context,
-  E extends Err
 >(
-  connect: ReporterConnector<A, Existence, Prepend<I, C>>,
-  subProcessor: ResultProcessor<SR, A, Prepend<I, C>>,
-): ResultProcessor<R, A, C> {
+  connect: ReporterConnector<Existence, Prepend<I, C>, A>,
+  subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
+): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const tasks: Array<Task<void>> = pipe(
@@ -171,7 +171,7 @@ export function queryExamples<I extends Id, SQ extends Query>(
   );
 }
 
-export function resultExamples<I extends Id, SR extends Result, E extends Err>(
+export function resultExamples<I extends Id, SR extends Result>(
   ids: Examples<I>,
   subResults: Examples<SR>,
 ): Examples<IdsResult<SR, I>> {
@@ -194,8 +194,8 @@ export const bundle = <
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
-  queryConnector: ResolverConnector<QA, ExistenceQuery<I>, Existence, E, C>,
-  resultConnector: ReporterConnector<RA, Existence, Prepend<I, C>>,
+  queryConnector: ResolverConnector<ExistenceQuery<I>, Existence, E, C, QA>,
+  resultConnector: ReporterConnector<Existence, Prepend<I, C>, RA>,
 ): Protocol<IdsQuery<Q, I>, IdsResult<R, I>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),

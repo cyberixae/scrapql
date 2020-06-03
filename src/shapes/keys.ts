@@ -42,16 +42,16 @@ import {
 // keys query requests some information that is always present in database
 
 export function processQuery<
-  A extends Resolvers,
   Q extends KeysQuery<SQ, K>,
+  E extends Err,
+  C extends Context,
+  A extends Resolvers,
   K extends Key,
   SQ extends Query,
   SR extends Result,
-  E extends Err,
-  C extends Context
 >(
-  subProcessor: QueryProcessor<SQ, SR, E, A, Prepend<K, C>>,
-): QueryProcessor<Q, KeysResult<SR, K>, E, A, C> {
+  subProcessor: QueryProcessor<SQ, SR, E, Prepend<K, C>, A>,
+): QueryProcessor<Q, KeysResult<SR, K>, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, KeysResult<SR, K>> => {
     return (resolvers) =>
       pipe(
@@ -70,12 +70,12 @@ export function processQuery<
 // keys result contains data that always exists in database
 
 export function processResult<
-  A extends Reporters,
   R extends KeysResult<SR, K>,
+  C extends Context,
+  A extends Reporters,
   K extends Key,
   SR extends Result,
-  C extends Context
->(subProcessor: ResultProcessor<SR, A, Prepend<K, C>>): ResultProcessor<R, A, C> {
+>(subProcessor: ResultProcessor<SR, Prepend<K, C>, A>): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters): Task<void> => {
       const tasks: Array<Task<void>> = pipe(
