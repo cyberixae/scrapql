@@ -7,9 +7,9 @@ import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 import * as Option_ from 'fp-ts/lib/Option';
 
-import { Zero, zero, Prepend, prepend, Onion } from './onion';
-import { Dict as _Dict, dict as _dict } from './dict';
-import { NEGenF, neGenF } from './negf';
+import { Zero, zero, Prepend, prepend, Onion } from './utils/onion';
+import { Dict as _Dict, dict as _dict } from './utils/dict';
+import { NEGenF, neGenF } from './utils/negf';
 
 export * as ids from './shapes/ids';
 export * as keys from './shapes/keys';

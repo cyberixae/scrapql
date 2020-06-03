@@ -5,10 +5,8 @@ import * as Option_ from 'fp-ts/lib/Option';
 
 import { name, version } from '../../package.json';
 
-import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
+import { Ctx, Ctx0, Dict, ctx, ctx0, dict } from '../scrapql';
 import * as scrapql from '../scrapql';
-
-import { Dict, dict } from '../dict';
 
 type Logger<R, A extends Array<any>> = {
   (...a: A): R;

@@ -11,11 +11,10 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import { name, version } from '../../package.json';
 
-import { Ctx, Ctx0, ctx, ctx0 } from '../scrapql';
+import { Ctx, Ctx0, Dict, ctx, ctx0, dict } from '../scrapql';
 import * as scrapql from '../scrapql';
 
-import { Dict, dict } from '../dict';
-import * as Dict_ from '../dict';
+import * as Dict_ from '../utils/dict';
 
 type Logger<R, A extends Array<any>> = {
   (...a: A): R;

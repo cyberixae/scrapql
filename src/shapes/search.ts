@@ -11,12 +11,12 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../onion';
-import * as Dict_ from '../dict';
-import * as NEGenF_ from '../negf';
-import * as Onion_ from '../onion';
-import { Dict } from '../dict';
-import { Prepend } from '../onion';
+import * as Context_ from '../utils/onion';
+import * as Dict_ from '../utils/dict';
+import * as NEGenF_ from '../utils/negf';
+import * as Onion_ from '../utils/onion';
+import { Dict } from '../utils/dict';
+import { Prepend } from '../utils/onion';
 
 import {
   Context,

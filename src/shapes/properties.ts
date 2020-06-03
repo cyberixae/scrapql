@@ -14,7 +14,7 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as NEGenF_ from '../negf';
+import * as NEGenF_ from '../utils/negf';
 
 import {
   Context,

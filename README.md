@@ -87,7 +87,7 @@ type Errors = t.TypeOf<typeof Errors>;
 
 ```typescript
 
-import { Dict } from 'scrapql/lib/dict';
+import { Dict } from 'scrapql';
 
 // name and version from package.json
 const packageName = 'scrapql-example-app';
