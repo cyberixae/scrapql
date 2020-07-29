@@ -33,11 +33,11 @@ import {
 // leaf query contains information for retrieving a payload
 
 export function processQuery<
-  Q extends LeafQuery,
-  E extends Err,
+  Q extends LeafQuery<any>,
+  E extends Err<any>,
   C extends Context,
   A extends Resolvers,
-  R extends LeafResult
+  R extends LeafResult<any>
 >(connect: ResolverConnector<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, R> => {
     return (resolvers) => {
@@ -50,7 +50,7 @@ export function processQuery<
 // leaf result contains part of the payload
 
 export function processResult<
-  R extends LeafResult,
+  R extends LeafResult<any>,
   C extends Context,
   A extends Reporters
 >(connect: ReporterConnector<R, C, A>): ResultProcessor<R, C, A> {
@@ -62,7 +62,7 @@ export function processResult<
   };
 }
 
-export const reduceResult = <R extends LeafResult>(
+export const reduceResult = <R extends LeafResult<any>>(
   combineLeafResult: LeafResultCombiner<R>,
 ) => (results: NonEmptyArray<R>): Either<ReduceFailure, R> => {
   const writeResult: R = NonEmptyArray_.head(results);
@@ -79,22 +79,22 @@ export const reduceResult = <R extends LeafResult>(
   return result;
 };
 
-export function queryExamples<Q extends LeafQuery>(
+export function queryExamples<Q extends LeafQuery<any>>(
   queries: NonEmptyArray<Q>,
 ): Examples<Q> {
   return examples(queries);
 }
 
-export function resultExamples<R extends LeafResult>(
+export function resultExamples<R extends LeafResult<any>>(
   results: NonEmptyArray<R>,
 ): Examples<R> {
   return examples(results);
 }
 
 export const bundle = <
-  Q extends Query,
-  R extends Result,
-  E extends Err,
+  Q extends Query<any>,
+  R extends Result<any>,
+  E extends Err<any>,
   C extends Context,
   QA extends Resolvers,
   RA extends Reporters

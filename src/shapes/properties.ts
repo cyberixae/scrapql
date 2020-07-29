@@ -25,12 +25,14 @@ import {
   PropertiesResult,
   Property,
   Protocol,
+  Query,
   QueryExamplesMapping,
   QueryProcessor,
   QueryProcessorMapping,
   ReduceFailure,
   Reporters,
   Resolvers,
+  Result,
   ResultExamplesMapping,
   ResultProcessor,
   ResultProcessorMapping,
@@ -42,11 +44,11 @@ import {
 // properties query contains optional queries that may or may not be present
 
 export function processQuery<
-  Q extends PropertiesQuery,
-  E extends Err,
+  Q extends PropertiesQuery<any>,
+  E extends Err<any>,
   C extends Context,
   A extends Resolvers,
-  R extends PropertiesResult
+  R extends PropertiesResult<any>
 >(processors: QueryProcessorMapping<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
   return <P extends Property & keyof Q & keyof R>(query: Q) => (
     context: C,
@@ -70,7 +72,7 @@ export function processQuery<
 // properties result contains results for a set of optional queries
 
 export function processResult<
-  R extends PropertiesResult,
+  R extends PropertiesResult<any>,
   C extends Context,
   A extends Reporters
 >(processors: ResultProcessorMapping<R, C, A>): ResultProcessor<R, C, A> {
@@ -95,7 +97,7 @@ export function processResult<
   };
 }
 
-export const reduceResult = <R extends PropertiesResult>(
+export const reduceResult = <R extends PropertiesResult<any>>(
   processors: ResultReducerMapping<R>,
 ) => <P extends Property & keyof R>(
   results: NonEmptyArray<R>,
@@ -118,14 +120,16 @@ export const reduceResult = <R extends PropertiesResult>(
   return result as Either<ReduceFailure, R>;
 };
 
-export function queryExamples<Q extends PropertiesQuery>(
-  subQueries: QueryExamplesMapping<Q>,
+export function queryExamples<P extends Property, Q extends PropertiesQuery<{ [I in P]: Query<any> }>>(
+  subQueries: QueryExamplesMapping<P, Q>,
 ): Examples<Q> {
   return NEGenF_.sequenceS(subQueries) as Examples<Q>;
 }
 
-export function resultExamples<R extends PropertiesResult>(
-  subResults: ResultExamplesMapping<R>,
+export function resultExamples<
+P extends Property, R extends PropertiesResult<{ [I in P]: Result<any> }>
+>(
+  subResults: ResultExamplesMapping<P, R>,
 ): Examples<R> {
   return NEGenF_.sequenceS(subResults) as Examples<R>;
 }
