@@ -46,7 +46,7 @@ import {
 export function processQuery<
   Q extends PropertiesQuery<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers,
   R extends PropertiesResult<any>
 >(processors: QueryProcessorMapping<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
@@ -73,7 +73,7 @@ export function processQuery<
 
 export function processResult<
   R extends PropertiesResult<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters
 >(processors: ResultProcessorMapping<R, C, A>): ResultProcessor<R, C, A> {
   return <P extends Property & keyof R>(result: R) => (
@@ -120,17 +120,17 @@ export const reduceResult = <R extends PropertiesResult<any>>(
   return result as Either<ReduceFailure, R>;
 };
 
-export function queryExamples<P extends Property, Q extends PropertiesQuery<{ [I in P]: Query<any> }>>(
-  subQueries: QueryExamplesMapping<P, Q>,
-): Examples<Q> {
+export function queryExamples<
+  P extends Property,
+  Q extends PropertiesQuery<{ [I in P]: Query<any> }>
+>(subQueries: QueryExamplesMapping<P, Q>): Examples<Q> {
   return NEGenF_.sequenceS(subQueries) as Examples<Q>;
 }
 
 export function resultExamples<
-P extends Property, R extends PropertiesResult<{ [I in P]: Result<any> }>
->(
-  subResults: ResultExamplesMapping<P, R>,
-): Examples<R> {
+  P extends Property,
+  R extends PropertiesResult<{ [I in P]: Result<any> }>
+>(subResults: ResultExamplesMapping<P, R>): Examples<R> {
   return NEGenF_.sequenceS(subResults) as Examples<R>;
 }
 

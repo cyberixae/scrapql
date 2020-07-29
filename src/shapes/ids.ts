@@ -57,7 +57,7 @@ import {
 export function processQuery<
   Q extends IdsQuery<Dict<I, SQ>>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers,
   I extends Id<any>,
   SQ extends Query<any>,
@@ -66,7 +66,9 @@ export function processQuery<
   connect: ResolverConnector<ExistenceQuery<I>, Existence, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
 ): QueryProcessor<Q, IdsResult<Dict<I, Option<SR>>>, E, C, A> {
-  return (query: Q) => (context: C): ReaderTaskEither<A, E, IdsResult<Dict<I, Option<SR>>>> => {
+  return (query: Q) => (
+    context: C,
+  ): ReaderTaskEither<A, E, IdsResult<Dict<I, Option<SR>>>> => {
     return (resolvers) => {
       const tasks: Dict<I, TaskEither<E, Option<SR>>> = pipe(
         query,
@@ -103,7 +105,7 @@ export function processQuery<
 
 export function processResult<
   R extends IdsResult<Dict<I, Option<SR>>>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters,
   I extends Id<any>,
   SR extends Result<any>
@@ -177,7 +179,8 @@ export function resultExamples<I extends Id<any>, SR extends Result<any>>(
   return pipe(
     NEGenF_.sequenceT(ids, subResults),
     NEGenF_.map(
-      ([id, subResult]): IdsResult<Dict<I, Option<SR>>> => Dict_.dict([id, Option_.some(subResult)]),
+      ([id, subResult]): IdsResult<Dict<I, Option<SR>>> =>
+        Dict_.dict([id, Option_.some(subResult)]),
     ),
   );
 }
@@ -186,7 +189,7 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters,
   I extends Id<any>

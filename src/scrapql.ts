@@ -59,7 +59,7 @@ export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
   );
 }
 
-export type Context = Ctx<any, any> | Ctx0;
+export type Context<C extends Ctx<any, any> | Ctx0> = C;
 
 export type ExistenceQuery<Q extends Id<any>> = Q & {
   readonly ExistenceQuery: unique symbol;
@@ -85,12 +85,14 @@ export const termsQuery = <T extends Terms<any>>(terms: T): TermsQuery<T> =>
   terms as TermsQuery<T>;
 
 export type FetchableQuery<Q extends LeafQuery<any> | ExistenceQuery<any>> = Q;
-export type StructuralQuery<Q extends 
-  LiteralQuery<any>
-  | KeysQuery<any>
-  | IdsQuery<any>
-  | SearchQuery<any>
-  | PropertiesQuery<any>> = Q;
+export type StructuralQuery<
+  Q extends
+    | LiteralQuery<any>
+    | KeysQuery<any>
+    | IdsQuery<any>
+    | SearchQuery<any>
+    | PropertiesQuery<any>
+> = Q;
 
 export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
 
@@ -109,9 +111,7 @@ export type LiteralResult<R extends Json & string> = R;
 export type LeafResult<R extends Json> = R;
 export type KeysResult<R extends Dict<Key<any>, Result<any>>> = R;
 export type IdsResult<R extends Dict<Id<any>, Option<Result<any>>>> = R;
-export type SearchResult<
-  R extends Dict<Terms, Dict<Id<any>, Result<any>>>
-> = R;
+export type SearchResult<R extends Dict<Terms<any>, Dict<Id<any>, Result<any>>>> = R;
 export type PropertiesResult<
   R extends {
     [I in Property]: Result<any>;
@@ -119,17 +119,19 @@ export type PropertiesResult<
 > = Partial<R>;
 
 export type ReportableResult<R extends LeafResult<any> | ExistenceResult<any>> = R;
-export type StructuralResult<R extends
-   LiteralResult<any>
-  | KeysResult<any>
-  | IdsResult<any>
-  | SearchResult<any>
-  | PropertiesResult<any>> = R
+export type StructuralResult<
+  R extends
+    | LiteralResult<any>
+    | KeysResult<any>
+    | IdsResult<any>
+    | SearchResult<any>
+    | PropertiesResult<any>
+> = R;
 
 export type Result<R extends StructuralResult<any> | ReportableResult<any>> = R;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, C extends Context, A extends API<any>>(
+export const processorInstance = <I, O, C extends Context<any>, A extends API<any>>(
   processor: Processor<I, O, C, A>,
   context: C,
   api: A,
@@ -142,7 +144,7 @@ export type QueryProcessorInstance<
 > = ProcessorInstance<Q, Either<E, R>>;
 export type ResultProcessorInstance<R extends Result<any>> = ProcessorInstance<R, void>;
 
-export type Processor<I, O, C extends Context, A extends API<any>> = (
+export type Processor<I, O, C extends Context<any>, A extends API<any>> = (
   i: I,
 ) => (c: C) => ReaderTask<A, O>;
 
@@ -150,33 +152,33 @@ export type QueryProcessor<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers
 > = Processor<Q, Either<E, R>, C, A>;
 
 export type ResultProcessor<
   R extends Result<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters
 > = Processor<R, void, C, A>;
 
-export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
+export type Handler<I, O, C extends Context<any>> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result<any>, C extends Context> = Handler<R, void, C>;
+export type Reporter<R extends Result<any>, C extends Context<any>> = Handler<R, void, C>;
 
 export type ReporterConnector<
   R extends Result<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters
 > = (a: A) => Reporter<R, C>;
 
 export type ResultProcessorMapping<
   R extends PropertiesResult<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters
 > = {
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], C, A>;
@@ -186,14 +188,14 @@ export type Resolver<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context
+  C extends Context<any>
 > = Handler<Q, Either<E, R>, C>;
 
 export type ResolverConnector<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers
 > = (a: A) => Resolver<Q, R, E, C>;
 
@@ -201,7 +203,7 @@ export type QueryProcessorMapping<
   Q extends PropertiesQuery<any>,
   R extends PropertiesResult<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers
 > = {
   [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, C, A>;
@@ -265,12 +267,20 @@ export type Codecs<Q extends Query<any>, R extends Result<any>, E extends Err<an
   Err: ErrCodec<E>;
 };
 
-export type Constructors<Q extends Query<any>, R extends Result<any>, E extends Err<any>> = {
+export type Constructors<
+  Q extends Query<any>,
+  R extends Result<any>,
+  E extends Err<any>
+> = {
   query: Constructor<Q>;
   result: Constructor<R>;
   err: Constructor<E>;
 };
-export const constructors = <Q extends Query<any>, R extends Result<any>, E extends Err<any>>(
+export const constructors = <
+  Q extends Query<any>,
+  R extends Result<any>,
+  E extends Err<any>
+>(
   _codecs: Codecs<Q, R, E>,
 ): Constructors<Q, R, E> => ({
   query: (q) => q,
@@ -281,10 +291,16 @@ export const constructors = <Q extends Query<any>, R extends Result<any>, E exte
 export type Examples<A> = NEGenF<A>;
 export const examples = neGenF;
 
-export type QueryExamplesMapping<P extends Property, Q extends PropertiesQuery<{ [I in P]: Query<any> }>> = {
+export type QueryExamplesMapping<
+  P extends Property,
+  Q extends PropertiesQuery<{ [I in P]: Query<any> }>
+> = {
   [I in keyof Q]: Examples<Required<Q>[I]>;
 };
-export type ResultExamplesMapping<P extends Property, R extends PropertiesResult<{ [I in P]: Result<any> }>> = {
+export type ResultExamplesMapping<
+  P extends Property,
+  R extends PropertiesResult<{ [I in P]: Result<any> }>
+> = {
   [I in keyof R]: Examples<Required<R>[I]>;
 };
 
@@ -297,13 +313,17 @@ export type QueryUtils<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers
 > = {
   processQuery: QueryProcessor<Q, R, E, C, QA>;
 };
 
-export type ResultUtils<R extends Result<any>, C extends Context, RA extends Reporters> = {
+export type ResultUtils<
+  R extends Result<any>,
+  C extends Context<any>,
+  RA extends Reporters
+> = {
   processResult: ResultProcessor<R, C, RA>;
   reduceResult: ResultReducer<R>;
 };
@@ -312,7 +332,7 @@ export type Fundamentals<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters
 > = QueryUtils<Q, R, E, C, QA> &
@@ -320,17 +340,17 @@ export type Fundamentals<
   Codecs<Q, R, E> &
   ExampleCatalog<Q, R>;
 
-export type Conveniences<Q extends Query<any>, R extends Result<any>, E extends Err<any>> = Constructors<
-  Q,
-  R,
-  E
->;
+export type Conveniences<
+  Q extends Query<any>,
+  R extends Result<any>,
+  E extends Err<any>
+> = Constructors<Q, R, E>;
 
 export type Protocol<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters
 > = Fundamentals<Q, R, E, C, QA, RA> & Conveniences<Q, R, E>;
@@ -339,7 +359,7 @@ export const protocol = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters
 >(
@@ -363,7 +383,7 @@ export type LeafProtocolSeed<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters
 > = {

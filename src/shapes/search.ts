@@ -53,7 +53,7 @@ import {
 export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers,
   T extends Terms<any>,
   I extends Id<any>,
@@ -97,7 +97,7 @@ export function processQuery<
 
 export function processResult<
   R extends SearchResult<Dict<T, Dict<I, SR>>>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters,
   T extends Terms<any>,
   I extends Id<any>,
@@ -178,7 +178,7 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers,
   RA extends Reporters,
   T extends Terms<any>,
