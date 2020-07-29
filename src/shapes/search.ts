@@ -53,7 +53,7 @@ import {
 export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers,
   T extends Terms<any>,
   I extends Id<any>,
@@ -63,7 +63,9 @@ export function processQuery<
   connect: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
 ): QueryProcessor<Q, SearchResult<Dict<T, Dict<I, SR>>>, E, C, A> {
-  return (query: Q) => (context: C): ReaderTaskEither<A, E, SearchResult<Dict<T, Dict<I, SR>>>> => {
+  return (query: Q) => (
+    context: C,
+  ): ReaderTaskEither<A, E, SearchResult<Dict<T, Dict<I, SR>>>> => {
     return (resolvers) => {
       const tasks: Dict<T, TaskEither<E, Dict<I, SR>>> = pipe(
         query,
@@ -97,7 +99,7 @@ export function processQuery<
 
 export function processResult<
   R extends SearchResult<Dict<T, Dict<I, SR>>>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters,
   T extends Terms<any>,
   I extends Id<any>,
@@ -137,7 +139,11 @@ export function processResult<
   };
 }
 
-export const reduceResult = <T extends Terms<any>, I extends Id<any>, SR extends Result<any>>(
+export const reduceResult = <
+  T extends Terms<any>,
+  I extends Id<any>,
+  SR extends Result<any>
+>(
   reduceSubResult: ResultReducer<SR>,
 ) => (
   results: NonEmptyArray<SearchResult<Dict<T, Dict<I, SR>>>>,
@@ -160,7 +166,11 @@ export function queryExamples<T extends Terms<any>, SQ extends Result<any>>(
   );
 }
 
-export function resultExamples<T extends Terms<any>, I extends Id<any>, SR extends Result<any>>(
+export function resultExamples<
+  T extends Terms<any>,
+  I extends Id<any>,
+  SR extends Result<any>
+>(
   termss: Examples<T>,
   ids: Examples<I>,
   subResults: Examples<SR>,
@@ -178,7 +188,7 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters,
   T extends Terms<any>,

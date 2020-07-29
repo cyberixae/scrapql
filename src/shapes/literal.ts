@@ -32,7 +32,7 @@ import {
 export function processQuery<
   Q extends LiteralQuery<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers,
   R extends LiteralResult<any>
 >(constant: R): QueryProcessor<Q, R, E, C, A> {
@@ -45,7 +45,7 @@ export function processQuery<
 
 export function processResult<
   R extends LiteralResult<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters
 >(): ResultProcessor<R, C, A> {
   return (_result: R) => (_context: C): ReaderTask<A, void> => {
@@ -89,7 +89,7 @@ export const bundle = <
   Q extends LiteralQuery<string>,
   R extends LiteralResult<string>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters
 >(

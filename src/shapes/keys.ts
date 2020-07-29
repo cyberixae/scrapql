@@ -44,7 +44,7 @@ import {
 export function processQuery<
   Q extends KeysQuery<Dict<K, SQ>>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers,
   K extends Key<any>,
   SQ extends Query<any>,
@@ -71,7 +71,7 @@ export function processQuery<
 
 export function processResult<
   R extends KeysResult<Dict<K, SR>>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters,
   K extends Key<any>,
   SR extends Result<any>
@@ -131,7 +131,7 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters,
   K extends Key<any>

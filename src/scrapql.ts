@@ -59,7 +59,7 @@ export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
   );
 }
 
-export type Context<C extends Ctx<any, any> | Ctx0> = C;
+export type Context = Ctx<any, any> | Ctx0;
 
 export type ExistenceQuery<Q extends Id<any>> = Q & {
   readonly ExistenceQuery: unique symbol;
@@ -131,7 +131,7 @@ export type StructuralResult<
 export type Result<R extends StructuralResult<any> | ReportableResult<any>> = R;
 
 export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, C extends Context<any>, A extends API<any>>(
+export const processorInstance = <I, O, C extends Context, A extends API<any>>(
   processor: Processor<I, O, C, A>,
   context: C,
   api: A,
@@ -144,7 +144,7 @@ export type QueryProcessorInstance<
 > = ProcessorInstance<Q, Either<E, R>>;
 export type ResultProcessorInstance<R extends Result<any>> = ProcessorInstance<R, void>;
 
-export type Processor<I, O, C extends Context<any>, A extends API<any>> = (
+export type Processor<I, O, C extends Context, A extends API<any>> = (
   i: I,
 ) => (c: C) => ReaderTask<A, O>;
 
@@ -152,33 +152,33 @@ export type QueryProcessor<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers
 > = Processor<Q, Either<E, R>, C, A>;
 
 export type ResultProcessor<
   R extends Result<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters
 > = Processor<R, void, C, A>;
 
-export type Handler<I, O, C extends Context<any>> = (i: I, c: C) => Task<O>;
+export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<T> = Record<string, T>;
 export type Resolvers = API<any>; // should be API<Resolver>
 export type Reporters = API<any>; // should be API<Reporter>
 
-export type Reporter<R extends Result<any>, C extends Context<any>> = Handler<R, void, C>;
+export type Reporter<R extends Result<any>, C extends Context> = Handler<R, void, C>;
 
 export type ReporterConnector<
   R extends Result<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters
 > = (a: A) => Reporter<R, C>;
 
 export type ResultProcessorMapping<
   R extends PropertiesResult<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Reporters
 > = {
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], C, A>;
@@ -188,14 +188,14 @@ export type Resolver<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>
+  C extends Context
 > = Handler<Q, Either<E, R>, C>;
 
 export type ResolverConnector<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers
 > = (a: A) => Resolver<Q, R, E, C>;
 
@@ -203,7 +203,7 @@ export type QueryProcessorMapping<
   Q extends PropertiesQuery<any>,
   R extends PropertiesResult<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   A extends Resolvers
 > = {
   [I in keyof Q & keyof R]: QueryProcessor<Required<Q>[I], Required<R>[I], E, C, A>;
@@ -313,7 +313,7 @@ export type QueryUtils<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers
 > = {
   processQuery: QueryProcessor<Q, R, E, C, QA>;
@@ -321,7 +321,7 @@ export type QueryUtils<
 
 export type ResultUtils<
   R extends Result<any>,
-  C extends Context<any>,
+  C extends Context,
   RA extends Reporters
 > = {
   processResult: ResultProcessor<R, C, RA>;
@@ -332,7 +332,7 @@ export type Fundamentals<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters
 > = QueryUtils<Q, R, E, C, QA> &
@@ -350,7 +350,7 @@ export type Protocol<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters
 > = Fundamentals<Q, R, E, C, QA, RA> & Conveniences<Q, R, E>;
@@ -359,7 +359,7 @@ export const protocol = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters
 >(
@@ -383,7 +383,7 @@ export type LeafProtocolSeed<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context<any>,
+  C extends Context,
   QA extends Resolvers,
   RA extends Reporters
 > = {
