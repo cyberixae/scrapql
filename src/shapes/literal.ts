@@ -33,7 +33,7 @@ export function processQuery<
   Q extends LiteralQuery<any>,
   E extends Err<any>,
   C extends Context,
-  A extends Resolvers,
+  A extends Resolvers<any>,
   R extends LiteralResult<any>
 >(constant: R): QueryProcessor<Q, R, E, C, A> {
   return (_query: Q) => (_context: C): ReaderTaskEither<A, E, R> => {
@@ -46,7 +46,7 @@ export function processQuery<
 export function processResult<
   R extends LiteralResult<any>,
   C extends Context,
-  A extends Reporters
+  A extends Reporters<any>
 >(): ResultProcessor<R, C, A> {
   return (_result: R) => (_context: C): ReaderTask<A, void> => {
     return (_reporters) => Task_.of(undefined);
@@ -90,8 +90,8 @@ export const bundle = <
   R extends LiteralResult<string>,
   E extends Err<any>,
   C extends Context,
-  QA extends Resolvers,
-  RA extends Reporters
+  QA extends Resolvers<any>,
+  RA extends Reporters<any>
 >(
   seed: LiteralProtocolSeed<Q, R, E>,
 ): Protocol<Q, R, E, C, QA, RA> =>

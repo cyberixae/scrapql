@@ -47,7 +47,7 @@ export function processQuery<
   Q extends PropertiesQuery<any>,
   E extends Err<any>,
   C extends Context,
-  A extends Resolvers,
+  A extends Resolvers<any>,
   R extends PropertiesResult<any>
 >(processors: QueryProcessorMapping<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
   return <P extends Property & keyof Q & keyof R>(query: Q) => (
@@ -74,7 +74,7 @@ export function processQuery<
 export function processResult<
   R extends PropertiesResult<any>,
   C extends Context,
-  A extends Reporters
+  A extends Reporters<any>
 >(processors: ResultProcessorMapping<R, C, A>): ResultProcessor<R, C, A> {
   return <P extends Property & keyof R>(result: R) => (
     context: C,

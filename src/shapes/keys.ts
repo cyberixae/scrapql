@@ -45,7 +45,7 @@ export function processQuery<
   Q extends KeysQuery<Dict<K, SQ>>,
   E extends Err<any>,
   C extends Context,
-  A extends Resolvers,
+  A extends Resolvers<any>,
   K extends Key<any>,
   SQ extends Query<any>,
   SR extends Result<any>
@@ -72,7 +72,7 @@ export function processQuery<
 export function processResult<
   R extends KeysResult<Dict<K, SR>>,
   C extends Context,
-  A extends Reporters,
+  A extends Reporters<any>,
   K extends Key<any>,
   SR extends Result<any>
 >(subProcessor: ResultProcessor<SR, Prepend<K, C>, A>): ResultProcessor<R, C, A> {
@@ -132,8 +132,8 @@ export const bundle = <
   R extends Result<any>,
   E extends Err<any>,
   C extends Context,
-  QA extends Resolvers,
-  RA extends Reporters,
+  QA extends Resolvers<any>,
+  RA extends Reporters<any>,
   K extends Key<any>
 >(
   key: { Key: KeyCodec<K>; keyExamples: NonEmptyArray<K> },

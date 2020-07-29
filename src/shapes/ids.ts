@@ -58,7 +58,7 @@ export function processQuery<
   Q extends IdsQuery<Dict<I, SQ>>,
   E extends Err<any>,
   C extends Context,
-  A extends Resolvers,
+  A extends Resolvers<any>,
   I extends Id<any>,
   SQ extends Query<any>,
   SR extends Result<any>
@@ -106,7 +106,7 @@ export function processQuery<
 export function processResult<
   R extends IdsResult<Dict<I, Option<SR>>>,
   C extends Context,
-  A extends Reporters,
+  A extends Reporters<any>,
   I extends Id<any>,
   SR extends Result<any>
 >(
@@ -190,8 +190,8 @@ export const bundle = <
   R extends Result<any>,
   E extends Err<any>,
   C extends Context,
-  QA extends Resolvers,
-  RA extends Reporters,
+  QA extends Resolvers<any>,
+  RA extends Reporters<any>,
   I extends Id<any>
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },

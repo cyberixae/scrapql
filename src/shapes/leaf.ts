@@ -36,7 +36,7 @@ export function processQuery<
   Q extends LeafQuery<any>,
   E extends Err<any>,
   C extends Context,
-  A extends Resolvers,
+  A extends Resolvers<any>,
   R extends LeafResult<any>
 >(connect: ResolverConnector<Q, R, E, C, A>): QueryProcessor<Q, R, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, R> => {
@@ -52,7 +52,7 @@ export function processQuery<
 export function processResult<
   R extends LeafResult<any>,
   C extends Context,
-  A extends Reporters
+  A extends Reporters<any>
 >(connect: ReporterConnector<R, C, A>): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
@@ -96,8 +96,8 @@ export const bundle = <
   R extends Result<any>,
   E extends Err<any>,
   C extends Context,
-  QA extends Resolvers,
-  RA extends Reporters
+  QA extends Resolvers<any>,
+  RA extends Reporters<any>
 >(
   seed: LeafProtocolSeed<Q, R, E, C, QA, RA>,
 ): Protocol<Q, R, E, C, QA, RA> =>
