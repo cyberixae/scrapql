@@ -31,6 +31,7 @@ import {
   Examples,
   Existence,
   ExistenceQuery,
+  ExistenceResult,
   Id,
   IdCodec,
   IdsQuery,
@@ -63,7 +64,7 @@ export function processQuery<
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  connect: ResolverConnector<ExistenceQuery<I>, Existence, E, C, A>,
+  connect: ResolverConnector<I, Existence, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
 ): QueryProcessor<Q, IdsResult<Dict<I, Option<SR>>>, E, C, A> {
   return (query: Q) => (
@@ -77,7 +78,7 @@ export function processQuery<
             const subContext = pipe(context, Context_.prepend(id));
             const existenceCheck = connect(resolvers);
             return pipe(
-              existenceCheck(existenceQuery(id), context),
+              existenceCheck(id, context),
               TaskEither_.chain(
                 (exists: Existence): TaskEither<E, Option<SR>> =>
                   pipe(
@@ -110,7 +111,7 @@ export function processResult<
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: ReporterConnector<Existence, Prepend<I, C>, A>,
+  connect: ReporterConnector<I, Existence, Prepend<I, C>, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -122,9 +123,9 @@ export function processResult<
           return pipe(
             maybeSubResult,
             Option_.fold(
-              () => [connect(reporters)(false, subContext)],
+              () => [connect(reporters)(id, false, subContext)],
               (subResult) => [
-                connect(reporters)(true, subContext),
+                connect(reporters)(id, true, subContext),
                 subProcessor(subResult)(subContext)(reporters),
               ],
             ),
@@ -194,8 +195,8 @@ export const bundle = <
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
-  queryConnector: ResolverConnector<ExistenceQuery<I>, Existence, E, C, QA>,
-  resultConnector: ReporterConnector<Existence, Prepend<I, C>, RA>,
+  queryConnector: ResolverConnector<I, Existence, E, C, QA>,
+  resultConnector: ReporterConnector<I, Existence, Prepend<I, C>, RA>,
 ): Protocol<IdsQuery<Dict<I, Q>>, IdsResult<Dict<I, Option<R>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),

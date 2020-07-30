@@ -62,76 +62,86 @@ export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
 // TODO: with TS4 tuple type Context<C extends Array<any>> = C
 export type Context = Onion<any, any> | Zero;
 
-export type ExistenceQuery<Q extends Id<any>> = Q & {
-  readonly ExistenceQuery: unique symbol;
-};
-export const existenceQuery = <I extends Id<any>>(id: I): ExistenceQuery<I> =>
-  id as ExistenceQuery<I>;
+export type Payload<P extends Json> = P;
+export type QueryPayload<QP extends Payload<any>> = QP;
+export type ResultPayload<RP extends Payload<any>> = RP;
 
-export type LiteralQuery<Q extends Json & string> = Q;
-export type LeafQuery<Q extends Json> = Q;
+export type ExistenceQueryPayload<QP extends QueryPayload<Id<string>>> = QP;
+export type TermsQueryPayload<QP extends QueryPayload<Terms<any>>> = QP;
+export type LiteralQueryPayload<QP extends QueryPayload<string>> = QP;
+export type LeafQueryPayload<QP extends QueryPayload<any>> = QP;
+
+export type Payloads<P extends [any]|[any, any]> = P
+
+export type ExistenceQuery<Q extends ExistenceQueryPayload<any>> = Q;
+
+export type LiteralQuery<Q extends Payload<string>> = Q;
+export type LeafQuery<Q extends LeafQueryPayload<any>> = Q;
+
 export type KeysQuery<Q extends Dict<Key<any>, Query<any>>> = Q;
 export type IdsQuery<Q extends Dict<Id<any>, Query<any>>> = Q;
-export type SearchQuery<Q extends Dict<Terms<any>, Query<any>>> = Q;
+export type SearchQuery<Q extends Dict<TermsQueryPayload<any>, Query<any>>> = Q;
 export type PropertiesQuery<
   Q extends {
     [I in Property<any>]: Query<any>;
   }
 > = Partial<Q>;
-export type Terms<T extends Json> = T;
-export type TermsQuery<Q extends Terms<any>> = Q & {
-  readonly TermsQuery: unique symbol;
-};
-export const termsQuery = <T extends Terms<any>>(terms: T): TermsQuery<T> =>
-  terms as TermsQuery<T>;
 
-export type FetchableQuery<Q extends LeafQuery<any> | ExistenceQuery<any>> = Q;
-export type StructuralQuery<
+export type Terms<T extends Json> = T;
+export type TermsQuery<QP extends TermsQueryPayload<any>> = QP;
+
+export type Query<
   Q extends
+    ExistenceQuery<any>
+    | TermsQuery<any>
     | LiteralQuery<any>
+    | LeafQuery<any> 
     | KeysQuery<any>
     | IdsQuery<any>
     | SearchQuery<any>
     | PropertiesQuery<any>
 > = Q;
 
-export type Query<Q extends StructuralQuery<any> | FetchableQuery<any>> = Q;
-
 export type Existence = boolean;
 
-export type ExistenceResult<R extends Existence = Existence> = R & {
-  readonly ExistenceResult: unique symbol;
-};
-export const existenceResult = <R extends Existence>(existence: R): ExistenceResult<R> =>
-  existence as ExistenceResult<R>;
 
-export type TermsResult<I extends Id<any>> = Array<I>;
-export const termsResult = <I extends Id<any>>(ids: Array<I>): TermsResult<I> => ids;
+export type ExistenceResultPayload<RP extends Payload<Existence>> = RP;
+export type TermsResultPayload<RP extends Payload<Array<Id<any>>>> = RP;
+export type LiteralResultPayload<RP extends Payload<string>> = RP;
+export type LeafResultPayload<RP extends Payload<any>> = RP;
 
-export type LiteralResult<R extends Json & string> = R;
-export type LeafResult<R extends Json> = R;
+export type ExistenceResult<QP extends ExistenceQueryPayload<any>, RP extends ExistenceResultPayload<any>> = [QP, RP];
+export const existenceResult = <R extends ExistenceResult<any, any>>(r: R) => r;
+
+export type TermsResult<QP extends TermsQueryPayload<any>, RP extends TermsResultPayload<any>> = [QP, RP];
+
+export type LiteralResult<QP extends LiteralQueryPayload<string>, RP extends LiteralResultPayload<string>> = [QP, RP];
+export type LeafResult<QP extends LeafQueryPayload<any>, RP extends LeafResultPayload<any>> = [QP, RP];
 export type KeysResult<R extends Dict<Key<any>, Result<any>>> = R;
 export type IdsResult<R extends Dict<Id<any>, Option<Result<any>>>> = R;
-export type SearchResult<R extends Dict<Terms<any>, Dict<Id<any>, Result<any>>>> = R;
+export type SearchResult<R extends Dict<TermsQueryPayload<any>, Dict<TermsResultPayload<any>, Result<any>>>> = R;
 export type PropertiesResult<
   R extends {
     [I in Property<any>]: Result<any>;
   }
 > = Partial<R>;
 
-export type ReportableResult<R extends LeafResult<any> | ExistenceResult<any>> = R;
-export type StructuralResult<
+export type Result<
   R extends
-    | LiteralResult<any>
+    ExistenceResult<any, any>
+    | TermsResult<any, any>
+    | LiteralResult<any, any>
+    | LeafResult<any, any>
     | KeysResult<any>
     | IdsResult<any>
     | SearchResult<any>
     | PropertiesResult<any>
 > = R;
 
-export type Result<R extends StructuralResult<any> | ReportableResult<any>> = R;
-
-export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
+export type Handler<I extends Payloads<[any]|[any, any]>, O, C extends Context> =
+  I extends [infer A, infer B] ? (a: A, b: B, c: C) => Task<O> :
+  I extends [infer A] ? (a: A, c: C) => Task<O> :
+  never
 
 export type API<A extends { [p: string]: Handler<any, any, any> }> = A;
 
@@ -153,15 +163,15 @@ export type Processor<I, O, C extends Context, A extends API<any>> = (
   i: I,
 ) => (c: C) => ReaderTask<A, O>;
 
-export type Reporter<R extends Result<any>, C extends Context> = Handler<R, void, C>;
-export type Reporters<A extends API<{ [p: string]: Reporter<any, any> }>> = A;
+export type Reporter<QP extends QueryPayload<any>, RP extends ResultPayload<any>, C extends Context> = Handler<[QP, RP], void, C>;
+export type Reporters<A extends API<{ [p: string]: Reporter<any, any, any> }>> = A;
 
 export type Resolver<
-  Q extends Query<any>,
-  R extends Result<any>,
+  QP extends QueryPayload<any>,
+  RP extends ResultPayload<any>,
   E extends Err<any>,
   C extends Context
-> = Handler<Q, Either<E, R>, C>;
+> = Handler<[QP], Either<E, RP>, C>;
 export type Resolvers<A extends API<{ [p: string]: Resolver<any, any, any, any> }>> = A;
 
 export type QueryProcessor<
@@ -179,10 +189,11 @@ export type ResultProcessor<
 > = Processor<R, void, C, A>;
 
 export type ReporterConnector<
-  R extends Result<any>,
+  QP extends QueryPayload<any>,
+  RP extends ResultPayload<any>,
   C extends Context,
   A extends Reporters<any>
-> = (a: A) => A[keyof A] & Reporter<R, C>;
+> = (a: A) => A[keyof A] & Reporter<QP, RP, C>;
 
 export type ResultProcessorMapping<
   R extends PropertiesResult<any>,
@@ -193,12 +204,12 @@ export type ResultProcessorMapping<
 };
 
 export type ResolverConnector<
-  Q extends Query<any>,
-  R extends Result<any>,
+  QP extends QueryPayload<any>,
+  RP extends ResultPayload<any>,
   E extends Err<any>,
   C extends Context,
   A extends Resolvers<any>
-> = (a: A) => A[keyof A] & Resolver<Q, R, E, C>;
+> = (a: A) => A[keyof A] & Resolver<QP, RP, E, C>;
 
 export type QueryProcessorMapping<
   Q extends PropertiesQuery<any>,
@@ -371,29 +382,30 @@ export const protocol = <
 });
 
 export type LiteralProtocolSeed<
-  Q extends LiteralQuery<string>,
-  R extends LiteralResult<string>,
-  E extends Err<any>
+  E extends Err<any>,
+  QP extends LiteralQueryPayload<string>,
+  RP extends LiteralResultPayload<string>,
 > = {
   Err: ErrCodec<E>;
-  Query: QueryCodec<Q> & t.LiteralC<Q>;
-  Result: ResultCodec<R> & t.LiteralC<R>;
+  QueryPayload: QueryCodec<QP> & t.LiteralC<QP>;
+  ResultPayload: ResultCodec<RP> & t.LiteralC<RP>;
 };
 
 export type LeafProtocolSeed<
-  Q extends Query<any>,
-  R extends Result<any>,
+  Q extends LeafQuery<QP>,
   E extends Err<any>,
   C extends Context,
   QA extends Resolvers<any>,
-  RA extends Reporters<any>
+  RA extends Reporters<any>,
+  QP extends LeafQueryPayload<any>,
+  RP extends LeafResultPayload<any>,
 > = {
   Err: ErrCodec<E>;
   Query: QueryCodec<Q>;
-  Result: ResultCodec<R>;
-  queryConnector: ResolverConnector<Q, R, E, C, QA>;
-  resultConnector: ReporterConnector<R, C, RA>;
-  resultCombiner: LeafResultCombiner<R>;
+  Result: ResultCodec<LeafResult<QP, RP>>;
+  queryConnector: ResolverConnector<QP, RP, E, C, QA>;
+  resultConnector: ReporterConnector<QP, RP, C, RA>;
+  resultCombiner: LeafResultCombiner<LeafResult<QP, RP>>;
   queryExamplesArray: NonEmptyArray<Q>;
-  resultExamplesArray: NonEmptyArray<R>;
+  resultExamplesArray: NonEmptyArray<LeafResult<QP, RP>>;
 };
