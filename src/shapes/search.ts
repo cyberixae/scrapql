@@ -26,9 +26,7 @@ import {
   Protocol,
   Query,
   QueryProcessor,
-  ReporterConnector,
   Reporters,
-  ResolverConnector,
   Resolvers,
   Result,
   ResultProcessor,
@@ -37,13 +35,11 @@ import {
   SearchResult,
   Terms,
   TermsCodec,
-  TermsQuery,
-  TermsResult,
+  TermsReporterConnector,
+  TermsResolverConnector,
   structuralMismatch,
   examples,
   protocol,
-  termsQuery,
-  termsResult,
 } from '../scrapql';
 
 // search query requests some information that may zero or more instances in the database
@@ -58,7 +54,7 @@ export function processQuery<
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  connect: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, A>,
+  connect: TermsResolverConnector<T, Array<I>, E, C, A>,
   subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
 ): QueryProcessor<Q, SearchResult<Dict<T, Dict<I, SR>>>, E, C, A> {
   return (query: Q) => (
@@ -71,7 +67,7 @@ export function processQuery<
           (terms: T, subQuery: SQ): TaskEither<E, Dict<I, SR>> => {
             const idResolver = connect(resolvers);
             return pipe(
-              idResolver(termsQuery(terms), context),
+              idResolver(terms, context),
               TaskEither_.chain(
                 (ids: Array<I>): TaskEither<E, Dict<I, SR>> =>
                   pipe(
@@ -103,7 +99,7 @@ export function processResult<
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: ReporterConnector<TermsResult<I>, Prepend<T, C>, A>,
+  connect: TermsReporterConnector<T, Array<I>, C, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -115,8 +111,7 @@ export function processResult<
             const termsContext = pipe(context, Onion_.prepend(terms));
             const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
-              (ids: Array<I>): Task<void> =>
-                connect(reporters)(termsResult<I>(ids), termsContext),
+              (ids: Array<I>): Task<void> => connect(reporters)(ids, termsContext),
             );
             const reportResults: Array<Task<void>> = pipe(
               subResults,
@@ -181,21 +176,21 @@ export function resultExamples<
 }
 
 export const bundle = <
-  Q extends Query<any>,
-  R extends Result<any>,
   E extends Err<any>,
   C extends Context,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
-  I extends Id<any>
+  I extends Id<any>,
+  SQ extends Query<any>,
+  SR extends Result<any>
 >(
   terms: { Terms: TermsCodec<T>; termsExamples: NonEmptyArray<T> },
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
-  item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
-  queryConnector: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, QA>,
-  resultConnector: ReporterConnector<TermsResult<I>, Prepend<T, C>, RA>,
-): Protocol<SearchQuery<Dict<T, Q>>, SearchResult<Dict<T, Dict<I, R>>>, E, C, QA, RA> =>
+  item: Protocol<SQ, SR, E, Prepend<I, C>, QA, RA>,
+  queryConnector: TermsResolverConnector<T, Array<I>, E, C, QA>,
+  resultConnector: TermsReporterConnector<T, Array<I>, C, RA>,
+): Protocol<SearchQuery<Dict<T, SQ>>, SearchResult<Dict<T, Dict<I, SR>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(terms.Terms, item.Query),
     Result: Dict(terms.Terms, Dict(id.Id, item.Result)),
