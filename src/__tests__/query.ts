@@ -144,7 +144,7 @@ describe('query', () => {
     const result = await ruins.fromTaskEither(main);
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(key1Result);
@@ -165,7 +165,7 @@ describe('query', () => {
     const result = await ruins.fromTaskEither(main);
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(keysResult);
@@ -202,7 +202,7 @@ describe('query', () => {
       ctx(id2),
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(property1Result);
@@ -242,7 +242,7 @@ describe('query', () => {
     expect((resolvers.checkProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([
-      [property2Query, ctx0],
+      [property2QueryPayload, ctx0],
     ]);
     expect(result).toEqual(property2Result);
   });
@@ -271,7 +271,7 @@ describe('query', () => {
       [terms, []],
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect(result).toEqual(property3Result);
   });
@@ -325,8 +325,8 @@ describe('query', () => {
       [terms, []],
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);
@@ -381,8 +381,8 @@ describe('query', () => {
       [terms, []],
     ]);
     expect((resolvers.fetchKeyResult as any).mock.calls).toMatchObject([
-      [key1Query, ctx(key1, ctx(id1))],
-      [key1Query, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
+      [keyQueryPayload, ctx(key1, ctx(id1))],
     ]);
     expect((resolvers.fetchProperty2Result as any).mock.calls).toMatchObject([]);
     expect(result).toEqual(rootResult);

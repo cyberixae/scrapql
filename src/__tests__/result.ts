@@ -103,7 +103,7 @@ describe('result', () => {
     await ruins.fromTask(main);
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -121,7 +121,7 @@ describe('result', () => {
     await ruins.fromTask(main);
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -154,7 +154,7 @@ describe('result', () => {
       [true, ctx(id1)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -189,7 +189,7 @@ describe('result', () => {
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([
-      [property2Result, ctx0],
+      [property2ResultPayload, ctx(property2QueryPayload)],
     ]);
   });
 
@@ -218,7 +218,7 @@ describe('result', () => {
       [[id1], ctx(terms)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -260,8 +260,8 @@ describe('result', () => {
       [[id1], ctx(terms)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -322,8 +322,8 @@ describe('result', () => {
       [[id1], ctx(terms)],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [key1Result, ctx(key1, ctx(id1))],
-      [key1Result, ctx(key1, ctx(id1))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1)))],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
