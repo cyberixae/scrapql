@@ -40,7 +40,7 @@ export function processQuery<
   QP extends LiteralQueryPayload<string>,
   RP extends LiteralResultPayload<string>
 >(rp: RP): QueryProcessor<Q, LiteralResult<QP, RP>, E, C, A> {
-  return (qp: Q) => (_context: C): ReaderTaskEither<A, E, LiteralResult<QP, RP>> => {
+  return ([qp]: Q) => (_context: C): ReaderTaskEither<A, E, LiteralResult<QP, RP>> => {
     return (_resolvers) => TaskEither_.right([qp, rp]);
   };
 }
@@ -95,17 +95,17 @@ export const bundle = <
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   QP extends LiteralQueryPayload<string>,
-  RP extends LiteralResultPayload<string>,
+  RP extends LiteralResultPayload<string>
 >(
   seed: LiteralProtocolSeed<E, QP, RP>,
 ): Protocol<LiteralQuery<QP>, LiteralResult<QP, RP>, E, C, QA, RA> =>
   protocol({
-    Query: seed.QueryPayload,
+    Query: t.tuple([seed.QueryPayload]),
     Result: t.tuple([seed.QueryPayload, seed.ResultPayload]),
     Err: seed.Err,
     processQuery: processQuery(seed.ResultPayload.value),
     processResult: processResult(),
     reduceResult,
-    queryExamples: queryExamples([seed.QueryPayload.value]),
+    queryExamples: queryExamples([[seed.QueryPayload.value]]),
     resultExamples: resultExamples([[seed.QueryPayload.value, seed.ResultPayload.value]]),
   });

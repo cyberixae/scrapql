@@ -126,17 +126,17 @@ export function resultExamples<K extends Key<any>, SR extends Result<any>>(
 }
 
 export const bundle = <
-  Q extends Query<any>,
-  R extends Result<any>,
   E extends Err<any>,
   C extends Context,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
-  K extends Key<any>
+  K extends Key<any>,
+  SQ extends Query<any>,
+  SR extends Result<any>
 >(
   key: { Key: KeyCodec<K>; keyExamples: NonEmptyArray<K> },
-  item: Protocol<Q, R, E, Prepend<K, C>, QA, RA>,
-): Protocol<KeysQuery<Dict<K, Q>>, KeysResult<Dict<K, R>>, E, C, QA, RA> =>
+  item: Protocol<SQ, SR, E, Prepend<K, C>, QA, RA>,
+): Protocol<KeysQuery<Dict<K, SQ>>, KeysResult<Dict<K, SR>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(key.Key, item.Query),
     Result: Dict(key.Key, item.Result),

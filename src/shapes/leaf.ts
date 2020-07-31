@@ -15,18 +15,16 @@ import {
   LeafProtocolSeed,
   LeafQuery,
   LeafQueryPayload,
+  LeafReporterConnector,
+  LeafResolverConnector,
   LeafResult,
   LeafResultPayload,
   LeafResultCombiner,
   Protocol,
-  Query,
   QueryProcessor,
   PayloadMismatch,
-  ReporterConnector,
   Reporters,
-  ResolverConnector,
   Resolvers,
-  Result,
   ResultProcessor,
   ResultReducer,
   examples,
@@ -41,15 +39,17 @@ export function processQuery<
   C extends Context,
   A extends Resolvers<any>,
   QP extends LeafQueryPayload<any>,
-  RP extends LeafResultPayload<any>,
->(connect: ResolverConnector<QP, RP, E, C, A>): QueryProcessor<Q, LeafResult<QP, RP>, E, C, A> {
-  return (qp: Q) => (context: C): ReaderTaskEither<A, E, LeafResult<QP, RP>> => {
+  RP extends LeafResultPayload<any>
+>(
+  connect: LeafResolverConnector<QP, RP, E, C, A>,
+): QueryProcessor<Q, LeafResult<QP, RP>, E, C, A> {
+  return ([qp]: Q) => (context: C): ReaderTaskEither<A, E, LeafResult<QP, RP>> => {
     return (resolvers) => {
       const resolver = connect(resolvers);
       return pipe(
         resolver(qp, context),
-        TaskEither_.map((rp) => [qp, rp])
-      )
+        TaskEither_.map((rp) => [qp, rp]),
+      );
     };
   };
 }
@@ -61,8 +61,8 @@ export function processResult<
   C extends Context,
   A extends Reporters<any>,
   QP extends LeafQueryPayload<any>,
-  RP extends LeafResultPayload<any>,
->(connect: ReporterConnector<QP, RP, C, A>): ResultProcessor<R, C, A> {
+  RP extends LeafResultPayload<any>
+>(connect: LeafReporterConnector<QP, RP, C, A>): ResultProcessor<R, C, A> {
   return ([qp, rp]: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
@@ -101,16 +101,15 @@ export function resultExamples<R extends LeafResult<any, any>>(
 }
 
 export const bundle = <
-  Q extends LeafQuery<QP>,
   E extends Err<any>,
   C extends Context,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   QP extends LeafQueryPayload<any>,
-  RP extends LeafResultPayload<any>,
+  RP extends LeafResultPayload<any>
 >(
-  seed: LeafProtocolSeed<Q, E, C, QA, RA, QP, RP>,
-): Protocol<Q, LeafResult<QP, RP>, E, C, QA, RA> =>
+  seed: LeafProtocolSeed<E, C, QA, RA, QP, RP>,
+): Protocol<LeafQuery<QP>, LeafResult<QP, RP>, E, C, QA, RA> =>
   protocol({
     Query: seed.Query,
     Result: seed.Result,
