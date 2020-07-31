@@ -100,14 +100,12 @@ export const bundle = <
   seed: LiteralProtocolSeed<E, QP, RP>,
 ): Protocol<LiteralQuery<QP>, LiteralResult<QP, RP>, E, C, QA, RA> =>
   protocol({
-    Query: t.type({ q: seed.QueryPayload }),
-    Result: t.type({ q: seed.QueryPayload, r: seed.ResultPayload }),
+    Query: t.type({ q: seed.Query }),
+    Result: t.type({ q: seed.Query, r: seed.Result }),
     Err: seed.Err,
-    processQuery: processQuery(seed.ResultPayload.value),
+    processQuery: processQuery(seed.Result.value),
     processResult: processResult(),
     reduceResult,
-    queryExamples: queryExamples([{ q: seed.QueryPayload.value }]),
-    resultExamples: resultExamples([
-      { q: seed.QueryPayload.value, r: seed.ResultPayload.value },
-    ]),
+    queryExamples: queryExamples([{ q: seed.Query.value }]),
+    resultExamples: resultExamples([{ q: seed.Query.value, r: seed.Result.value }]),
   });

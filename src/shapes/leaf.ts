@@ -1,3 +1,4 @@
+import * as t from 'io-ts';
 import * as Array_ from 'fp-ts/lib/Array';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
@@ -9,6 +10,8 @@ import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { pipe } from 'fp-ts/lib/pipeable';
 
 import * as Onion_ from '../utils/onion';
+import * as NEGenF_ from '../utils/negf';
+
 import {
   Context,
   Err,
@@ -90,16 +93,23 @@ export const reduceResult = <R extends LeafResult<any, any>>(
   return result;
 };
 
-export function queryExamples<Q extends LeafQuery<any>>(
-  queries: NonEmptyArray<Q>,
-): Examples<Q> {
-  return examples(queries);
+export function queryExamples<QP extends LeafQueryPayload<any>>(
+  qps: NonEmptyArray<QP>,
+): Examples<LeafQuery<QP>> {
+  return pipe(
+    examples(qps),
+    NEGenF_.map((q) => ({ q })),
+  );
 }
 
-export function resultExamples<R extends LeafResult<any, any>>(
-  results: NonEmptyArray<R>,
-): Examples<R> {
-  return examples(results);
+export function resultExamples<
+  QP extends LeafQueryPayload<any>,
+  RP extends LeafResultPayload<any>
+>(qps: NonEmptyArray<QP>, rps: NonEmptyArray<RP>): Examples<LeafResult<QP, RP>> {
+  return NEGenF_.sequenceS({
+    q: examples(qps),
+    r: examples(rps),
+  });
 }
 
 export const bundle = <
@@ -113,12 +123,12 @@ export const bundle = <
   seed: LeafProtocolSeed<E, C, QA, RA, QP, RP>,
 ): Protocol<LeafQuery<QP>, LeafResult<QP, RP>, E, C, QA, RA> =>
   protocol({
-    Query: seed.Query,
-    Result: seed.Result,
+    Query: t.type({ q: seed.Query }),
+    Result: t.type({ q: seed.Query, r: seed.Result }),
     Err: seed.Err,
     processQuery: processQuery(seed.queryConnector),
     processResult: processResult(seed.resultConnector),
     reduceResult: reduceResult(seed.resultCombiner),
     queryExamples: queryExamples(seed.queryExamplesArray),
-    resultExamples: resultExamples(seed.resultExamplesArray),
+    resultExamples: resultExamples(seed.queryExamplesArray, seed.resultExamplesArray),
   });

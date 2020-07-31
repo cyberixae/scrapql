@@ -321,7 +321,7 @@ export type ResultReducer<R extends Result<any>> = (
 
 export type Failure = ReduceFailure;
 
-export type LeafResultCombiner<R extends Result<any>> = (
+export type LeafResultCombiner<R extends LeafResult<any, any>> = (
   w: R,
   r: R,
 ) => Either<PayloadMismatch, R>;
@@ -461,8 +461,8 @@ export type LiteralProtocolSeed<
   RP extends LiteralResultPayload<string>
 > = {
   Err: ErrCodec<E>;
-  QueryPayload: QueryCodec<QP> & t.LiteralC<QP>;
-  ResultPayload: ResultCodec<RP> & t.LiteralC<RP>;
+  Query: QueryCodec<QP> & t.LiteralC<QP>;
+  Result: ResultCodec<RP> & t.LiteralC<RP>;
 };
 
 export type LeafProtocolSeed<
@@ -474,11 +474,12 @@ export type LeafProtocolSeed<
   RP extends LeafResultPayload<any>
 > = {
   Err: ErrCodec<E>;
-  Query: QueryCodec<LeafQuery<QP>>;
-  Result: ResultCodec<LeafResult<QP, RP>>;
+  Query: QueryCodec<QP>;
+  Result: ResultCodec<RP>;
   queryConnector: ResolverConnector<QP, RP, E, C, QA>;
   resultConnector: ReporterConnector<QP, RP, C, RA>;
+  queryCombiner: LeafResultCombiner<LeafResult<QP, RP>>;
   resultCombiner: LeafResultCombiner<LeafResult<QP, RP>>;
-  queryExamplesArray: NonEmptyArray<LeafQuery<QP>>;
-  resultExamplesArray: NonEmptyArray<LeafResult<QP, RP>>;
+  queryExamplesArray: NonEmptyArray<QP>;
+  resultExamplesArray: NonEmptyArray<RP>;
 };
