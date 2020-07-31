@@ -74,10 +74,10 @@ export type QueryPayload<
     | LeafQueryPayload<any>
 > = QP;
 
-export type ExistenceQuery<QP extends ExistenceQueryPayload<any>> = [QP];
-export type TermsQuery<QP extends TermsQueryPayload<any>> = [QP];
-export type LiteralQuery<QP extends LiteralQueryPayload<string>> = [QP];
-export type LeafQuery<QP extends LeafQueryPayload<any>> = [QP];
+export type ExistenceQuery<QP extends ExistenceQueryPayload<any>> = { q: QP };
+export type TermsQuery<QP extends TermsQueryPayload<any>> = { q: QP };
+export type LiteralQuery<QP extends LiteralQueryPayload<string>> = { q: QP };
+export type LeafQuery<QP extends LeafQueryPayload<any>> = { q: QP };
 
 export type KeysQuery<Q extends Dict<Key<any>, Query<any>>> = Q;
 export type IdsQuery<Q extends Dict<Id<any>, Query<any>>> = Q;
@@ -118,19 +118,19 @@ export type ResultPayload<
 export type ExistenceResult<
   QP extends ExistenceQueryPayload<any>,
   RP extends ExistenceResultPayload<any>
-> = [QP, RP];
+> = { q: QP; r: RP };
 export type TermsResult<
   QP extends TermsQueryPayload<any>,
   RP extends TermsResultPayload<any>
-> = [QP, RP];
+> = { q: QP; r: RP };
 export type LiteralResult<
   QP extends LiteralQueryPayload<string>,
   RP extends LiteralResultPayload<string>
-> = [QP, RP];
+> = { q: QP; r: RP };
 export type LeafResult<
   QP extends LeafQueryPayload<any>,
   RP extends LeafResultPayload<any>
-> = [QP, RP];
+> = { q: QP; r: RP };
 
 export type KeysResult<R extends Dict<Key<any>, Result<any>>> = R;
 export type IdsResult<R extends Dict<Id<any>, Option<Result<any>>>> = R;

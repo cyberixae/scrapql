@@ -43,12 +43,12 @@ export function processQuery<
 >(
   connect: LeafResolverConnector<QP, RP, E, C, A>,
 ): QueryProcessor<Q, LeafResult<QP, RP>, E, C, A> {
-  return ([qp]: Q) => (context: C): ReaderTaskEither<A, E, LeafResult<QP, RP>> => {
+  return ({ q }: Q) => (context: C): ReaderTaskEither<A, E, LeafResult<QP, RP>> => {
     return (resolvers) => {
       const resolver = connect(resolvers);
       return pipe(
-        resolver(qp, context),
-        TaskEither_.map((rp) => [qp, rp]),
+        resolver(q, context),
+        TaskEither_.map((r) => ({ q, r })),
       );
     };
   };
@@ -63,10 +63,10 @@ export function processResult<
   QP extends LeafQueryPayload<any>,
   RP extends LeafResultPayload<any>
 >(connect: LeafReporterConnector<QP, RP, C, A>): ResultProcessor<R, C, A> {
-  return ([qp, rp]: R) => (context: C): ReaderTask<A, void> => {
+  return ({ q, r }: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
-      return reporter(qp, rp, context);
+      return reporter(q, r, context);
     };
   };
 }
