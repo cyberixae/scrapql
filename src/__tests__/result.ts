@@ -30,8 +30,8 @@ describe('result', () => {
   type Reporters = {
     learnProperty1Existence: (r: scrapql.Existence, c: Ctx<Id>) => Task<void>;
     learnProperty3Match: (r: Array<Id>, c: Ctx<Terms>) => Task<void>;
-    receiveKeyResult: (q: KeyQuery, r: KeyResult, c: Ctx<Key, Ctx<Id>>) => Task<void>;
-    receiveProperty2Result: (q: Property2Query, r: Property2Result, c: Ctx0) => Task<void>;
+    receiveKeyResult: (r: KeyResultPayload, c: Ctx<KeyQueryPayload, Ctx<Key, Ctx<Id>>>) => Task<void>;
+    receiveProperty2Result: (r: Property2ResultPayload, c: Ctx<Property2QueryPayload>) => Task<void>;
   };
 
   function createReporters(): Reporters {
@@ -43,10 +43,10 @@ describe('result', () => {
         jest.fn((_0: Array<Id>, _1: Ctx<Terms>) => undefined),
       ),
       receiveKeyResult: loggerTask(
-        jest.fn((_0: KeyResult, _1: Ctx<Key, Ctx<Id>>) => undefined),
+        jest.fn((_0: KeyResultPayload, _1: Ctx<KeyQueryPayload, Ctx<Key, Ctx<Id>>>) => undefined),
       ),
       receiveProperty2Result: loggerTask(
-        jest.fn((_0: Property2Result, _1: Ctx0) => undefined),
+        jest.fn((_0: Property2ResultPayload, _1: Ctx<Property2QueryPayload>) => undefined),
       ),
     };
   }
@@ -71,17 +71,24 @@ describe('result', () => {
   type Key = string;
   const key1: Key = 'key1';
 
-  type KeyQuery = string;
-  const key1Query: KeyQuery = 'query1';
-  type KeyResult = string;
-  const key1Result: KeyResult = 'result1';
-  const processKey: CustomRP<KeyResult, Ctx<Key, Ctx<Id>>> = scrapql.leaf.processResult(
+  type KeyQueryPayload = string
+  const keyQueryPayload: KeyQueryPayload = 'query1'
+
+  type KeyResultPayload = string
+  const keyResultPayload: KeyResultPayload = 'result1'
+
+  type KeyResult = scrapql.LeafResult<KeyQueryPayload, KeyResultPayload>;
+  type KeyQuery = scrapql.LeafQuery<KeyQueryPayload>;
+  const key1Result: KeyResult = { q: keyQueryPayload, r: keyResultPayload };
+  const key1Query: KeyQuery = { q: keyQueryPayload };
+
+  const processKey: CustomRP<KeyResult, Ctx<KeyQuery, Ctx<Key, Ctx<Id>>>> = scrapql.leaf.processResult(
     (r) => r.receiveKeyResult,
   );
 
   it('processKey', async () => {
     const reporters = createReporters();
-    const context: Ctx<Key, Ctx<Id>> = ctx(key1, ctx(id1));
+    const context: Ctx<KeyQuery, Ctx<Key, Ctx<Id>>> = ctx(key1Query, ctx(key1, ctx(id1)));
     const main = scrapql.processorInstance(processKey, context, reporters)(key1Result);
     await ruins.fromTask(main);
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
@@ -142,10 +149,18 @@ describe('result', () => {
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
 
-  type Property2Query = string;
-  const property2Query: Property2Query = 'query2';
-  type Property2Result = string;
-  const property2Result: Property2Result = 'result2';
+
+  type Property2QueryPayload = string
+  type Property2ResultPayload = string
+  const property2QueryPayload: Property2QueryPayload = 'query2'
+  const property2ResultPayload: Property2ResultPayload = 'result2'
+
+
+  type Property2Result = scrapql.LeafResult<Property2QueryPayload, Property2ResultPayload>;
+  type Property2Query = scrapql.LeafQuery<Property2QueryPayload>;
+  const property2Result: Property2Result = {  q: property2QueryPayload , r: property2ResultPayload };
+  const property2Query: Property2Query = { q: property2QueryPayload };
+
   const processProperty2: CustomRP<Property2Result, Ctx0> = scrapql.leaf.processResult(
     (r) => r.receiveProperty2Result,
   );
@@ -251,7 +266,7 @@ describe('result', () => {
       >(
         (r: Reporters) => r.learnProperty1Existence,
         scrapql.keys.processResult<KeysResult, Ctx<Id>, Reporters, Key, KeyResult>(
-          scrapql.leaf.processResult<KeyResult, Ctx<Key, Ctx<Id>>, Reporters>(
+          scrapql.leaf.processResult<KeyResult, Ctx<Key, Ctx<Id>>, Reporters, KeyQueryPayload, KeyResultPayload>(
             (r: Reporters) => r.receiveKeyResult,
           ),
         ),
@@ -267,7 +282,7 @@ describe('result', () => {
       >(
         (r) => r.learnProperty3Match,
         scrapql.keys.processResult<KeysResult, Ctx<Id>, Reporters, Key, KeyResult>(
-          scrapql.leaf.processResult<KeyResult, Ctx<Key, Ctx<Id>>, Reporters>(
+          scrapql.leaf.processResult<KeyResult, Ctx<Key, Ctx<Id>>, Reporters, KeyQueryPayload, KeyResultPayload>(
             (r: Reporters) => r.receiveKeyResult,
           ),
         ),
