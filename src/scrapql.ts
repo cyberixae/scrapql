@@ -2,14 +2,14 @@ import * as t from 'io-ts';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
-import { Task } from 'fp-ts/lib/Task';
-import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { pipe } from 'fp-ts/lib/pipeable';
 import * as Option_ from 'fp-ts/lib/Option';
 
 import { Zero, zero, Prepend, prepend, Onion } from './utils/onion';
 import { Dict as _Dict, dict as _dict } from './utils/dict';
 import { NEGenF, neGenF } from './utils/negf';
+
+import * as abstr from './abstract';
 
 export * as ids from './shapes/ids';
 export * as keys from './shapes/keys';
@@ -29,9 +29,14 @@ export type Id<I extends string> = I;
 export type Key<K extends string> = K;
 export type Property<P extends string> = P;
 export type Err<E extends Json> = E;
+export type Existence = boolean;
+
+export type Context = abstr.Context
 
 export type Ctx0 = Zero;
 export const ctx0 = zero;
+
+// TODO: replace Onion with TS4 tuple type
 
 export type Ctx<N, C extends Onion<any, any> = Zero> = Prepend<N, C>;
 export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
@@ -57,9 +62,6 @@ export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
     ),
   );
 }
-
-// TODO: with TS4 tuple type Context<C extends Array<any>> = C
-export type Context = Onion<any, any> | Zero;
 
 export type ExistenceQueryPayload<QP extends Id<string>> = QP;
 export type TermsQueryPayload<QP extends Terms<any>> = QP;
@@ -99,8 +101,6 @@ export type Query<
     | SearchQuery<any>
     | PropertiesQuery<any>
 > = Q;
-
-export type Existence = boolean;
 
 export type ExistenceResultPayload<RP extends Existence> = RP;
 export type TermsResultPayload<RP extends Array<Id<any>>> = RP;
@@ -155,49 +155,27 @@ export type Result<
     | PropertiesResult<any>
 > = R;
 
-export type Handler<I extends [any] | [any, any], O, C extends Context> = I extends [
-  infer Q,
-  infer R,
-]
-  ? (q: Q, r: R, c: C) => Task<O>
-  : I extends [infer Q]
-  ? (q: Q, c: C) => Task<O>
-  : never;
-
-export type API<A extends { [p: string]: Handler<any, any, any> }> = A;
-
-export type ProcessorInstance<I, O> = (i: I) => Task<O>;
-export const processorInstance = <I, O, C extends Context, A extends API<any>>(
-  processor: Processor<I, O, C, A>,
-  context: C,
-  api: A,
-): ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
-
 export type QueryProcessorInstance<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>
-> = ProcessorInstance<Q, Either<E, R>>;
-export type ResultProcessorInstance<R extends Result<any>> = ProcessorInstance<R, void>;
-
-export type Processor<I, O, C extends Context, A extends API<any>> = (
-  i: I,
-) => (c: C) => ReaderTask<A, O>;
+> = abstr.ProcessorInstance<Q, Either<E, R>>;
+export type ResultProcessorInstance<R extends Result<any>> = abstr.ProcessorInstance<R, void>;
 
 export type Reporter<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   C extends Context
-> = Handler<[QP, RP], void, C>;
-export type Reporters<A extends API<{ [p: string]: Reporter<any, any, any> }>> = A;
+> = abstr.Handler<[QP, RP], void, C>;
+export type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
 
 export type Resolver<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   E extends Err<any>,
   C extends Context
-> = Handler<[QP], Either<E, RP>, C>;
-export type Resolvers<A extends API<{ [p: string]: Resolver<any, any, any, any> }>> = A;
+> = abstr.Handler<[QP], Either<E, RP>, C>;
+export type Resolvers<A extends abstr.API<{ [p: string]: Resolver<any, any, any, any> }>> = A;
 
 export type QueryProcessor<
   Q extends Query<any>,
@@ -205,13 +183,13 @@ export type QueryProcessor<
   E extends Err<any>,
   C extends Context,
   A extends Resolvers<any>
-> = Processor<Q, Either<E, R>, C, A>;
+> = abstr.Processor<Q, Either<E, R>, C, A>;
 
 export type ResultProcessor<
   R extends Result<any>,
   C extends Context,
   A extends Reporters<any>
-> = Processor<R, void, C, A>;
+> = abstr.Processor<R, void, C, A>;
 
 export type ReporterConnector<
   QP extends QueryPayload<any>,
@@ -465,6 +443,13 @@ export const protocol = <
   ...fundamentals,
   ...constructors(fundamentals),
 });
+
+
+export const processorInstance = <I, O, C extends Context, A extends abstr.API<any>>(
+  processor: abstr.Processor<I, O, C, A>,
+  context: C,
+  api: A,
+): abstr.ProcessorInstance<I, O> => (input: I) => processor(input)(context)(api);
 
 export type LiteralProtocolSeed<
   E extends Err<any>,
