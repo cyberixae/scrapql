@@ -53,6 +53,7 @@ describe('result', () => {
 
   type CustomRP<R, C extends scrapql.Context> = scrapql.ResultProcessor<R, C, Reporters>;
 
+  const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
 
   type Id = string & ('id1' | 'id2');
@@ -212,13 +213,13 @@ describe('result', () => {
   });
 
   type RootResult = Partial<{
-    protocol: typeof RESULT;
+    protocol: scrapql.LiteralResult<typeof QUERY, typeof RESULT>;
     property1: Property1Result;
     property2: Property2Result;
     property3: Property3Result;
   }>;
   const rootResult: RootResult = {
-    protocol: RESULT,
+    protocol: { q: QUERY, r: RESULT },
     property1: property1Result,
     property3: property3Result,
   };
