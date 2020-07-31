@@ -99,7 +99,7 @@ export function processResult<
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: TermsReporterConnector<T, Array<I>, Prepend<T, C>, A>,
+  connect: TermsReporterConnector<T, Array<I>, C, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -111,7 +111,7 @@ export function processResult<
             const termsContext = pipe(context, Onion_.prepend(terms));
             const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
-              (ids: Array<I>): Task<void> => connect(reporters)(terms, ids, termsContext),
+              (ids: Array<I>): Task<void> => connect(reporters)(ids, termsContext),
             );
             const reportResults: Array<Task<void>> = pipe(
               subResults,
@@ -189,7 +189,7 @@ export const bundle = <
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<SQ, SR, E, Prepend<I, C>, QA, RA>,
   queryConnector: TermsResolverConnector<T, Array<I>, E, C, QA>,
-  resultConnector: TermsReporterConnector<T, Array<I>, Prepend<T, C>, RA>,
+  resultConnector: TermsReporterConnector<T, Array<I>, C, RA>,
 ): Protocol<SearchQuery<Dict<T, SQ>>, SearchResult<Dict<T, Dict<I, SR>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(terms.Terms, item.Query),

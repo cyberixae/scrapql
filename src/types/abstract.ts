@@ -1,15 +1,8 @@
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
-import { Onion, Zero } from './utils/onion';
+import { Onion, Zero } from '../utils/onion';
 
-export type Handler<I extends [any] | [any, any], O, C extends Context> = I extends [
-  infer Q,
-  infer R,
-]
-  ? (q: Q, r: R, c: C) => Task<O>
-  : I extends [infer Q]
-  ? (q: Q, c: C) => Task<O>
-  : never;
+export type Handler<I, O, C extends Context> = (i: I, c: C) => Task<O>;
 
 export type API<A extends { [p: string]: Handler<any, any, any> }> = A;
 

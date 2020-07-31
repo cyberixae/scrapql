@@ -8,6 +8,7 @@ import { ReaderTaskEither } from 'fp-ts/lib/ReaderTaskEither';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { pipe } from 'fp-ts/lib/pipeable';
 
+import * as Onion_ from '../utils/onion';
 import {
   Context,
   Err,
@@ -66,7 +67,8 @@ export function processResult<
   return ({ q, r }: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const reporter = connect(reporters);
-      return reporter(q, r, context);
+      const subContext = pipe(context, Onion_.prepend(q));
+      return reporter(r, subContext);
     };
   };
 }

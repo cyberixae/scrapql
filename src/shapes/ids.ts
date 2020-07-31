@@ -108,7 +108,7 @@ export function processResult<
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: ExistenceReporterConnector<I, Existence, Prepend<I, C>, A>,
+  connect: ExistenceReporterConnector<I, Existence, C, A>,
   subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
@@ -120,9 +120,9 @@ export function processResult<
           return pipe(
             maybeSubResult,
             Option_.fold(
-              () => [connect(reporters)(id, false, subContext)],
+              () => [connect(reporters)(false, subContext)],
               (subResult) => [
-                connect(reporters)(id, true, subContext),
+                connect(reporters)(true, subContext),
                 subProcessor(subResult)(subContext)(reporters),
               ],
             ),
@@ -193,7 +193,7 @@ export const bundle = <
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
   item: Protocol<SQ, SR, E, Prepend<I, C>, QA, RA>,
   queryConnector: ExistenceResolverConnector<I, Existence, E, C, QA>,
-  resultConnector: ExistenceReporterConnector<I, Existence, Prepend<I, C>, RA>,
+  resultConnector: ExistenceReporterConnector<I, Existence, C, RA>,
 ): Protocol<IdsQuery<Dict<I, SQ>>, IdsResult<Dict<I, Option<SR>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),

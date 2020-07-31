@@ -169,7 +169,7 @@ export type Reporter<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   C extends Context
-> = abstr.Handler<[QP, RP], void, C>;
+> = abstr.Handler<RP, void, Prepend<QP, C>>;
 export type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
 
 export type Resolver<
@@ -177,7 +177,7 @@ export type Resolver<
   RP extends ResultPayload<any>,
   E extends Err<any>,
   C extends Context
-> = abstr.Handler<[QP], Either<E, RP>, C>;
+> = abstr.Handler<QP, Either<E, RP>, C>;
 export type Resolvers<
   A extends abstr.API<{ [p: string]: Resolver<any, any, any, any> }>
 > = A;

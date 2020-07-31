@@ -30,8 +30,8 @@ describe('result', () => {
   type Reporters = {
     learnProperty1Existence: (r: scrapql.Existence, c: Ctx<Id>) => Task<void>;
     learnProperty3Match: (r: Array<Id>, c: Ctx<Terms>) => Task<void>;
-    receiveKeyResult: (r: KeyResult, c: Ctx<Key, Ctx<Id>>) => Task<void>;
-    receiveProperty2Result: (r: Property2Result, c: Ctx0) => Task<void>;
+    receiveKeyResult: (q: KeyQuery, r: KeyResult, c: Ctx<Key, Ctx<Id>>) => Task<void>;
+    receiveProperty2Result: (q: Property2Query, r: Property2Result, c: Ctx0) => Task<void>;
   };
 
   function createReporters(): Reporters {
@@ -71,6 +71,8 @@ describe('result', () => {
   type Key = string;
   const key1: Key = 'key1';
 
+  type KeyQuery = string;
+  const key1Query: KeyQuery = 'query1';
   type KeyResult = string;
   const key1Result: KeyResult = 'result1';
   const processKey: CustomRP<KeyResult, Ctx<Key, Ctx<Id>>> = scrapql.leaf.processResult(
@@ -140,6 +142,8 @@ describe('result', () => {
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
 
+  type Property2Query = string;
+  const property2Query: Property2Query = 'query2';
   type Property2Result = string;
   const property2Result: Property2Result = 'result2';
   const processProperty2: CustomRP<Property2Result, Ctx0> = scrapql.leaf.processResult(
