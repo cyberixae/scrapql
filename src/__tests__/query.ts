@@ -40,7 +40,10 @@ describe('query', () => {
   type Resolvers = scrapql.Resolvers<{
     checkProperty1Existence: (q: Id) => TaskEither<Err1, scrapql.Existence>;
     resolveProperty3Terms: (q: Terms) => TaskEither<Err1, Array<Id>>;
-    fetchKeyResult: (q: KeyQueryPayload, c: Ctx<Key, Ctx<Id>>) => TaskEither<Err1, KeyResultPayload>;
+    fetchKeyResult: (
+      q: KeyQueryPayload,
+      c: Ctx<Key, Ctx<Id>>,
+    ) => TaskEither<Err1, KeyResultPayload>;
     fetchProperty2Result: (
       q: Property2QueryPayload,
       c: Ctx0,
@@ -76,10 +79,14 @@ describe('query', () => {
         ),
       ),
       fetchKeyResult: loggerTask(
-        jest.fn((_0: KeyQueryPayload, _1: Ctx<Key, Ctx<Id>>) => Either_.right(keyResultPayload)),
+        jest.fn((_0: KeyQueryPayload, _1: Ctx<Key, Ctx<Id>>) =>
+          Either_.right(keyResultPayload),
+        ),
       ),
       fetchProperty2Result: loggerTask(
-        jest.fn((_0: Property2QueryPayload, _1: Ctx0) => Either_.right(property2ResultPayload)),
+        jest.fn((_0: Property2QueryPayload, _1: Ctx0) =>
+          Either_.right(property2ResultPayload),
+        ),
       ),
     };
   }
@@ -114,11 +121,11 @@ describe('query', () => {
   type Key = string;
   const key1: Key = 'key1';
 
-  type KeyQueryPayload = string
-  const keyQueryPayload: KeyQueryPayload = 'query1'
+  type KeyQueryPayload = string;
+  const keyQueryPayload: KeyQueryPayload = 'query1';
 
-  type KeyResultPayload = string
-  const keyResultPayload: KeyResultPayload = 'result1'
+  type KeyResultPayload = string;
+  const keyResultPayload: KeyResultPayload = 'result1';
 
   type KeyResult = scrapql.LeafResult<KeyQueryPayload, KeyResultPayload>;
   type KeyQuery = scrapql.LeafQuery<KeyQueryPayload>;
@@ -201,16 +208,21 @@ describe('query', () => {
     expect(result).toEqual(property1Result);
   });
 
-  type Property2QueryPayload = string
-  const property2QueryPayload: Property2QueryPayload = 'query1'
+  type Property2QueryPayload = string;
+  const property2QueryPayload: Property2QueryPayload = 'query1';
 
-  type Property2ResultPayload = string
-  const property2ResultPayload: Property2ResultPayload = 'result1'
+  type Property2ResultPayload = string;
+  const property2ResultPayload: Property2ResultPayload = 'result1';
 
-
-  type Property2Result = scrapql.LeafResult<Property2QueryPayload, Property2ResultPayload>;
+  type Property2Result = scrapql.LeafResult<
+    Property2QueryPayload,
+    Property2ResultPayload
+  >;
   type Property2Query = scrapql.LeafQuery<Property2QueryPayload>;
-  const property2Result: Property2Result = {  q: property2QueryPayload , r: property2ResultPayload };
+  const property2Result: Property2Result = {
+    q: property2QueryPayload,
+    r: property2ResultPayload,
+  };
   const property2Query: Property2Query = { q: property2QueryPayload };
   const processProperty2: CustomQP<
     Property2Query,
@@ -277,7 +289,7 @@ describe('query', () => {
     property3: Property3Query;
   }>;
   const rootResult: RootResult = {
-    protocol: { q: QUERY, r: RESULT },
+    protocol: { q: QUERY, r: RESULT },
     property1: property1Result,
     property3: property3Result,
   };
