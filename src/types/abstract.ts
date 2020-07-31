@@ -1,4 +1,3 @@
-
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { Onion, Zero } from './utils/onion';

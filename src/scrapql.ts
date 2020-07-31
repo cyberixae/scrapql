@@ -9,7 +9,7 @@ import { Zero, zero, Prepend, prepend, Onion } from './utils/onion';
 import { Dict as _Dict, dict as _dict } from './utils/dict';
 import { NEGenF, neGenF } from './utils/negf';
 
-import * as abstr from './abstract';
+import * as abstr from './types/abstract';
 
 export * as ids from './shapes/ids';
 export * as keys from './shapes/keys';
@@ -31,7 +31,7 @@ export type Property<P extends string> = P;
 export type Err<E extends Json> = E;
 export type Existence = boolean;
 
-export type Context = abstr.Context
+export type Context = abstr.Context;
 
 export type Ctx0 = Zero;
 export const ctx0 = zero;
@@ -160,7 +160,10 @@ export type QueryProcessorInstance<
   R extends Result<any>,
   E extends Err<any>
 > = abstr.ProcessorInstance<Q, Either<E, R>>;
-export type ResultProcessorInstance<R extends Result<any>> = abstr.ProcessorInstance<R, void>;
+export type ResultProcessorInstance<R extends Result<any>> = abstr.ProcessorInstance<
+  R,
+  void
+>;
 
 export type Reporter<
   QP extends QueryPayload<any>,
@@ -175,7 +178,9 @@ export type Resolver<
   E extends Err<any>,
   C extends Context
 > = abstr.Handler<[QP], Either<E, RP>, C>;
-export type Resolvers<A extends abstr.API<{ [p: string]: Resolver<any, any, any, any> }>> = A;
+export type Resolvers<
+  A extends abstr.API<{ [p: string]: Resolver<any, any, any, any> }>
+> = A;
 
 export type QueryProcessor<
   Q extends Query<any>,
@@ -443,7 +448,6 @@ export const protocol = <
   ...fundamentals,
   ...constructors(fundamentals),
 });
-
 
 export const processorInstance = <I, O, C extends Context, A extends abstr.API<any>>(
   processor: abstr.Processor<I, O, C, A>,
