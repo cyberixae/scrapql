@@ -10,12 +10,9 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../utils/onion';
 import * as Dict_ from '../utils/dict';
 import * as NonEmptyList_ from '../utils/non-empty-list';
-import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
-import { Prepend } from '../utils/onion';
 
 import {
   Context,
@@ -51,7 +48,7 @@ import {
 export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers<any>,
   T extends Terms<any>,
   I extends Id<any>,
@@ -59,7 +56,7 @@ export function processQuery<
   SR extends Result<any>
 >(
   connect: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, A>,
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Context<[I, ...C]>, A>,
 ): QueryProcessor<Q, SearchResult<Dict<T, Dict<I, SR>>>, E, C, A> {
   return (query: Q) => (
     context: C,
@@ -77,7 +74,7 @@ export function processQuery<
                   pipe(
                     ids,
                     Array_.map((id: I): [I, TaskEither<E, SR>] => {
-                      const subContext = pipe(context, Context_.prepend(id));
+                      const subContext: Context<[I, ...C]> = [id, ...context];
                       const subResult = subProcessor(subQuery)(subContext)(resolvers);
                       return [id, subResult];
                     }),
@@ -97,14 +94,14 @@ export function processQuery<
 
 export function processResult<
   R extends SearchResult<Dict<T, Dict<I, SR>>>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: ReporterConnector<TermsResult<I>, Prepend<T, C>, A>,
-  subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
+  connect: ReporterConnector<TermsResult<I>, Context<[T, ...C]>, A>,
+  subProcessor: ResultProcessor<SR, Context<[I, ...C]>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters): Task<void> => {
@@ -112,7 +109,7 @@ export function processResult<
         result,
         Dict_.mapWithIndex(
           (terms: T, subResults: Dict<I, SR>): Array<Task<void>> => {
-            const termsContext = pipe(context, Onion_.prepend(terms));
+            const termsContext: Context<[T, ...C]> = [terms, ...context];
             const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
               (ids: Array<I>): Task<void> =>
@@ -121,7 +118,7 @@ export function processResult<
             const reportResults: Array<Task<void>> = pipe(
               subResults,
               Array_.map(([id, subResult]: [I, SR]) => {
-                const idContext = pipe(context, Onion_.prepend(id));
+                const idContext: Context<[I, ...C]> = [id, ...context];
                 return subProcessor(subResult)(idContext)(reporters);
               }),
             );
@@ -184,7 +181,7 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
@@ -192,9 +189,9 @@ export const bundle = <
 >(
   terms: { Terms: TermsCodec<T>; termsExamples: NonEmptyArray<T> },
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
-  item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
+  item: Protocol<Q, R, E, Context<[I, ...C]>, QA, RA>,
   queryConnector: ResolverConnector<TermsQuery<T>, TermsResult<I>, E, C, QA>,
-  resultConnector: ReporterConnector<TermsResult<I>, Prepend<T, C>, RA>,
+  resultConnector: ReporterConnector<TermsResult<I>, Context<[T, ...C]>, RA>,
 ): Protocol<SearchQuery<Dict<T, Q>>, SearchResult<Dict<T, Dict<I, R>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(terms.Terms, item.Query),

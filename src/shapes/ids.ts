@@ -17,12 +17,9 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../utils/onion';
 import * as Dict_ from '../utils/dict';
 import * as NonEmptyList_ from '../utils/non-empty-list';
-import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
-import { Prepend } from '../utils/onion';
 import { mergeOption } from '../utils/option';
 
 import {
@@ -57,14 +54,14 @@ import {
 export function processQuery<
   Q extends IdsQuery<Dict<I, SQ>>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers<any>,
   I extends Id<any>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
   connect: ResolverConnector<ExistenceQuery<I>, Existence, E, C, A>,
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Context<[I, ...C]>, A>,
 ): QueryProcessor<Q, IdsResult<Dict<I, Option<SR>>>, E, C, A> {
   return (query: Q) => (
     context: C,
@@ -74,7 +71,7 @@ export function processQuery<
         query,
         Dict_.mapWithIndex(
           (id: I, subQuery: SQ): TaskEither<E, Option<SR>> => {
-            const subContext = pipe(context, Context_.prepend(id));
+            const subContext: Context<[I, ...C]> = [id, ...context];
             const existenceCheck = connect(resolvers);
             return pipe(
               existenceCheck(existenceQuery(id), context),
@@ -105,20 +102,20 @@ export function processQuery<
 
 export function processResult<
   R extends IdsResult<Dict<I, Option<SR>>>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters<any>,
   I extends Id<any>,
   SR extends Result<any>
 >(
-  connect: ReporterConnector<Existence, Prepend<I, C>, A>,
-  subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
+  connect: ReporterConnector<Existence, Context<[I, ...C]>, A>,
+  subProcessor: ResultProcessor<SR, Context<[I, ...C]>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters) => {
       const tasks: Array<Task<void>> = pipe(
         result,
         Dict_.mapWithIndex((id: I, maybeSubResult: Option<SR>) => {
-          const subContext = pipe(context, Onion_.prepend(id));
+          const subContext: Context<[I, ...C]> = [id, ...context];
           return pipe(
             maybeSubResult,
             Option_.fold(
@@ -187,15 +184,15 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   I extends Id<any>
 >(
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> },
-  item: Protocol<Q, R, E, Prepend<I, C>, QA, RA>,
+  item: Protocol<Q, R, E, Context<[I, ...C]>, QA, RA>,
   queryConnector: ResolverConnector<ExistenceQuery<I>, Existence, E, C, QA>,
-  resultConnector: ReporterConnector<Existence, Prepend<I, C>, RA>,
+  resultConnector: ReporterConnector<Existence, Context<[I, ...C]>, RA>,
 ): Protocol<IdsQuery<Dict<I, Q>>, IdsResult<Dict<I, Option<R>>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(id.Id, item.Query),
