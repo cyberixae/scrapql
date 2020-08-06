@@ -10,12 +10,9 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../utils/onion';
 import * as Dict_ from '../utils/dict';
 import * as NEGenF_ from '../utils/negf';
-import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
-import { Prepend } from '../utils/onion';
 
 import {
   Context,
@@ -44,13 +41,13 @@ import {
 export function processQuery<
   Q extends KeysQuery<Dict<K, SQ>>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   A extends Resolvers<any>,
   K extends Key<any>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<K, C>, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Context<[K, ...C]>, A>,
 ): QueryProcessor<Q, KeysResult<Dict<K, SR>>, E, C, A> {
   return (query: Q) => (context: C): ReaderTaskEither<A, E, KeysResult<Dict<K, SR>>> => {
     return (resolvers) =>
@@ -58,7 +55,7 @@ export function processQuery<
         query,
         Dict_.mapWithIndex(
           (key: K, subQuery: SQ): TaskEither<E, SR> => {
-            const subContext = pipe(context, Context_.prepend(key));
+            const subContext: Context<[K, ...C]> = [key, ...context];
             return subProcessor(subQuery)(subContext)(resolvers);
           },
         ),
@@ -71,17 +68,17 @@ export function processQuery<
 
 export function processResult<
   R extends KeysResult<Dict<K, SR>>,
-  C extends Context,
+  C extends Context<any>,
   A extends Reporters<any>,
   K extends Key<any>,
   SR extends Result<any>
->(subProcessor: ResultProcessor<SR, Prepend<K, C>, A>): ResultProcessor<R, C, A> {
+>(subProcessor: ResultProcessor<SR, Context<[K, ...C]>, A>): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters): Task<void> => {
       const tasks: Array<Task<void>> = pipe(
         result,
         Dict_.mapWithIndex((key: K, subResult: SR) => {
-          const subContext = pipe(context, Onion_.prepend(key));
+          const subContext: Context<[K, ...C]> = [key, ...context];
           return subProcessor(subResult)(subContext)(reporters);
         }),
         Array_.map(([_k, v]) => v),
@@ -129,13 +126,13 @@ export const bundle = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   K extends Key<any>
 >(
   key: { Key: KeyCodec<K>; keyExamples: NonEmptyArray<K> },
-  item: Protocol<Q, R, E, Prepend<K, C>, QA, RA>,
+  item: Protocol<Q, R, E, Context<[K, ...C]>, QA, RA>,
 ): Protocol<KeysQuery<Dict<K, Q>>, KeysResult<Dict<K, R>>, E, C, QA, RA> =>
   protocol({
     Query: Dict(key.Key, item.Query),
