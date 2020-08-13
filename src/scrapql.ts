@@ -468,11 +468,19 @@ export const protocol = <
   ...constructors(fundamentals),
 });
 
-export const processorInstance = <I, O, C extends Context, A extends abstr.API<any>>(
-  processor: abstr.Processor<I, O, C, [], A>,
+export const processorInstance = <
+  I,
+  O,
+  C extends Context,
+  W extends Workspace,
+  A extends abstr.API<any>
+>(
+  processor: abstr.Processor<I, O, C, W, A>,
   context: C,
+  workspace: W,
   api: A,
-): abstr.ProcessorInstance<I, O> => (input: I) => processor(input)(context, [])(api);
+): abstr.ProcessorInstance<I, O> => (input: I) =>
+  processor(input)(context, workspace)(api);
 
 export type LiteralBundle<
   E extends Err<any>,
