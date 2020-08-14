@@ -50,7 +50,7 @@ export function processQuery<
   Q extends PropertiesQuery<any>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   A extends Resolvers<any>,
   R extends PropertiesResult<any>
 >(processors: QueryProcessorMapping<Q, R, E, C, W, A>): QueryProcessor<Q, R, E, C, W, A> {

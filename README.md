@@ -143,8 +143,8 @@ import { Ctx } from 'scrapql';
 
 type Resolvers = scrapql.Resolvers<{
   readonly fetchReport: (a: true, b: Ctx<Year>) => TaskEither<Errors, Report>;
-  readonly fetchCustomer: (a: true, b: Ctx<CustomerId>, c: Ctx<Customer>) => TaskEither<Errors, Customer>;
-  readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Errors, Option<Customer>>;
+  readonly fetchCustomer: (a: true, b: Ctx<CustomerId>, c: { customer: Customer }) => TaskEither<Errors, Customer>;
+  readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Errors, Option<{ customer: Customer }>>;
 }>
 
 const resolvers: Resolvers = {
@@ -154,7 +154,7 @@ const resolvers: Resolvers = {
     TaskEither_.mapLeft(failure),
   ),
 
-  fetchCustomer: (_queryArgs, [_customerId], [customer]) => pipe(
+  fetchCustomer: (_queryArgs, [_customerId], {customer}) => pipe(
     customer,  // cached by checkCustomerExistence
     TaskEither_.right,
   ),
@@ -164,6 +164,7 @@ const resolvers: Resolvers = {
     Task_.map((nullable) => pipe(
       Option_.fromNullable(nullable),
       Option_.map(Customer.decode),
+      Option_.map(Either_.map((customer) => ({customer}))),
       Option_.sequence(Either_.either),
       Either_.mapLeft(failure),
     )),
@@ -181,20 +182,20 @@ import { QueryProcessor, Ctx0 } from 'scrapql';
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
 // Ideally the type casts would be unnecessary, see https://github.com/maasglobal/scrapql/issues/12
-const processQuery: QueryProcessor<Query, Result, Errors, Ctx0, [], Resolvers> = scrapql.properties.processQuery<Query, Errors, Ctx0, [], Resolvers, Result>({
+const processQuery: QueryProcessor<Query, Result, Errors, Ctx0, {}, Resolvers> = scrapql.properties.processQuery<Query, Errors, Ctx0, {}, Resolvers, Result>({
   protocol: scrapql.literal.processQuery(RESULT_PROTOCOL),
     reports: scrapql.keys.processQuery(
       scrapql.properties.processQuery({
         get: scrapql.leaf.processQuery((r: Resolvers) => r.fetchReport)
-      }) as QueryProcessor<{ get: { q: true } }, { get: { q: true, r: Report } }, Errors, Ctx<Year>, [], Resolvers> ,
+      }) as QueryProcessor<{ get: { q: true } }, { get: { q: true, r: Report } }, Errors, Ctx<Year>, {}, Resolvers> ,
     ),
     customers: scrapql.ids.processQuery(
       (r: Resolvers) => r.checkCustomerExistence,
       scrapql.properties.processQuery({
         get: scrapql.leaf.processQuery((r: Resolvers) => r.fetchCustomer),
-      }) as QueryProcessor<{ get: { q: true } }, { get: { q: true, r: Customer } }, Errors, Ctx<CustomerId>, Ctx<Customer>, Resolvers>,
-    ) as QueryProcessor<Dict<CustomerId, { get: { q: true; } }>, Dict<CustomerId, Option<{ get: { q: true, r: Customer } }>>, Errors, Ctx0, [], Resolvers>,
-  }) as QueryProcessor<Query, Result, Errors, Ctx0, [], Resolvers>;
+      }) as QueryProcessor<{ get: { q: true } }, { get: { q: true, r: Customer } }, Errors, Ctx<CustomerId>, { customer: Customer}, Resolvers>,
+    ) as QueryProcessor<Dict<CustomerId, { get: { q: true; } }>, Dict<CustomerId, Option<{ get: { q: true, r: Customer } }>>, Errors, Ctx0, {}, Resolvers>,
+  }) as QueryProcessor<Query, Result, Errors, Ctx0, {}, Resolvers>;
 ```
 
 You can run the processor as follows.
@@ -204,7 +205,7 @@ import { processorInstance, ctx0 } from 'scrapql';
 import * as ruins from 'ruins-ts';
 
 async function generateExampleOutput() {
-  const qp = processorInstance(processQuery, ctx0, [], resolvers);
+  const qp = processorInstance(processQuery, ctx0, {}, resolvers);
   const q: Query = await validator(Query).decodePromise(exampleJsonQuery);
   const output = await ruins.fromTaskEither(qp(q));
   console.log(output);

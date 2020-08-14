@@ -46,7 +46,7 @@ export function processQuery<
   Q extends KeysQuery<Dict<K, SQ>>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   A extends Resolvers<any>,
   K extends Key<any>,
   SQ extends Query<any>,
@@ -133,7 +133,7 @@ export function resultExamples<K extends Key<any>, SR extends Result<any>>(
 export const bundle = <
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   K extends Key<any>,

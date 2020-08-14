@@ -44,7 +44,7 @@ export function processQuery<
   Q extends LeafQuery<QP>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   A extends Resolvers<any>,
   QP extends LeafQueryPayload<any>,
   RP extends LeafResultPayload<any>
@@ -138,7 +138,7 @@ export function resultExamples<
 export const bundle = <
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   QP extends LeafQueryPayload<any>,

@@ -15,6 +15,7 @@ import * as NonEmptyList_ from '../utils/non-empty-list';
 import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
 import { Prepend } from '../utils/onion';
+import { MergeObject, mergeObject } from '../utils/object';
 
 import {
   Context,
@@ -35,7 +36,6 @@ import {
   Terms,
   TermsReporterConnector,
   TermsResolverConnector,
-  Tmp,
   Workspace,
   structuralMismatch,
   examples,
@@ -48,16 +48,16 @@ export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<object>,
   A extends Resolvers<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  X extends Tmp<any>,
+  WX extends Workspace<object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  connect: TermsResolverConnector<T, Dict<I, X>, E, C, W, A>,
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, Prepend<X, W>, A>,
+  connect: TermsResolverConnector<T, Dict<I, WX>, E, C, W, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, MergeObject<W, WX>, A>,
 ): QueryProcessor<Q, SearchResult<Dict<T, Dict<I, SR>>>, E, C, W, A> {
   return (query: Q) => (
     context: C,
@@ -72,12 +72,12 @@ export function processQuery<
             return pipe(
               idResolver(terms, context, workspace),
               TaskEither_.chain(
-                (match: Dict<I, X>): TaskEither<E, Dict<I, SR>> =>
+                (match: Dict<I, WX>): TaskEither<E, Dict<I, SR>> =>
                   pipe(
                     match,
-                    Array_.map(([id, x]: [I, X]): [I, TaskEither<E, SR>] => {
+                    Array_.map(([id, x]: [I, WX]): [I, TaskEither<E, SR>] => {
                       const subContext = pipe(context, Context_.prepend(id));
-                      const subWorkspace = pipe(workspace, Context_.prepend(x));
+                      const subWorkspace = mergeObject(workspace, x);
                       const subResult = subProcessor(subQuery)(subContext, subWorkspace)(
                         resolvers,
                       );
@@ -184,16 +184,16 @@ export function resultExamples<
 export const bundle = <
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<{ [WP in Exclude<string, keyof WX>]: any }>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  X extends Tmp<any>,
+  WX extends Workspace<object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  seed: SearchBundleSeed<E, C, W, QA, RA, T, I, X, SQ, SR>,
+  seed: SearchBundleSeed<E, C, W, QA, RA, T, I, WX, SQ, SR>,
 ): SearchBundle<E, C, W, QA, RA, T, I, SQ, SR> =>
   protocol({
     Query: Dict(seed.terms.Terms, seed.item.Query),

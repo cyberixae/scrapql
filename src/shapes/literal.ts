@@ -37,7 +37,7 @@ export function processQuery<
   Q extends LiteralQuery<QP>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   A extends Resolvers<any>,
   QP extends LiteralQueryPayload<string>,
   RP extends LiteralResultPayload<string>
@@ -94,7 +94,7 @@ export function resultExamples<R extends LiteralResult<any, any>>(
 export const bundle = <
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   QP extends LiteralQueryPayload<string>,

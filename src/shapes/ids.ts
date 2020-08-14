@@ -23,6 +23,7 @@ import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
 import { Prepend } from '../utils/onion';
 import { mergeOption } from '../utils/option';
+import { MergeObject, mergeObject } from '../utils/object';
 
 import {
   Context,
@@ -44,7 +45,6 @@ import {
   Result,
   ResultProcessor,
   ResultReducer,
-  Tmp,
   Workspace,
   examples,
   protocol,
@@ -57,15 +57,15 @@ export function processQuery<
   Q extends IdsQuery<Dict<I, SQ>>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<object>,
   A extends Resolvers<any>,
   I extends Id<any>,
-  X extends Tmp<any>,
+  WX extends Workspace<object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  connect: ExistenceResolverConnector<I, Option<X>, E, C, W, A>,
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, Prepend<X, W>, A>,
+  connect: ExistenceResolverConnector<I, Option<WX>, E, C, W, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, MergeObject<W, WX>, A>,
 ): QueryProcessor<Q, IdsResult<Dict<I, Option<SR>>>, E, C, W, A> {
   return (query: Q) => (
     context: C,
@@ -81,13 +81,13 @@ export function processQuery<
             return pipe(
               existenceCheck(id, context, workspace),
               TaskEither_.chain(
-                (exists: Option<X>): TaskEither<E, Option<SR>> =>
+                (exists: Option<WX>): TaskEither<E, Option<SR>> =>
                   pipe(
                     exists,
                     Option_.fold(
                       () => TaskEither_.right(Option_.none),
                       (x) => {
-                        const subWorkspace = pipe(workspace, Context_.prepend(x));
+                        const subWorkspace = mergeObject(workspace, x);
                         return pipe(
                           subProcessor(subQuery)(subContext, subWorkspace)(resolvers),
                           TaskEither_.map(Option_.some),
@@ -190,15 +190,15 @@ export function resultExamples<I extends Id<any>, SR extends Result<any>>(
 export const bundle = <
   E extends Err<any>,
   C extends Context,
-  W extends Workspace,
+  W extends Workspace<{ [WP in Exclude<string, keyof WX>]: any }>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   I extends Id<any>,
-  X extends Tmp<any>,
+  WX extends Workspace<object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
-  seed: IdsBundleSeed<E, C, W, QA, RA, I, X, SQ, SR>,
+  seed: IdsBundleSeed<E, C, W, QA, RA, I, WX, SQ, SR>,
 ): IdsBundle<E, C, W, QA, RA, I, SQ, SR> =>
   protocol({
     Query: Dict(seed.id.Id, seed.item.Query),
