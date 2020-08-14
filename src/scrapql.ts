@@ -198,7 +198,7 @@ export type ResultProcessor<
   R extends Result<any>,
   C extends Context,
   A extends Reporters<any>
-> = abstr.Processor<R, void, C, [], A>;
+> = abstr.Processor<R, void, C, {}, A>;
 
 export type ReporterConnector<
   QP extends QueryPayload<any>,
