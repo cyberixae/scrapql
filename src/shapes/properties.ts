@@ -89,7 +89,7 @@ export function processResult<
         result,
         Record_.mapWithIndex((property, subResult: R[P]) => {
           const processor = processors[property];
-          return processor(subResult)(context, [])(reporters);
+          return processor(subResult)(context, {})(reporters);
         }),
       );
       const tasks: Array<Task<void>> = pipe(

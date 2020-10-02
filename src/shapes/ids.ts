@@ -24,6 +24,7 @@ import { Dict } from '../utils/dict';
 import { Prepend } from '../utils/onion';
 import { mergeOption } from '../utils/option';
 import { MergeObject, mergeObject } from '../utils/object';
+import * as scrapql from '../scrapql';
 
 import {
   Context,
@@ -57,10 +58,10 @@ export function processQuery<
   Q extends IdsQuery<Dict<I, SQ>>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace<object>,
+  W extends Workspace<scrapql.Object>,
   A extends Resolvers<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
@@ -126,10 +127,10 @@ export function processResult<
           return pipe(
             maybeSubResult,
             Option_.fold(
-              () => [connect(reporters)(false, subContext, [])],
+              () => [connect(reporters)(false, subContext, {})],
               (subResult) => [
-                connect(reporters)(true, subContext, []),
-                subProcessor(subResult)(subContext, [])(reporters),
+                connect(reporters)(true, subContext, {}),
+                subProcessor(subResult)(subContext, {})(reporters),
               ],
             ),
           );
@@ -194,7 +195,7 @@ export const bundle = <
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(

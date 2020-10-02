@@ -67,7 +67,7 @@ describe('result', () => {
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
 
-  const workspace: [] = [];
+  const workspace: scrapql.Object = {};
 
   type Id = string & ('id1' | 'id2');
   const id1: Id = 'id1';

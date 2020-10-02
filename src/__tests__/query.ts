@@ -221,13 +221,13 @@ describe('query', () => {
     Property1Query,
     Property1Result,
     Ctx0,
-    {}
+    scrapql.Object
   > = scrapql.ids.processQuery((r) => r.checkProperty1Existence, processKeys1);
 
   it('processProperty1', async () => {
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: {} = {};
+    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processProperty1,
       context,
@@ -267,13 +267,13 @@ describe('query', () => {
     Property2Query,
     Property2Result,
     Ctx0,
-    {}
+    scrapql.Object
   > = scrapql.leaf.processQuery((r) => r.fetchProperty2Result);
 
   it('processProperty2', async () => {
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: {} = {};
+    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processProperty2,
       context,
@@ -297,13 +297,13 @@ describe('query', () => {
     Property3Query,
     Property3Result,
     Ctx0,
-    {}
+    scrapql.Object
   > = scrapql.search.processQuery((r) => r.resolveProperty3Terms, processKeys2);
 
   it('processProperty3', async () => {
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: {} = {};
+    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processProperty3,
       context,
@@ -349,7 +349,7 @@ describe('query', () => {
       RootQuery,
       RootResult,
       Ctx0,
-      {}
+      scrapql.Object
     > = scrapql.properties.processQuery({
       protocol: scrapql.literal.processQuery(RESULT),
       property1: processProperty1,
@@ -359,7 +359,7 @@ describe('query', () => {
 
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: {} = {};
+    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processRoot,
       context,
@@ -389,7 +389,7 @@ describe('query', () => {
       RootQuery,
       Err1,
       Ctx0,
-      {},
+      scrapql.Object,
       Resolvers,
       RootResult
     >({
@@ -425,7 +425,7 @@ describe('query', () => {
 
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: {} = {};
+    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processRoot,
       context,

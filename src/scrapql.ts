@@ -19,6 +19,9 @@ export * as literal from './shapes/literal';
 export * as search from './shapes/search';
 export * as properties from './shapes/properties';
 
+type _Object = Record<string, unknown>;
+export { _Object as Object };
+
 export type Dict<K, V> = _Dict<K, V>;
 export const Dict = _Dict;
 export const dict = _dict;
@@ -33,7 +36,7 @@ export type Err<E extends Json> = E;
 export type Existence = boolean;
 
 export type Context = abstr.Context;
-export type Workspace<W extends object> = abstr.Workspace<W>;
+export type Workspace<W extends _Object> = abstr.Workspace<W>;
 
 export type Ctx0 = Zero;
 export const ctx0 = zero;
@@ -41,10 +44,10 @@ export const ctx0 = zero;
 // TODO: replace Onion with TS4 tuple type
 
 export type Ctx<N, C extends Onion<any, any> = Zero> = Prepend<N, C>;
-export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
+export function ctx<N, _A = never, _B extends Onion<any, any> = Zero>(
   n: N,
 ): Prepend<N, Zero>;
-export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
+export function ctx<N, _A = never, _B extends Onion<any, any> = Zero>(
   n: N,
   c: Zero,
 ): Prepend<N, Zero>;
@@ -171,7 +174,7 @@ export type Reporter<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   C extends Context
-> = abstr.Handler<RP, void, Prepend<QP, C>, {}>;
+> = abstr.Handler<RP, void, Prepend<QP, C>, _Object>;
 export type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
 
 export type Resolver<
@@ -198,7 +201,7 @@ export type ResultProcessor<
   R extends Result<any>,
   C extends Context,
   A extends Reporters<any>
-> = abstr.Processor<R, void, C, {}, A>;
+> = abstr.Processor<R, void, C, _Object, A>;
 
 export type ReporterConnector<
   QP extends QueryPayload<any>,
@@ -571,11 +574,11 @@ export type IdsBundle<
 export type IdsBundleSeed<
   E extends Err<any>,
   C extends Context,
-  W extends Workspace<object>,
+  W extends Workspace<_Object>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<_Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 > = {
@@ -600,12 +603,12 @@ export type SearchBundle<
 export type SearchBundleSeed<
   E extends Err<any>,
   C extends Context,
-  W extends Workspace<object>,
+  W extends Workspace<_Object>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<_Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 > = {

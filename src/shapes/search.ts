@@ -16,6 +16,7 @@ import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
 import { Prepend } from '../utils/onion';
 import { MergeObject, mergeObject } from '../utils/object';
+import * as scrapql from '../scrapql';
 
 import {
   Context,
@@ -48,11 +49,11 @@ export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
   C extends Context,
-  W extends Workspace<object>,
+  W extends Workspace<scrapql.Object>,
   A extends Resolvers<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
@@ -117,13 +118,13 @@ export function processResult<
             const termsContext = pipe(context, Onion_.prepend(terms));
             const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
-              (ids: Array<I>): Task<void> => connect(reporters)(ids, termsContext, []),
+              (ids: Array<I>): Task<void> => connect(reporters)(ids, termsContext, {}),
             );
             const reportResults: Array<Task<void>> = pipe(
               subResults,
               Array_.map(([id, subResult]: [I, SR]) => {
                 const idContext = pipe(context, Onion_.prepend(id));
-                return subProcessor(subResult)(idContext, [])(reporters);
+                return subProcessor(subResult)(idContext, {})(reporters);
               }),
             );
             return pipe([[reportIds], reportResults], Array_.flatten);
@@ -189,7 +190,7 @@ export const bundle = <
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<object>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(

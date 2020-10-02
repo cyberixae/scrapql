@@ -87,7 +87,7 @@ export function processResult<
         result,
         Dict_.mapWithIndex((key: K, subResult: SR) => {
           const subContext = pipe(context, Onion_.prepend(key));
-          return subProcessor(subResult)(subContext, [])(reporters);
+          return subProcessor(subResult)(subContext, {})(reporters);
         }),
         Array_.map(([_k, v]) => v),
       );

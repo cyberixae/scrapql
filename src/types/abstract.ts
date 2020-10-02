@@ -1,6 +1,7 @@
 import { Task } from 'fp-ts/lib/Task';
 import { ReaderTask } from 'fp-ts/lib/ReaderTask';
 import { Onion, Zero } from '../utils/onion';
+import * as scrapql from '../scrapql';
 
 export type Handler<I, O, C extends Context, W extends Workspace<any>> = (
   i: I,
@@ -23,4 +24,4 @@ export type ProcessorInstance<I, O> = (i: I) => Task<O>;
 // TODO: with TS4 tuple type Context<C extends Array<any>> = C
 export type Context = Onion<any, any> | Zero;
 
-export type Workspace<W extends object> = W;
+export type Workspace<W extends scrapql.Object> = W;

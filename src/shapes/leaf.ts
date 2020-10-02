@@ -78,7 +78,7 @@ export function processResult<
     return (reporters) => {
       const reporter = connect(reporters);
       const subContext = pipe(context, Onion_.prepend(q));
-      return reporter(r, subContext, []);
+      return reporter(r, subContext, {});
     };
   };
 }
