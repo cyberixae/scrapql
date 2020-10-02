@@ -205,7 +205,7 @@ import { processorInstance, ctx0 } from 'scrapql';
 import * as ruins from 'ruins-ts';
 
 async function generateExampleOutput() {
-  const qp = processorInstance(processQuery, ctx0, scrapql.Object, resolvers);
+  const qp = processorInstance(processQuery, ctx0, {}, resolvers);
   const q: Query = await validator(Query).decodePromise(exampleJsonQuery);
   const output = await ruins.fromTaskEither(qp(q));
   console.log(output);
@@ -407,7 +407,7 @@ async function server(request: string): Promise<string> {
       TaskEither_.fromEither,
     )),
     TaskEither_.chain((query: Query) => pipe(
-      processorInstance(processQuery, ctx0, scrapql.Object, resolvers),
+      processorInstance(processQuery, ctx0, {}, resolvers),
       (qp) => qp(query),
     )),
     Task_.chainFirst((result: Either<Errors, Result>) => pipe(
@@ -459,7 +459,7 @@ async function client(query: Query): Promise<void> {
     TaskEither_.fold(
       (errors) => () => Promise.resolve(console.error(errors)),
       (result: Result) => pipe(
-        processorInstance( processResult, ctx0, scrapql.Object, reporters ),
+        processorInstance( processResult, ctx0, {}, reporters ),
         (rp) => rp(result),
       ),
     ),
