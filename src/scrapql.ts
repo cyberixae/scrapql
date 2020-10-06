@@ -151,7 +151,9 @@ export type Reporter<
   RP extends ResultPayload<any>,
   C extends Context<Array<any>>
 > = abstr.Handler<RP, void, Prepend<QP, C>, Object_.Object>;
-export type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
+
+// type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
+export type Reporters<A extends abstr.API<{ [p: string]: abstr.Handler<ResultPayload<any>, void, Tuple<any>, Object_.Object> }>> = A;
 
 export type Resolver<
   QP extends QueryPayload<any>,
