@@ -1,11 +1,8 @@
-export type Zero = Array<never>;
-export const zero: Zero = [];
+export type Prepend<F, T extends Array<any>> = [F, ...T];
+export const prepend = <F>(f: F) => <T extends Array<any>>(t: T): Prepend<F, T> => [
+  f,
+  ...t,
+];
 
-export type Prepend<N, C extends Zero | Prepend<any, any>> = [N, C];
-export const prepend = <N>(n: N) => <C extends Zero | Prepend<any, any>>(
-  c: C,
-): Prepend<N, C> => [n, c];
-
-export type Onion<N, C extends Onion<any, any>> = Zero | Prepend<N, C>;
-
-export {};
+export type Tuple<T extends Array<any>> = T;
+export const tuple = <T extends Array<any>>(...t: T): T => t;

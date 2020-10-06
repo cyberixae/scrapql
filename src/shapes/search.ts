@@ -9,14 +9,11 @@ import { array } from 'fp-ts/lib/Array';
 import { identity } from 'fp-ts/lib/function';
 import { pipe } from 'fp-ts/lib/pipeable';
 
-import * as Context_ from '../utils/onion';
-import * as Dict_ from '../utils/dict';
-import * as NonEmptyList_ from '../utils/non-empty-list';
-import * as Onion_ from '../utils/onion';
 import { Dict } from '../utils/dict';
-import { Prepend } from '../utils/onion';
-import { MergeObject, mergeObject } from '../utils/object';
-import * as scrapql from '../scrapql';
+import * as Dict_ from '../utils/dict';
+import * as Tuple_ from '../utils/tuple';
+import * as NonEmptyList_ from '../utils/non-empty-list';
+import * as Object_ from '../utils/object';
 
 import {
   Context,
@@ -48,17 +45,17 @@ import {
 export function processQuery<
   Q extends SearchQuery<Dict<T, SQ>>,
   E extends Err<any>,
-  C extends Context,
-  W extends Workspace<scrapql.Object>,
+  C extends Context<Array<any>>,
+  W extends Workspace<Object_.Object>,
   A extends Resolvers<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<scrapql.Object>,
+  WX extends Workspace<Object_.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
   connect: TermsResolverConnector<T, Dict<I, WX>, E, C, W, A>,
-  subProcessor: QueryProcessor<SQ, SR, E, Prepend<I, C>, MergeObject<W, WX>, A>,
+  subProcessor: QueryProcessor<SQ, SR, E, Tuple_.Prepend<I, C>, Object_.Merge<W, WX>, A>,
 ): QueryProcessor<Q, SearchResult<Dict<T, Dict<I, SR>>>, E, C, W, A> {
   return (query: Q) => (
     context: C,
@@ -77,8 +74,8 @@ export function processQuery<
                   pipe(
                     match,
                     Array_.map(([id, x]: [I, WX]): [I, TaskEither<E, SR>] => {
-                      const subContext = pipe(context, Context_.prepend(id));
-                      const subWorkspace = mergeObject(workspace, x);
+                      const subContext = pipe(context, Tuple_.prepend(id));
+                      const subWorkspace = Object_.merge(workspace, x);
                       const subResult = subProcessor(subQuery)(subContext, subWorkspace)(
                         resolvers,
                       );
@@ -100,14 +97,14 @@ export function processQuery<
 
 export function processResult<
   R extends SearchResult<Dict<T, Dict<I, SR>>>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
   SR extends Result<any>
 >(
   connect: TermsReporterConnector<T, Array<I>, C, A>,
-  subProcessor: ResultProcessor<SR, Prepend<I, C>, A>,
+  subProcessor: ResultProcessor<SR, Tuple_.Prepend<I, C>, A>,
 ): ResultProcessor<R, C, A> {
   return (result: R) => (context: C): ReaderTask<A, void> => {
     return (reporters): Task<void> => {
@@ -115,7 +112,7 @@ export function processResult<
         result,
         Dict_.mapWithIndex(
           (terms: T, subResults: Dict<I, SR>): Array<Task<void>> => {
-            const termsContext = pipe(context, Onion_.prepend(terms));
+            const termsContext = pipe(context, Tuple_.prepend(terms));
             const reportIds: Task<void> = pipe(
               Dict_.keys(subResults),
               (ids: Array<I>): Task<void> => connect(reporters)(ids, termsContext, {}),
@@ -123,7 +120,7 @@ export function processResult<
             const reportResults: Array<Task<void>> = pipe(
               subResults,
               Array_.map(([id, subResult]: [I, SR]) => {
-                const idContext = pipe(context, Onion_.prepend(id));
+                const idContext = pipe(context, Tuple_.prepend(id));
                 return subProcessor(subResult)(idContext, {})(reporters);
               }),
             );
@@ -184,13 +181,13 @@ export function resultExamples<
 
 export const bundle = <
   E extends Err<any>,
-  C extends Context,
-  W extends Workspace<scrapql.Object>,
+  C extends Context<Array<any>>,
+  W extends Workspace<Object_.Object>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<scrapql.Object>,
+  WX extends Workspace<Object_.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(

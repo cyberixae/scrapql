@@ -49,7 +49,7 @@ import {
 export function processQuery<
   Q extends PropertiesQuery<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>,
   R extends PropertiesResult<any>
@@ -78,7 +78,7 @@ export function processQuery<
 
 export function processResult<
   R extends PropertiesResult<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 >(processors: ResultProcessorMapping<R, C, A>): ResultProcessor<R, C, A> {
   return <P extends Property<string> & keyof R>(result: R) => (

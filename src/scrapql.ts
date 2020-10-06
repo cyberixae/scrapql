@@ -2,13 +2,11 @@ import * as t from 'io-ts';
 import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { Option } from 'fp-ts/lib/Option';
 import { Either } from 'fp-ts/lib/Either';
-import { pipe } from 'fp-ts/lib/pipeable';
-import * as Option_ from 'fp-ts/lib/Option';
 
-import { Zero, zero, Prepend, prepend, Onion } from './utils/onion';
+import { Prepend, Tuple, tuple } from './utils/tuple';
 import { Dict as _Dict, dict as _dict } from './utils/dict';
 import { NonEmptyList, nonEmptyList } from './utils/non-empty-list';
-import { MergeObject } from './utils/object';
+import * as Object_ from './utils/object';
 
 import * as abstr from './types/abstract';
 
@@ -19,8 +17,7 @@ export * as literal from './shapes/literal';
 export * as search from './shapes/search';
 export * as properties from './shapes/properties';
 
-type _Object = Record<string, unknown>;
-export { _Object as Object };
+export { Object } from './utils/object';
 
 export type Dict<K, V> = _Dict<K, V>;
 export const Dict = _Dict;
@@ -35,41 +32,17 @@ export type Property<P extends string> = P;
 export type Err<E extends Json> = E;
 export type Existence = boolean;
 
-export type Context = abstr.Context;
-export type Workspace<W extends _Object> = abstr.Workspace<W>;
+export type Context<C extends Tuple<any>> = abstr.Context<C>;
+export type Ctx<C extends Tuple<Array<any>>> = C;
+export const ctx = tuple;
+export type Ctx0 = Ctx<[]>;
+export const ctx0 = ctx();
 
-export type Ctx0 = Zero;
-export const ctx0 = zero;
-
+export type Workspace<W extends Object_.Object> = abstr.Workspace<W>;
+export type Wsp<W extends Workspace<any>> = W;
+export const wsp = <W extends Workspace<any>>(w: W): W => w;
 export type Wsp0 = Record<string, never>;
 export const wsp0: Wsp0 = {};
-
-// TODO: replace Onion with TS4 tuple type
-
-export type Ctx<N, C extends Onion<any, any> = Zero> = Prepend<N, C>;
-export function ctx<N, _A = never, _B extends Onion<any, any> = Zero>(
-  n: N,
-): Prepend<N, Zero>;
-export function ctx<N, _A = never, _B extends Onion<any, any> = Zero>(
-  n: N,
-  c: Zero,
-): Prepend<N, Zero>;
-export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
-  n: N,
-  c: Prepend<A, B>,
-): Prepend<N, Prepend<A, B>>;
-export function ctx<N, A = never, B extends Onion<any, any> = Zero>(
-  n: N,
-  c?: Onion<A, B>,
-): Prepend<N, Onion<A, B>> {
-  return pipe(
-    Option_.fromNullable(c),
-    Option_.fold(
-      () => prepend(n)(ctx0),
-      (old: Onion<A, B>): Prepend<N, Onion<A, B>> => prepend(n)(old),
-    ),
-  );
-}
 
 export type ExistenceQueryPayload<QP extends Id<string>> = QP;
 export type TermsQueryPayload<QP extends Terms<any>> = QP;
@@ -176,15 +149,15 @@ export type ResultProcessorInstance<R extends Result<any>> = abstr.ProcessorInst
 export type Reporter<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
-  C extends Context
-> = abstr.Handler<RP, void, Prepend<QP, C>, _Object>;
+  C extends Context<Array<any>>
+> = abstr.Handler<RP, void, Prepend<QP, C>, Object_.Object>;
 export type Reporters<A extends abstr.API<{ [p: string]: Reporter<any, any, any> }>> = A;
 
 export type Resolver<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>
 > = abstr.Handler<QP, Either<E, RP>, C, W>;
 export type Resolvers<
@@ -195,55 +168,55 @@ export type QueryProcessor<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = abstr.Processor<Q, Either<E, R>, C, W, A>;
 
 export type ResultProcessor<
   R extends Result<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
-> = abstr.Processor<R, void, C, _Object, A>;
+> = abstr.Processor<R, void, C, Object_.Object, A>;
 
 export type ReporterConnector<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = (a: A) => A[keyof A] & Reporter<QP, RP, C>;
 
 export type ExistenceReporterConnector<
   QP extends ExistenceQueryPayload<any>,
   RP extends ExistenceResultPayload<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = ReporterConnector<QP, RP, C, A>;
 
 export type TermsReporterConnector<
   QP extends TermsQueryPayload<any>,
   RP extends TermsResultPayload<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = ReporterConnector<QP, RP, C, A>;
 
 export type LiteralReporterConnector<
   QP extends LiteralQueryPayload<any>,
   RP extends LiteralResultPayload<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = ReporterConnector<QP, RP, C, A>;
 
 export type LeafReporterConnector<
   QP extends LeafQueryPayload<any>,
   RP extends LeafResultPayload<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = ReporterConnector<QP, RP, C, A>;
 
 export type ResultProcessorMapping<
   R extends PropertiesResult<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   A extends Reporters<any>
 > = {
   [I in keyof Required<R>]: ResultProcessor<Required<R>[I], C, A>;
@@ -253,7 +226,7 @@ export type ResolverConnector<
   QP extends QueryPayload<any>,
   RP extends ResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = (a: A) => A[keyof A] & Resolver<QP, RP, E, C, W>;
@@ -262,7 +235,7 @@ export type ExistenceResolverConnector<
   QP extends ExistenceQueryPayload<any>,
   RP extends ExistenceResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = ResolverConnector<QP, RP, E, C, W, A>;
@@ -271,7 +244,7 @@ export type TermsResolverConnector<
   QP extends TermsQueryPayload<any>,
   RP extends TermsResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = ResolverConnector<QP, RP, E, C, W, A>;
@@ -280,7 +253,7 @@ export type LiteralResolverConnector<
   QP extends LiteralQueryPayload<any>,
   RP extends LiteralResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = ResolverConnector<QP, RP, E, C, W, A>;
@@ -289,7 +262,7 @@ export type LeafResolverConnector<
   QP extends LeafQueryPayload<any>,
   RP extends LeafResultPayload<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = ResolverConnector<QP, RP, E, C, W, A>;
@@ -298,7 +271,7 @@ export type QueryProcessorMapping<
   Q extends PropertiesQuery<any>,
   R extends PropertiesResult<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends Resolvers<any>
 > = {
@@ -414,7 +387,7 @@ export type QueryUtils<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>
 > = {
@@ -423,7 +396,7 @@ export type QueryUtils<
 
 export type ResultUtils<
   R extends Result<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   RA extends Reporters<any>
 > = {
   processResult: ResultProcessor<R, C, RA>;
@@ -434,7 +407,7 @@ export type Fundamentals<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>
@@ -453,7 +426,7 @@ export type Bundle<
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>
@@ -463,7 +436,7 @@ export const protocol = <
   Q extends Query<any>,
   R extends Result<any>,
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>
@@ -477,7 +450,7 @@ export const protocol = <
 export const processorInstance = <
   I,
   O,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   A extends abstr.API<any>
 >(
@@ -490,7 +463,7 @@ export const processorInstance = <
 
 export type LiteralBundle<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -510,7 +483,7 @@ export type LiteralBundleSeed<
 
 export type LeafBundle<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -520,7 +493,7 @@ export type LeafBundle<
 
 export type LeafBundleSeed<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -540,7 +513,7 @@ export type LeafBundleSeed<
 
 export type KeysBundle<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -551,7 +524,7 @@ export type KeysBundle<
 
 export type KeysBundleSeed<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -565,7 +538,7 @@ export type KeysBundleSeed<
 
 export type IdsBundle<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -576,24 +549,24 @@ export type IdsBundle<
 
 export type IdsBundleSeed<
   E extends Err<any>,
-  C extends Context,
-  W extends Workspace<_Object>,
+  C extends Context<Array<any>>,
+  W extends Workspace<Object_.Object>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   I extends Id<any>,
-  WX extends Workspace<_Object>,
+  WX extends Workspace<Object_.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 > = {
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> };
-  item: Bundle<SQ, SR, E, Prepend<I, C>, MergeObject<W, WX>, QA, RA>;
+  item: Bundle<SQ, SR, E, Prepend<I, C>, Object_.Merge<W, WX>, QA, RA>;
   queryConnector: ExistenceResolverConnector<I, Option<WX>, E, C, W, QA>;
   resultConnector: ExistenceReporterConnector<I, Existence, C, RA>;
 };
 
 export type SearchBundle<
   E extends Err<any>,
-  C extends Context,
+  C extends Context<Array<any>>,
   W extends Workspace<any>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
@@ -605,19 +578,19 @@ export type SearchBundle<
 
 export type SearchBundleSeed<
   E extends Err<any>,
-  C extends Context,
-  W extends Workspace<_Object>,
+  C extends Context<Array<any>>,
+  W extends Workspace<Object_.Object>,
   QA extends Resolvers<any>,
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<_Object>,
+  WX extends Workspace<Object_.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 > = {
   terms: { Terms: TermsCodec<T>; termsExamples: NonEmptyArray<T> };
   id: { Id: IdCodec<I>; idExamples: NonEmptyArray<I> };
-  item: Bundle<SQ, SR, E, Prepend<I, C>, MergeObject<W, WX>, QA, RA>;
+  item: Bundle<SQ, SR, E, Prepend<I, C>, Object_.Merge<W, WX>, QA, RA>;
   queryConnector: TermsResolverConnector<T, Dict<I, WX>, E, C, W, QA>;
   resultConnector: TermsReporterConnector<T, Array<I>, C, RA>;
 };
