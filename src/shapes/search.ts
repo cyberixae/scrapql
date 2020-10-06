@@ -53,7 +53,7 @@ export function processQuery<
   A extends Resolvers<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<scrapql.Object & { [I in keyof W]: never }>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(
@@ -190,7 +190,7 @@ export const bundle = <
   RA extends Reporters<any>,
   T extends Terms<any>,
   I extends Id<any>,
-  WX extends Workspace<scrapql.Object & { [I in keyof W]: never }>,
+  WX extends Workspace<scrapql.Object>,
   SQ extends Query<any>,
   SR extends Result<any>
 >(

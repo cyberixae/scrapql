@@ -5,7 +5,7 @@ import * as Option_ from 'fp-ts/lib/Option';
 
 import { name, version } from '../../package.json';
 
-import { Ctx, Ctx0, Dict, ctx, ctx0, dict } from '../scrapql';
+import { Ctx, Ctx0, Dict, ctx, ctx0, dict, Wsp0, wsp0 } from '../scrapql';
 import * as scrapql from '../scrapql';
 
 type Logger<R, A extends Array<any>> = {
@@ -67,7 +67,7 @@ describe('result', () => {
   const QUERY = `${name}/${version}/scrapql/test/query`;
   const RESULT = `${name}/${version}/scrapql/test/result`;
 
-  const workspace: scrapql.Object = {};
+  const workspace: Wsp0 = wsp0;
 
   type Id = string & ('id1' | 'id2');
   const id1: Id = 'id1';
@@ -110,7 +110,7 @@ describe('result', () => {
     await ruins.fromTask(main);
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -133,7 +133,7 @@ describe('result', () => {
     await ruins.fromTask(main);
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -163,11 +163,11 @@ describe('result', () => {
     await ruins.fromTask(main);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [false, ctx(id2), []],
-      [true, ctx(id1), []],
+      [false, ctx(id2), wsp0],
+      [true, ctx(id1), wsp0],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -203,7 +203,7 @@ describe('result', () => {
     expect((reporters.learnProperty1Existence as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([
-      [property2ResultPayload, ctx(property2QueryPayload), []],
+      [property2ResultPayload, ctx(property2QueryPayload), wsp0],
     ]);
   });
 
@@ -230,10 +230,10 @@ describe('result', () => {
     await ruins.fromTask(main);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty3Match as any).mock.calls.sort()).toMatchObject([
-      [[id1], ctx(terms), []],
+      [[id1], ctx(terms), wsp0],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -272,16 +272,16 @@ describe('result', () => {
     await ruins.fromTask(main);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [false, ctx(id2), []],
-      [true, ctx(id1), []],
+      [false, ctx(id2), wsp0],
+      [true, ctx(id1), wsp0],
     ]);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty3Match as any).mock.calls.sort()).toMatchObject([
-      [[id1], ctx(terms), []],
+      [[id1], ctx(terms), wsp0],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
@@ -339,16 +339,16 @@ describe('result', () => {
     await ruins.fromTask(main);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty1Existence as any).mock.calls.sort()).toMatchObject([
-      [false, ctx(id2), []],
-      [true, ctx(id1), []],
+      [false, ctx(id2), wsp0],
+      [true, ctx(id1), wsp0],
     ]);
     // eslint-disable-next-line fp/no-mutating-methods
     expect((reporters.learnProperty3Match as any).mock.calls.sort()).toMatchObject([
-      [[id1], ctx(terms), []],
+      [[id1], ctx(terms), wsp0],
     ]);
     expect((reporters.receiveKeyResult as any).mock.calls).toMatchObject([
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
-      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), []],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
+      [keyResultPayload, ctx(keyQueryPayload, ctx(key1, ctx(id1))), wsp0],
     ]);
     expect((reporters.receiveProperty2Result as any).mock.calls).toMatchObject([]);
   });
