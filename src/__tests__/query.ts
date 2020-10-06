@@ -10,7 +10,7 @@ import { pipe } from 'fp-ts/lib/pipeable';
 
 import { name, version } from '../../package.json';
 
-import { Workspace, Ctx, Ctx0, Dict, ctx, ctx0, dict } from '../scrapql';
+import { Workspace, Ctx, Ctx0, Dict, ctx, ctx0, Wsp0, wsp0, dict } from '../scrapql';
 import * as scrapql from '../scrapql';
 
 import * as Dict_ from '../utils/dict';
@@ -65,7 +65,7 @@ describe('query', () => {
             property1Result,
             Dict_.lookup(id),
             Either_.fromOption((): Err1 => err1),
-            Either_.map(Option_.map(([[_key, _value]]): Workspace1 => ({ tmp1 }))),
+            Either_.map(Option_.map((_match): Workspace1 => ({ tmp1 }))),
           ),
         ),
       ),
@@ -221,17 +221,30 @@ describe('query', () => {
     Property1Query,
     Property1Result,
     Ctx0,
-    scrapql.Object
-  > = scrapql.ids.processQuery((r) => r.checkProperty1Existence, processKeys1);
+    Wsp0
+  > = scrapql.ids.processQuery<
+
+  Property1Query,
+  Err1,
+  Ctx0,
+  Wsp0,
+  Resolvers,
+  Id,
+  Workspace1,
+  KeysQuery,
+  KeysResult
+
+
+
+>((r) => r.checkProperty1Existence, processKeys1);
 
   it('processProperty1', async () => {
     const resolvers = createResolvers();
     const context: Ctx0 = ctx0;
-    const workspace: scrapql.Object = {};
     const main = scrapql.processorInstance(
       processProperty1,
       context,
-      workspace,
+      wsp0,
       resolvers,
     )(property1Query);
     const result = await ruins.fromTaskEither(main);

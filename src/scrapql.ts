@@ -41,6 +41,9 @@ export type Workspace<W extends _Object> = abstr.Workspace<W>;
 export type Ctx0 = Zero;
 export const ctx0 = zero;
 
+export type Wsp0 = Record<string, never>;
+export const wsp0: Wsp0 = {};
+
 // TODO: replace Onion with TS4 tuple type
 
 export type Ctx<N, C extends Onion<any, any> = Zero> = Prepend<N, C>;

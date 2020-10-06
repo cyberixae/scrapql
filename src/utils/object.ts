@@ -1,6 +1,6 @@
 import * as scrapql from '../scrapql';
 
-export type MergeObject<A extends scrapql.Object, B extends scrapql.Object> = {
+export type MergeObject<A extends scrapql.Object, B extends scrapql.Object, AK extends keyof A = keyof A> = {
   [I in Exclude<keyof A, keyof B>]: A[I];
 } &
   B;
