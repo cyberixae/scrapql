@@ -86,15 +86,30 @@ type Errors = t.TypeOf<typeof Errors>;
 
 */
 
-import { Dict, Wsp } from './scrapql';
+import { Dict, Wsp, Wsp0 } from './scrapql';
+import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 
 // name and version from package.json
 const packageName = 'scrapql-example-app';
 const packageVersion = '0.0.1';
 
 const QUERY_PROTOCOL= `${packageName}/${packageVersion}/scrapql/query`;
+const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
-
+export type Version = scrapql.LiteralBundle<
+  Errors,
+  Ctx0,
+  Wsp0,
+  Resolvers,
+  Reporters,
+  typeof QUERY_PROTOCOL,
+  typeof RESULT_PROTOCOL
+>;
+export const Version: Version = scrapql.literal.bundle({
+  Err: Errors,
+  QueryPayload: t.literal(QUERY_PROTOCOL),
+  ResultPayload: t.literal(RESULT_PROTOCOL),
+});
 
 
 export type GetCustomer = scrapql.LeafBundle<
@@ -106,7 +121,6 @@ export type GetCustomer = scrapql.LeafBundle<
   true,
   Customer
 >;
-
 export const GetCustomer: GetCustomer = scrapql.leaf.bundle({
   Err: Errors,
   QueryPayload: t.literal(true),
@@ -116,7 +130,81 @@ export const GetCustomer: GetCustomer = scrapql.leaf.bundle({
   queryPayloadExamplesArray: [true],
   resultConnector: (r: Reporters) => r.receiveCustomer,
   resultPayloadCombiner: (_w, r) => Either_.right(r),
-  resultPayloadExamplesArray: example.customers,
+  resultPayloadExamplesArray: Object.values(example.customers) as NonEmptyArray<Customer>,
+});
+
+type CustomerOps = scrapql.PropertiesBundle<{
+  get: GetCustomer;
+}>;
+const CustomerOps: CustomerOps = scrapql.properties.bundle({
+  get: GetCustomer,
+});
+
+type Customers = scrapql.IdsBundle<
+  Errors,
+  Ctx0,
+  Wsp0,
+  Resolvers,
+  Reporters,
+  CustomerId,
+  t.TypeOf<typeof CustomerOps['Query']>,
+  t.TypeOf<typeof CustomerOps['Result']>
+>;
+const Customers: Customers = scrapql.ids.bundle({
+  id: {
+    Id: CustomerId,
+    idExamples:  Object.keys(example.customers) as NonEmptyArray<CustomerId>,
+  },
+  item: CustomerOps,
+  queryConnector: (r: Resolvers) => r.checkCustomerExistence,
+  resultConnector: (r: Reporters) => r.learnCustomerExistence,
+});
+
+
+export type GetReport = scrapql.LeafBundle<
+  Errors,
+  Ctx<[Year]>,
+  Wsp0,
+  Resolvers,
+  Reporters,
+  true,
+  Report
+>;
+export const GetReport: GetReport = scrapql.leaf.bundle({
+  Err: Errors,
+  QueryPayload: t.literal(true),
+  ResultPayload: Report,
+  queryConnector: (r: Resolvers) => r.fetchReport,
+  queryPayloadCombiner: (_w, r) => Either_.right(r),
+  queryPayloadExamplesArray: [true],
+  resultConnector: (r: Reporters) => r.receiveReport,
+  resultPayloadCombiner: (_w, r) => Either_.right(r),
+  resultPayloadExamplesArray: Object.values(example.reports) as NonEmptyArray<Report>,
+});
+
+type ReportOps = scrapql.PropertiesBundle<{
+  get: GetReport;
+}>;
+const ReportOps: ReportOps = scrapql.properties.bundle({
+  get: GetReport,
+});
+
+type Reports = scrapql.KeysBundle<
+  Errors,
+  Ctx0,
+  Wsp0,
+  Resolvers,
+  Reporters,
+  Year,
+  t.TypeOf<typeof ReportOps['Query']>,
+  t.TypeOf<typeof ReportOps['Result']>
+>;
+const Reports: Reports = scrapql.keys.bundle({
+  key: {
+    Key: Year,
+    keyExamples:  Object.keys(example.reports) as NonEmptyArray<Year>,
+  },
+  item: ReportOps,
 });
 
 
@@ -205,8 +293,6 @@ const resolvers: Resolvers = {
 
 */
 import { QueryProcessor, Ctx0 } from './scrapql';
-
-const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
 // Ideally the type casts would be unnecessary, see https://github.com/maasglobal/scrapql/issues/12
 const processQuery: QueryProcessor<Query, Result, Errors, Ctx0, scrapql.Object, Resolvers> = scrapql.properties.processQuery<Query, Errors, Ctx0, scrapql.Object, Resolvers, Result>({
