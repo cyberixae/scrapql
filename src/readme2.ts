@@ -55,8 +55,7 @@ const db: Database = {
 };
 /*
 
-
-## Define Data Validators
+## Define Data Types
 
 */
 import * as t from 'io-ts';
@@ -77,17 +76,50 @@ const Report = t.type({
   profit: t.number,
 });
 type Report = t.TypeOf<typeof Report>;
-
-const Errors = t.array(t.string);
-type Errors = t.TypeOf<typeof Errors>;
 /*
 
-## Define Query Validator
+## Define Query Driver
 
 */
+import { Task } from 'fp-ts/lib/Task';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
 
-import { Dict, Wsp, Wsp0 } from './scrapql';
-import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
+import { pipe } from 'fp-ts/lib/pipeable';
+import * as Task_ from 'fp-ts/lib/Task';
+import * as Option_ from 'fp-ts/lib/Option';
+import * as Either_ from 'fp-ts/lib/Either';
+import * as TaskEither_ from 'fp-ts/lib/TaskEither';
+import { failure } from 'io-ts/lib/PathReporter'
+
+import * as scrapql from './scrapql';
+import { Ctx, Ctx0, Wsp, Wsp0, Existence } from './scrapql';
+import { Either } from 'fp-ts/lib/Either';
+import { Option } from 'fp-ts/lib/Option';
+
+const Err = t.array(t.string);
+type Err = t.TypeOf<typeof Err>;
+
+const Get = t.literal(true)
+type Get = t.TypeOf<typeof Get>;
+
+type Resolvers = scrapql.Resolvers<{
+  readonly fetchReport: (a: Get, b: Ctx<[Year]>) => TaskEither<Err, Report>;
+  readonly fetchCustomer: (a: Get, b: Ctx<[CustomerId]>, c: { customer: Customer }) => TaskEither<Err, Customer>;
+  readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Err, Option<{ customer: Customer }>>;
+}>
+
+type Reporters = scrapql.Reporters<{
+  readonly receiveReport: (a: Report, b: Ctx<[Get, Year]> ) => Task<void>;
+  readonly receiveCustomer: (a: Customer, b: Ctx<[Get, CustomerId]>) => Task<void>;
+  readonly learnCustomerExistence: (a: Existence, b: Ctx<[CustomerId]>) => Task<void>;
+}>
+
+type Driver = Resolvers & Reporters
+/*
+
+## Define Query Literals
+
+*/
 
 // name and version from package.json
 const packageName = 'scrapql-example-app';
@@ -96,8 +128,8 @@ const packageVersion = '0.0.1';
 const QUERY_PROTOCOL= `${packageName}/${packageVersion}/scrapql/query`;
 const RESULT_PROTOCOL = `${packageName}/${packageVersion}/scrapql/result`;
 
-export type Version = scrapql.LiteralBundle<
-  Errors,
+type Version = scrapql.LiteralBundle<
+  Err,
   Ctx0,
   Wsp0,
   Resolvers,
@@ -105,29 +137,32 @@ export type Version = scrapql.LiteralBundle<
   typeof QUERY_PROTOCOL,
   typeof RESULT_PROTOCOL
 >;
-export const Version: Version = scrapql.literal.bundle({
-  Err: Errors,
+const Version: Version = scrapql.literal.bundle({
+  Err,
   QueryPayload: t.literal(QUERY_PROTOCOL),
   ResultPayload: t.literal(RESULT_PROTOCOL),
 });
+/*
 
+## Define Query Leafs
 
-export type GetCustomer = scrapql.LeafBundle<
-  Errors,
+*/
+type GetCustomer = scrapql.LeafBundle<
+  Err,
   Ctx<[CustomerId]>,
   Wsp<{ customer: Customer }>,
   Resolvers,
   Reporters,
-  true,
+  Get,
   Customer
 >;
-export const GetCustomer: GetCustomer = scrapql.leaf.bundle({
-  Err: Errors,
-  QueryPayload: t.literal(true),
+const GetCustomer: GetCustomer = scrapql.leaf.bundle({
+  Err,
+  QueryPayload: Get,
   ResultPayload: Customer,
   queryConnector: (r: Resolvers) => r.fetchCustomer,
   queryPayloadCombiner: (_w, r) => Either_.right(r),
-  queryPayloadExamplesArray: [true],
+  queryPayloadExamplesArray: [Get.value],
   resultConnector: (r: Reporters) => r.receiveCustomer,
   resultPayloadCombiner: (_w, r) => Either_.right(r),
   resultPayloadExamplesArray: [{
@@ -136,6 +171,33 @@ export const GetCustomer: GetCustomer = scrapql.leaf.bundle({
     }],
 });
 
+type GetReport = scrapql.LeafBundle<
+  Err,
+  Ctx<[Year]>,
+  Wsp0,
+  Resolvers,
+  Reporters,
+  Get,
+  Report
+>;
+const GetReport: GetReport = scrapql.leaf.bundle({
+  Err,
+  QueryPayload: Get,
+  ResultPayload: Report,
+  queryConnector: (r: Resolvers) => r.fetchReport,
+  queryPayloadCombiner: (_w, r) => Either_.right(r),
+  queryPayloadExamplesArray: [Get.value],
+  resultConnector: (r: Reporters) => r.receiveReport,
+  resultPayloadCombiner: (_w, r) => Either_.right(r),
+  resultPayloadExamplesArray: [{
+    profit: 500,
+  }],
+});
+/*
+
+## Define Query Structure
+
+*/
 type CustomerOps = scrapql.PropertiesBundle<{
   get: GetCustomer;
 }>;
@@ -144,7 +206,7 @@ const CustomerOps: CustomerOps = scrapql.properties.bundle({
 });
 
 type Customers = scrapql.IdsBundle<
-  Errors,
+  Err,
   Ctx0,
   Wsp0,
   Resolvers,
@@ -164,29 +226,6 @@ const Customers: Customers = scrapql.ids.bundle({
 });
 
 
-export type GetReport = scrapql.LeafBundle<
-  Errors,
-  Ctx<[Year]>,
-  Wsp0,
-  Resolvers,
-  Reporters,
-  true,
-  Report
->;
-export const GetReport: GetReport = scrapql.leaf.bundle({
-  Err: Errors,
-  QueryPayload: t.literal(true),
-  ResultPayload: Report,
-  queryConnector: (r: Resolvers) => r.fetchReport,
-  queryPayloadCombiner: (_w, r) => Either_.right(r),
-  queryPayloadExamplesArray: [true],
-  resultConnector: (r: Reporters) => r.receiveReport,
-  resultPayloadCombiner: (_w, r) => Either_.right(r),
-  resultPayloadExamplesArray: [{
-    profit: 500,
-  }],
-});
-
 type ReportOps = scrapql.PropertiesBundle<{
   get: GetReport;
 }>;
@@ -195,7 +234,7 @@ const ReportOps: ReportOps = scrapql.properties.bundle({
 });
 
 type Reports = scrapql.KeysBundle<
-  Errors,
+  Err,
   Ctx0,
   Wsp0,
   Resolvers,
@@ -212,20 +251,23 @@ const Reports: Reports = scrapql.keys.bundle({
   item: ReportOps,
 });
 
-export type Root = scrapql.PropertiesBundle<{
+type Root = scrapql.PropertiesBundle<{
   protocol: Version,
   reports: Reports,
   customers: Customers,
 }>;
-export const Root: Root = scrapql.properties.bundle({
+const Root: Root = scrapql.properties.bundle({
   protocol: Version,
   reports: Reports,
   customers: Customers,
 });
 
-
 const Query = Root.Query;
 type Query = t.TypeOf<typeof Query>;
+
+const Result = Root.Result;
+type Result = t.TypeOf<typeof Result>;
+
 /*
 
 You can use the query validator to validate JSON queries as follows.
@@ -233,11 +275,11 @@ You can use the query validator to validate JSON queries as follows.
 */
 import { validator } from 'io-ts-validator';
 
-const exampleJsonQuery: Json = {
+const rawQuery: Json = {
   protocol: QUERY_PROTOCOL,
   reports: [
-    ['2018', {get: true}],
-    ['3030', {get: true}],
+    [2018, {get: true}],
+    [3030, {get: true}],
   ],
   customers: [
     ['c002', {get: true}],
@@ -245,39 +287,20 @@ const exampleJsonQuery: Json = {
   ],
 };
 
-const exampleQuery: Query = validator(Query).decodeSync(exampleJsonQuery);
+const exampleQuery: Query = validator(Query).decodeSync(rawQuery);
+const wireQuery: string = validator(Query, 'json').encodeSync(exampleQuery);
 /*
 
-## Define Query Resolvers
+## Implement Query Resolvers
 
 */
-import { Task } from 'fp-ts/lib/Task';
-import { TaskEither } from 'fp-ts/lib/TaskEither';
-
-import { pipe } from 'fp-ts/lib/pipeable';
-import * as Task_ from 'fp-ts/lib/Task';
-import * as Option_ from 'fp-ts/lib/Option';
-import * as Either_ from 'fp-ts/lib/Either';
-import * as TaskEither_ from 'fp-ts/lib/TaskEither';
-import { failure } from 'io-ts/lib/PathReporter'
-
-import * as scrapql from './scrapql';
-import { Ctx } from './scrapql';
-
-type Resolvers = scrapql.Resolvers<{
-  readonly fetchReport: (a: true, b: Ctx<[Year]>) => TaskEither<Errors, Report>;
-  readonly fetchCustomer: (a: true, b: Ctx<[CustomerId]>, c: { customer: Customer }) => TaskEither<Errors, Customer>;
-  readonly checkCustomerExistence: (a: CustomerId) => TaskEither<Errors, Option<{ customer: Customer }>>;
-}>
-
 const resolvers: Resolvers = {
   fetchReport: (_queryArgs, [year]) => pipe(
     () => db.getReport(year),
-    Task_.map(Report.decode),
-    TaskEither_.mapLeft(failure),
+    Task_.map(validator(Report).decodeEither),
   ),
 
-  fetchCustomer: (_queryArgs, [_customerId], {customer}) => pipe(
+  fetchCustomer: (_queryArgs, [_customerId], { customer }) => pipe(
     customer,  // cached by checkCustomerExistence
     TaskEither_.right,
   ),
@@ -286,54 +309,44 @@ const resolvers: Resolvers = {
     () => db.getCustomer(customerId),
     Task_.map((nullable) => pipe(
       Option_.fromNullable(nullable),
-      Option_.map(Customer.decode),
-      Option_.map(Either_.map((customer) => ({customer}))),
+      Option_.map(validator(Customer).decodeEither),
+      Option_.map(Either_.map((customer) => ({ customer }))),
       Option_.sequence(Either_.either),
-      Either_.mapLeft(failure),
     )),
   ),
 
 };
 /*
 
-
-## Define Query Processor
-
-*/
-import { QueryProcessor, Ctx0 } from './scrapql';
-
-const processQuery = Root.processQuery
-/*
-
-You can run the processor as follows.
+You can now process a query as follows.
 
 */
-import { processorInstance, ctx0 } from './scrapql';
+import { processorInstance, ctx0, wsp0 } from './scrapql';
 import * as ruins from 'ruins-ts';
 
-async function generateExampleOutput() {
-  const qp = processorInstance(processQuery, ctx0, {}, resolvers);
-  const q: Query = await validator(Query).decodePromise(exampleJsonQuery);
+async function generateExampleOutput(query: string) {
+  const qp = processorInstance(Root.processQuery, ctx0, wsp0, resolvers);
+  const q: Query = await validator(Query, 'json').decodePromise(query);
   const output = await ruins.fromTaskEither(qp(q));
   console.log(output);
 }
 
-generateExampleOutput();
+generateExampleOutput(wireQuery);
 /*
 
 The result object should look as follows.
 
 */
-const exampleResult = {
+const rawResult: Json = {
   protocol: 'scrapql-example-app/0.0.1/scrapql/result',
   reports: [
-    ['2018', {
+    [2018, {
       get: {
         _tag: 'Right',  // get success
         right: { profit: 100 }
       },
     }],
-    ['3030', {
+    [3030, {
       get: {
         _tag: 'Right',  // get success
         right: { profit: 0 }
@@ -363,51 +376,31 @@ const exampleResult = {
       },
     }],
   ],
-} as unknown as Result;
-/*
-
-## Define Result Validator
-
-Now that we know what the output will look like we can define a result validator.
-
-*/
-import { option as tOption } from 'io-ts-types/lib/option';
-
-const Result = Root.Result;
-type Result = t.TypeOf<typeof Result>;
+};
 /*
 
 We can now use the result validator to encode the result as JSON.
 
 */
-const exampleJsonResult: Json = JSON.parse(JSON.stringify(Result.encode(exampleResult)));
+const exampleResult: Result = validator(Result).decodeSync(rawResult);
+const wireResult: string = validator(Result, 'json').encodeSync(exampleResult);
 /*
 
 It all comes together as the following query processor.
 
 */
-async function jsonQueryProcessor(jsonQuery: Json): Promise<Json> {
-  const qp = processorInstance(processQuery, ctx0, {}, resolvers);
-  const q: Query = await validator(Query).decodePromise(jsonQuery);
+async function wireQueryProcessor(query: string): Promise<string> {
+  const qp = processorInstance(Root.processQuery, ctx0, wsp0, resolvers);
+  const q: Query = await validator(Query, 'json').decodePromise(query);
   const r: Result = await ruins.fromTaskEither(qp(q));
-  const jsonResult: Json = JSON.parse(JSON.stringify(Result.encode(r)));
-  return jsonResult;
+  const result: string = await validator(Result, 'json').encodePromise(r);
+  return result;
 }
 /*
 
-
-## Define Result Reporters
+## Implement Result Reporters
 
 */
-import { Either } from 'fp-ts/lib/Either';
-import { Option } from 'fp-ts/lib/Option';
-
-type Reporters = scrapql.Reporters<{
-  readonly receiveReport: (a: Report, b: Ctx<[true, Year]> ) => Task<void>;
-  readonly receiveCustomer: (a: Customer, b: Ctx<[true, CustomerId]>) => Task<void>;
-  readonly learnCustomerExistence: (a: boolean, b: Ctx<[CustomerId]>) => Task<void>;
-}>
-
 const reporters: Reporters = {
 
   receiveReport: (report, [_query, year]) => () => {
@@ -425,88 +418,75 @@ const reporters: Reporters = {
 };
 /*
 
-
-## Define Result Processor
+## Define Request and Response formats
 
 */
-import { ResultProcessor } from './scrapql';
+import { either as tEither } from 'io-ts-types/lib/either';
 
-// Ideally the type casts would be unnecessary, see https://github.com/maasglobal/scrapql/issues/12
-const processResult = Root.processResult;
+const Request = <D extends t.Mixed>(DataC: D) => DataC
+type Request<D> = D
 
+const Response = tEither
+type Response<E, D> = Either<E, D>
 /*
 
-## Example Flow
-
-Now that we have a query processor we can finally use it to process queries.
-The query processor works as follows.
+## Implement Client and Server
 
 */
 import * as Console_ from 'fp-ts/lib/Console';
-import * as IOEither_ from 'fp-ts/lib/IOEither';
-import { either as tEither } from 'io-ts-types/lib/either';
+
 
 async function server(request: string): Promise<string> {
   const main = pipe(
-    IOEither_.tryCatch(() => request, (reason: unknown) => [String(reason)]),
-    TaskEither_.fromIOEither,
-    TaskEither_.chain((body: string) => pipe(
-      validator(Query, 'json').decodeEither(body),
-      TaskEither_.fromEither,
-    )),
+    // validate request
+    validator(Request(Query), 'json').decodeEither(request),
+    TaskEither_.fromEither,
+    // process query
     TaskEither_.chain((query: Query) => pipe(
-      processorInstance(processQuery, ctx0, {}, resolvers),
-      (qp) => qp(query),
+      query,
+      processorInstance(Root.processQuery, ctx0, wsp0, resolvers),
     )),
-    Task_.chainFirst((result: Either<Errors, Result>) => pipe(
-      result,
+    // log status
+    Task_.chainFirst((response: Response<Err, Result>) => pipe(
+      response,
       Either_.fold(
         (errors) => Console_.error(['Error!'].concat(errors).join('\n')),
         (_output) => Console_.log('Success!'),
       ),
       Task_.fromIO,
     )),
-    Task_.map((result: Either<Errors, Result>) => pipe(
-      result,
-      Either_.fold(
-        (_errors): unknown => ({ error: 'Internal server error' }),
-        (xxx) => ({ data: Result.encode(xxx) }),
-      ),
-      (json) => Either_.stringifyJSON(json, (reason) => String(reason)),
-    )),
-    TaskEither_.fold(
-      (errorString) => Task_.of(errorString), // JSON stringify failure
-      (jsonString) => Task_.of(jsonString), // processing success or failure
+    // encode response
+    Task_.map((response: Response<Err, Result>) => 
+      validator(Response(Err, Result), 'json').encodeEither(response)
     ),
   );
-  return main();
+  return ruins.fromTaskEither(main);
 }
 
 async function client(query: Query): Promise<void> {
   const main = pipe(
-    validator(Query, 'json').encodeEither(query),
+    // encode request
+    validator(Request(Query), 'json').encodeEither(query),
     TaskEither_.fromEither,
-    TaskEither_.chain((requestBody) => pipe(
-      TaskEither_.tryCatch(() => server(requestBody), (reason) => [String(reason)]),
+    // call server
+    TaskEither_.chain((request) => pipe(
+      TaskEither_.tryCatch(() => server(request), (reason) => [String(reason)]),
     )),
-    TaskEither_.chain((body: string) => pipe(
-      validator(tEither(Errors, Result), 'json').decodeEither(body),
-      TaskEither_.fromEither,
-    )),
-    TaskEither_.chain((result: Either<Errors, Result>) => pipe(
-      result,
-      TaskEither_.fromEither,
-    )),
-    TaskEither_.fold(
-      (errors) => () => Promise.resolve(console.error(errors)),
-      (result: Result) => pipe(
-        processorInstance( processResult, ctx0, {}, reporters ),
-        (rp) => rp(result),
-      ),
+    // validate response
+    TaskEither_.chainEitherK((body: string) =>
+      validator(Response(Err, Result), 'json').decodeEither(body),
     ),
+    // acknowledge server-side errors
+    TaskEither_.chain((response: Response<Err, Result>) => Task_.of(response)),
+    // process result
+    TaskEither_.chain((result: Result) => pipe(
+      result,
+      processorInstance( Root.processResult, ctx0, wsp0, reporters ),
+      TaskEither_.fromTask,
+    )),
   );
-  return main();
+  return ruins.fromTaskEither(main);
 }
 /*
 */
-export { Customer, CustomerId, Errors, Json, QUERY_PROTOCOL, Query, RESULT_PROTOCOL, Report, Result, Year, client, db, example, exampleBundle, exampleJsonQuery, exampleQuery, exampleResult, exampleJsonResult, jsonQueryProcessor, packageName, packageVersion, processQuery, processResult, reporters, resolvers, server }
+export { Customer, CustomerId, Err, Json, QUERY_PROTOCOL, Query, RESULT_PROTOCOL, Report, Result, Year, client, db, example, exampleBundle, wireQuery, exampleQuery, exampleResult, exampleJsonResult, wireQueryProcessor, packageName, packageVersion, processQuery, processResult, reporters, resolvers, server }
