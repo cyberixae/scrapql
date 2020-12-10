@@ -89,7 +89,6 @@ import * as Task_ from 'fp-ts/lib/Task';
 import * as Option_ from 'fp-ts/lib/Option';
 import * as Either_ from 'fp-ts/lib/Either';
 import * as TaskEither_ from 'fp-ts/lib/TaskEither';
-import { failure } from 'io-ts/lib/PathReporter'
 
 import * as scrapql from './scrapql';
 import { Ctx, Ctx0, Wsp, Wsp0, Existence } from './scrapql';
@@ -321,14 +320,13 @@ const resolvers: Resolvers = {
 You can now process a query as follows.
 
 */
-import { processorInstance, ctx0, wsp0 } from './scrapql';
 import * as ruins from 'ruins-ts';
 
-async function generateExampleOutput(query: string) {
-  const qp = processorInstance(Root.processQuery, ctx0, wsp0, resolvers);
-  const q: Query = await validator(Query, 'json').decodePromise(query);
-  const output = await ruins.fromTaskEither(qp(q));
-  console.log(output);
+async function generateExampleOutput(input: string) {
+  const query: Query = await validator(Query, 'json').decodePromise(input);
+  const queryProcessor = scrapql.processQuery(Root, resolvers);
+  const result = await ruins.fromTaskEither(queryProcessor(query));
+  console.log(result);
 }
 
 generateExampleOutput(wireQuery);
@@ -389,12 +387,12 @@ const wireResult: string = validator(Result, 'json').encodeSync(exampleResult);
 It all comes together as the following query processor.
 
 */
-async function wireQueryProcessor(query: string): Promise<string> {
-  const qp = processorInstance(Root.processQuery, ctx0, wsp0, resolvers);
-  const q: Query = await validator(Query, 'json').decodePromise(query);
-  const r: Result = await ruins.fromTaskEither(qp(q));
-  const result: string = await validator(Result, 'json').encodePromise(r);
-  return result;
+async function wireQueryProcessor(input: string): Promise<string> {
+  const queryProcessor = scrapql.processQuery(Root, resolvers);
+  const query: Query = await validator(Query, 'json').decodePromise(input);
+  const result: Result = await ruins.fromTaskEither(queryProcessor(query));
+  const output: string = await validator(Result, 'json').encodePromise(result);
+  return output;
 }
 /*
 
@@ -444,7 +442,7 @@ async function server(request: string): Promise<string> {
     // process query
     TaskEither_.chain((query: Query) => pipe(
       query,
-      processorInstance(Root.processQuery, ctx0, wsp0, resolvers),
+      scrapql.processQuery(Root, resolvers),
     )),
     // log status
     Task_.chainFirst((response: Response<Err, Result>) => pipe(
@@ -481,7 +479,7 @@ async function client(query: Query): Promise<void> {
     // process result
     TaskEither_.chain((result: Result) => pipe(
       result,
-      processorInstance( Root.processResult, ctx0, wsp0, reporters ),
+      scrapql.processResult( Root, reporters ),
       TaskEither_.fromTask,
     )),
   );
