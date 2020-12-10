@@ -634,8 +634,8 @@ export function processQuery<
   R extends Result<any>,
   E extends Err<any>,
   QA extends Resolvers<any>,
-  QR extends Resolvers<any>,
->(bundle: Bundle<Q, R, E, Ctx0, Wsp0, QA, QR>, resolvers: QA): QueryProcessorInstance<Q, R, E> {
+  RA extends Reporters<any>,
+>(bundle: Bundle<Q, R, E, Ctx0, Wsp0, QA, RA>, resolvers: QA): QueryProcessorInstance<Q, R, E> {
   return processorInstance( bundle.processQuery, ctx0, wsp0, resolvers)
 }
 
@@ -644,7 +644,7 @@ export function processResult<
   R extends Result<any>,
   E extends Err<any>,
   QA extends Resolvers<any>,
-  QR extends Resolvers<any>,
+  RA extends Reporters<any>,
 >(bundle: Bundle<Q, R, E, Ctx0, Wsp0, QA, RA>, reporters: RA): ResultProcessorInstance<R> {
   return processorInstance( bundle.processResult, ctx0, wsp0, reporters)
 }
